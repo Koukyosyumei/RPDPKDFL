@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 
 from ptbi.config.config import config_base, config_dataset, config_gradinvattack
-from ptbi.pipeline.pipeline_fedavg import attack_fedavg
+from ptbi.pipeline.fedavg.pipeline_fedavg import attack_fedavg
 
 
 def add_args(parser):

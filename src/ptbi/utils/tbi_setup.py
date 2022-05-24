@@ -4,7 +4,7 @@ import torch
 import torchvision.transforms as transforms
 from aijack.utils import NumpyDataset, worker_init_fn
 
-from invmodel import get_invmodel_class
+from ..model.invmodel import get_invmodel_class
 
 
 def setup_training_based_inversion(

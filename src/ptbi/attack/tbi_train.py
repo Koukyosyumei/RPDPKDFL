@@ -2,7 +2,7 @@ import os
 
 import torch
 
-from ..utils import setup_inv_dataloader
+from ..utils.tbi_setup import setup_inv_dataloader
 from .reconstruction import reconstruct_all_possible_targets
 
 

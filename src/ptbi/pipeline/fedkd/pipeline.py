@@ -8,17 +8,14 @@ import torch
 from ...attack.confidence import get_alpha, get_pi
 from ...attack.reconstruction import (
     reconstruct_all_possible_targets,
-    reconstruct_private_data_and_quick_evaluate,
-)
-from ...attack.tbi_train import (
-    get_inv_train_fn_ablation_3,
-    get_inv_train_fn_ptbi,
-    get_inv_train_fn_tbi,
-)
-from ...model import get_model_class
+    reconstruct_private_data_and_quick_evaluate)
+from ...attack.tbi_train import (get_inv_train_fn_ablation_3,
+                                 get_inv_train_fn_ptbi, get_inv_train_fn_tbi)
+from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
-from ...utils.tbi_setup import setup_tbi_optimizers, setup_training_based_inversion
+from ...utils.tbi_setup import (setup_tbi_optimizers,
+                                setup_training_based_inversion)
 from ..evaluation import evaluation_full
 
 

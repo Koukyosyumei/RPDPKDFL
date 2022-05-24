@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 
 from ptbi.config.config import config_base, config_dataset, config_fedkd
-from ptbi.pipeline.pipeline import attack_fedkd
+from ptbi.pipeline.fedkd.pipeline import attack_fedkd
 
 
 def add_args(parser):
