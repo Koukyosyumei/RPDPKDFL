@@ -2,12 +2,7 @@ import argparse
 import os
 from datetime import datetime
 
-from ptbi.config.config import (
-    config_base,
-    config_dataset,
-    config_fedkd,
-    config_nessearch,
-)
+from ptbi.config.config import config_base, config_dataset, config_fedkd
 from ptbi.pipeline.pipeline import attack_fedkd
 
 
@@ -112,8 +107,6 @@ if __name__ == "__main__":
     args["config_dataset"] = config_dataset[args["dataset"]]
     args["config_dataset"]["data_folder"] = parsed_args.path_to_datafolder
     args["config_fedkd"] = config_fedkd[args["fedkd_type"]]
-    config_nessearch["temperature"] = parsed_args.softmax_tempreature
-    args["config_attack_nes"] = config_nessearch
 
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id += f"_{args['dataset']}_{args['fedkd_type']}_{args['evaluation_type']}_{args['client_num']}"
