@@ -1,7 +1,7 @@
 opencv_python
 matplotlib
 numpy>=1.20.1
-torch_vision>=0.1.6
+torch_vision
 scikit_image>=0.18.3
 torch>=1.11.0
 torchvision
