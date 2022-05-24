@@ -9,7 +9,6 @@ do
   esac
 done
 
-cp -f 11e625050a0850c9066c378d9e05f08a/run.sh run.sh
 chmod 777 run.sh
 
 ./run.sh -t FedMD -d ${VALUE_D} -a ptbi -c ${VALUE_C} -s ${VALUE_S} -p ${VALUE_P} -o ${VALUE_O} -b 0
