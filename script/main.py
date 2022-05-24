@@ -41,13 +41,6 @@ def add_args(parser):
     )
 
     parser.add_argument(
-        "-f",
-        "--use_finetune",
-        type=int,
-        default=1,
-    )
-
-    parser.add_argument(
         "-s",
         "--softmax_tempreature",
         type=float,
@@ -89,7 +82,6 @@ if __name__ == "__main__":
 
     args["attack_type"] = parsed_args.attack_type
     args["client_num"] = parsed_args.client_num
-    args["use_finetune"] = bool(parsed_args.use_finetune)
 
     if parsed_args.ablation_study == 0:
         if parsed_args.fedkd_type == "DSFL":

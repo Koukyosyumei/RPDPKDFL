@@ -20,12 +20,34 @@ We use LAG dataset of [Large Age-Gap Face Verification by Feature Injection in D
 
 ## How to run
 
+### Prepare datasets
+
 We assume that all data locates in `data` folder.
 
-### PTBI/TBI against FedKD
+```
+├── data
+│   ├── LAGdataset_100.zip
+│   ├── lfw-align-128-mask.tar.gz
+│   └── lfw-align-128.tar.gz
+```
 
 - LFW
 
+```
+mkdir data/lag
+unzip -qq data/LAGdataset_100.zip -d data/lag
+```
+
 - LAG
+
+```
+mkdir data/lfw
+tar -zxf data/lfw-align-128.tar.gz -C data/lfw
+tar -zxf data/lfw-align-128-mask.tar.gz -C data/lfw
+```
+
+### PTBI/TBI against FedKD
+
+
 
 ### Gradient-based attack against FedAVG

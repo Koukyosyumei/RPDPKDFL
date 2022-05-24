@@ -3,6 +3,7 @@ import os
 import torch
 
 from ..utils import setup_inv_dataloader
+from .reconstruction import reconstruct_all_possible_targets
 
 
 def train_inv_model_tbi(data, device, inv_model, optimizer, criterion):
@@ -148,7 +149,6 @@ def get_inv_train_fn_ptbi(
             }
             torch.save(state, inv_path_list[target_client_id])
 
-        """
         print("saving the reconstructed images...")
         reconstruct_all_possible_targets(
             attack_type,
@@ -166,7 +166,6 @@ def get_inv_train_fn_ptbi(
             ablation_study,
             base_name=api.epoch,
         )
-        """
 
     return inv_train
 
@@ -250,7 +249,6 @@ def get_inv_train_fn_tbi(
             state = {"model": inv.state_dict(), "optimizer": inv_optimizer.state_dict()}
             torch.save(state, inv_path_list[target_client_id])
 
-        """
         print("saving the reconstructed images...")
         reconstruct_all_possible_targets(
             attack_type,
@@ -268,7 +266,6 @@ def get_inv_train_fn_tbi(
             ablation_study,
             base_name=api.epoch,
         )
-        """
 
     return inv_train
 
