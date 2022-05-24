@@ -4,5 +4,4 @@ numpy==1.20.1
 torch_vision==0.1.6.dev0
 scikit_image==0.18.3
 torch==1.11.0
-skimage==0.0
 torchvision==0.12.0
