@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import torch
-import torchvision.transforms.functional as F
 from matplotlib import pyplot as plt
 
 
@@ -54,18 +53,6 @@ def total_variance_numpy(x):
     dx = np.mean(np.abs(x[:, :, :-1] - x[:, :, 1:]))
     dy = np.mean(np.abs(x[:, :-1, :] - x[:, 1:, :]))
     return dx + dy
-
-
-def grid_plt_show(imgs):
-    if not isinstance(imgs, list):
-        imgs = [imgs]
-    fig, axs = plt.subplots(ncols=len(imgs), squeeze=False)
-    for i, img in enumerate(imgs):
-        img = img.detach()
-        img = F.to_pil_image(img)
-        axs[0, i].imshow(np.asarray(img))
-        axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
-    plt.show()
 
 
 def plot_img(x, channel):
