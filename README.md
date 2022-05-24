@@ -2,6 +2,12 @@
 
 Code for Reconstruct Private Data via Public Knowledge in Distillation-based Federated Learning
 
+## Install
+
+```
+./install.sh
+```
+
 ## Dataset
 
 - LFW
@@ -13,3 +19,13 @@ We use the masked LFW dataset of [DeepFace-EMD: Re-ranking Using Patch-wise Eart
 We use LAG dataset of [Large Age-Gap Face Verification by Feature Injection in Deep Networks (2017)](http://www.ivl.disco.unimib.it/activities/large-age-gap-face-verification/) by Bianco and Simone. You can download the dataset with [this link](http://www.ivl.disco.unimib.it/wp-content/uploads/2016/09/LAGdataset_100.zip).
 
 ## How to run
+
+We assume that all data locates in `data` folder.
+
+### PTBI/TBI against FedKD
+
+- LFW
+
+- LAG
+
+### Gradient-based attack against FedAVG
