@@ -1,4 +1,5 @@
 import argparse
+import glob
 import os
 from datetime import datetime
 
@@ -69,6 +70,7 @@ def add_args(parser):
 
 
 if __name__ == "__main__":
+    print(glob.glob("./*"))
     parser = argparse.ArgumentParser()
     parsed_args = add_args(parser)
 
