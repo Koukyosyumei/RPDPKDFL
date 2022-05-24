@@ -17,6 +17,7 @@ def add_args(parser):
         "--fedkd_type",
         type=str,
         default="fedgems",
+        help="type of FedKD; FedMD, FedGEMS, or FedGEMS",
     )
 
     parser.add_argument(

@@ -19,5 +19,4 @@ echo "client_num is $VALUE_C"
 echo "tempreature: $VALUE_S"
 echo "setting: $VALUE_B"
 
-ls
-python ./main.py -t ${VALUE_T} -d ${VALUE_D} -a ${VALUE_A} -c ${VALUE_C} -s ${VALUE_S} -p ${VALUE_P} -o ${VALUE_O} -b ${VALUE_B}
+python script/main.py -t ${VALUE_T} -d ${VALUE_D} -a ${VALUE_A} -c ${VALUE_C} -s ${VALUE_S} -p ${VALUE_P} -o ${VALUE_O} -b ${VALUE_B}
