@@ -91,6 +91,28 @@ python script/main.py -t FedMD -d LAG -a ptbi -c 10 -s 3 -p ./data/lag -o path_t
 
 ### Gradient-based attack against FedAVG
 
+You can reproduce our experiments with [script/main_fedavg.py](script/main_fedavg.py).
+
+#### Usage
+
+```
+usage: main_fedavg.py [-h] [-d DATASET] [-c CLIENT_NUM] [-p PATH_TO_DATAFOLDER] [-o OUTPUT_FOLDER]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d DATASET, --dataset DATASET
+                        type of dataset;
+                            LAG or LFW
+  -c CLIENT_NUM, --client_num CLIENT_NUM
+                        number of clients
+  -p PATH_TO_DATAFOLDER, --path_to_datafolder PATH_TO_DATAFOLDER
+                        path to the data folder
+  -o OUTPUT_FOLDER, --output_folder OUTPUT_FOLDER
+                        path to the output folder
+```
+
+#### Example
+
 ```
 python script/main_fedavg.py -d LAG -c 10 -p ./data/lag -o path_to_output_folder
 ```
