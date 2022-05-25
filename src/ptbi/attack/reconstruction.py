@@ -35,7 +35,7 @@ def reconstruct_private_data_and_quick_evaluate(
     }
     result = {
         f"{attack_type}_success": 0,
-        f"{attack_type}_falut": 0,
+        f"{attack_type}_too_close_to_public": 0,
     }
 
     (
@@ -90,7 +90,12 @@ def reconstruct_private_data_and_quick_evaluate(
                 x_rec = inv(dummy_preds.reshape(1, -1, 1, 1))
             else:
                 x_rec = inv(dummy_pred_local.reshape(1, -1, 1, 1))
-            (success_flag, falut_flag, ssim_private, ssim_public,) = evaluate_ssim(
+            (
+                success_flag,
+                too_close_to_public_flag,
+                ssim_private,
+                ssim_public,
+            ) = evaluate_ssim(
                 x_rec[0].detach().cpu().numpy().transpose(1, 2, 0),
                 private_dataset_transformed,
                 public_dataset_transformed,
@@ -111,13 +116,9 @@ def reconstruct_private_data_and_quick_evaluate(
                 result[f"{attack_type}_success"] += 1
                 ssim_list[f"{attack_type}_ssim_private"].append(ssim_private)
                 ssim_list[f"{attack_type}_ssim_public"].append(ssim_public)
-            if falut_flag:
-                print("falut!")
-                result[f"{attack_type}_falut"] += 1
-
-            # plt.figure(figsize=(1.5, 1.5))
-            # plot_img(x_rec[0], config_dataset["channel"])
-            # plt.axis("off")
+            if too_close_to_public_flag:
+                print("too_close_to_public!")
+                result[f"{attack_type}_too_close_to_public"] += 1
 
     for k in ssim_list.keys():
         if len(ssim_list[k]) > 0:
@@ -152,11 +153,6 @@ def reconstruct_all_possible_targets(
 
         for celeb_id in target_ids:
             target_label = id2label[celeb_id]
-            # --- Prepare Attack --- #
-
-            # --- Training-based inversion attak --- #
-            # inv_alpha = get_alpha(output_dim, inv_pj)
-            # pi = get_pi(output_dim, inv_alpha)
 
             dummy_pred_server = torch.ones(1, output_dim).to(device) * pi
             dummy_pred_server[:, target_label] = inv_pj

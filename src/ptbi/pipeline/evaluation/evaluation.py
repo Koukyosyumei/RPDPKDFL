@@ -105,7 +105,7 @@ def evaluation_full(
     }
     result = {
         f"{attack_type}_success": 0,
-        f"{attack_type}_falut": 0,
+        f"{attack_type}_too_close_to_public": 0,
     }
 
     target_ids = sum(local_identities, [])
@@ -200,7 +200,9 @@ def evaluation_full(
         ssim_public = ssim_public_list[label]
 
         result[f"{attack_type}_success"] += label == best_label
-        result[f"{attack_type}_falut"] += label + num_classes == best_label
+        result[f"{attack_type}_too_close_to_public"] += (
+            label + num_classes == best_label
+        )
         ssim_list[f"{attack_type}_ssim_private"].append(ssim_private)
         ssim_list[f"{attack_type}_ssim_public"].append(ssim_public)
 
