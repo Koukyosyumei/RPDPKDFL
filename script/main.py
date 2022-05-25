@@ -16,10 +16,7 @@ def add_args(parser):
     )
 
     parser.add_argument(
-        "-d",
-        "--dataset",
-        type=str,
-        default="LAG",
+        "-d", "--dataset", type=str, default="LAG", help="type of dataset; LAG or LFW"
     )
 
     parser.add_argument(
@@ -27,13 +24,11 @@ def add_args(parser):
         "--attack_type",
         type=str,
         default="ptbi",
+        help="type of attack; ptbi or tbi",
     )
 
     parser.add_argument(
-        "-c",
-        "--client_num",
-        type=int,
-        default=10,
+        "-c", "--client_num", type=int, default=10, help="number of clients"
     )
 
     parser.add_argument(
@@ -41,6 +36,7 @@ def add_args(parser):
         "--softmax_tempreature",
         type=float,
         default=1.0,
+        help="tempreature $\tau$",
     )
 
     parser.add_argument(
@@ -48,6 +44,7 @@ def add_args(parser):
         "--path_to_datafolder",
         type=str,
         default="/content/lag",
+        help="path to the data folder",
     )
 
     parser.add_argument(
@@ -55,6 +52,7 @@ def add_args(parser):
         "--output_folder",
         type=str,
         default="/content/drive/MyDrive/results/",
+        help="path to the output folder",
     )
 
     parser.add_argument(
@@ -62,6 +60,10 @@ def add_args(parser):
         "--ablation_study",
         type=int,
         default=0,
+        help="type of ablation study; 0:normal(Q=p'_{c_i, j}+p'_{s, j}+\alpha H(p'_s)), \
+                                      1:without entropy (Q=p'_{c_i, j}+p'_{s, j})\
+                                      2:without p'_{s, j} (Q=p'_{c_i, j}+\alpha H(p'_s))\
+                                      3:without local logit (Q=p'_{s, j}+\alpha H(p'_s))",
     )
 
     args = parser.parse_args()

@@ -8,17 +8,11 @@ from ptbi.pipeline.fedavg.pipeline_fedavg import attack_fedavg
 
 def add_args(parser):
     parser.add_argument(
-        "-d",
-        "--dataset",
-        type=str,
-        default="LAG",
+        "-d", "--dataset", type=str, default="LAG", help="type of dataset; LAG or LFW"
     )
 
     parser.add_argument(
-        "-c",
-        "--client_num",
-        type=int,
-        default=10,
+        "-c", "--client_num", type=int, default=10, help="number of clients"
     )
 
     parser.add_argument(
@@ -26,6 +20,7 @@ def add_args(parser):
         "--path_to_datafolder",
         type=str,
         default="/content/lag",
+        help="path to the data folder",
     )
 
     parser.add_argument(
@@ -33,6 +28,7 @@ def add_args(parser):
         "--output_folder",
         type=str,
         default="/content/drive/MyDrive/results/",
+        help="path to the output folder",
     )
 
     args = parser.parse_args()
