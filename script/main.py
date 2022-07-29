@@ -1,10 +1,17 @@
 import argparse
 import os
+import random
+import string
 from datetime import datetime
 
 from ptbi.attack import get_pj
 from ptbi.config.config import config_base, config_dataset, config_fedkd
 from ptbi.pipeline.fedkd.pipeline import attack_fedkd
+
+
+def randomname(n):
+    randlst = [random.choice(string.ascii_letters + string.digits) for i in range(n)]
+    return "".join(randlst)
 
 
 def add_args(parser):
@@ -161,10 +168,13 @@ if __name__ == "__main__":
         args["invmodel_type"] = "InvLM"
 
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
+    run_id += "_" + randomname(10)
     run_id += f"_{args['dataset']}_{args['fedkd_type']}_{args['evaluation_type']}_{args['client_num']}"
     run_dir = os.path.join(parsed_args.output_folder, run_id)
     os.makedirs(run_dir)
 
+    args["alpha"] = parsed_args.alpha
+    args["random_seed"] = parsed_args.random_seed
     with open(os.path.join(run_dir, "args.txt"), "w") as convert_file:
         convert_file.write(str(args))
 
