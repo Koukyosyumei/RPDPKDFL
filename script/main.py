@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     args["attack_type"] = parsed_args.attack_type
     args["client_num"] = parsed_args.client_num
-    args["lr"] = parsed_args.lr
+    args["lr"] = parsed_args.learning_rate
 
     if args["dataset"] == "AT&T":
         args["num_classes"] = 400
