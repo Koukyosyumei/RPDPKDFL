@@ -49,12 +49,109 @@ def prepare_mnist_dataloaders(
     y_private_lists = [[] for _ in range(client_num)]
 
     for i in range(num_classes):
-        if i not in name_id2client_id:
+        if i in name_id2client_id:
+            temp_size = labels[labels == i].shape[0]
+            temp_pub_x = imgs[labels == i][: int(temp_size / 2)]
+            temp_pub_x[:, 10 : 10 + blur_strength, :] = np.random.uniform(
+                0, 255, temp_pub_x[:, 10:blur_strength, :].shape
+            )
+            X_public_list.append(temp_pub_x)
+            y_public_list.append(labels[labels == i][: int(temp_size / 2)])
+            X_private_lists[name_id2client_id[i]].append(
+                imgs[labels == i][int(temp_size / 2) :]
+            )
+            y_private_lists[name_id2client_id[i]].append(
+                labels[labels == i][int(temp_size / 2) :]
+            )
+        else:
             X_public_list.append(imgs[labels == i])
             y_public_list.append(labels[labels == i])
-        else:
-            X_private_lists[name_id2client_id[i]].append(imgs[labels == i])
-            y_private_lists[name_id2client_id[i]].append(labels[labels == i])
+
+    X_public = np.stack(X_public_list)
+    y_public = np.array(y_public_list)
+    X_private_list = [np.stack(x) for x in X_private_lists]
+    y_private_list = [np.array(y) for y in y_private_lists]
+
+    transforms_list = [transforms.ToTensor()]
+    # if channel == 1:
+    #    transforms_list.append(transforms.Grayscale())
+    if crop:
+        transforms_list.append(transforms.CenterCrop((max(height, width))))
+    else:
+        transforms_list.append(transforms.Resize((height, width)))
+
+    transforms_list.append(transforms.Normalize((0.5,), (0.5,)))
+    # if channel == 1:
+    #    transforms_list.append(transforms.Normalize((0.5,), (0.5,)))
+    # else:
+    #    transforms_list.append(transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
+    transform = transforms.Compose(transforms_list)
+    return_idx = True
+
+    public_dataset = NumpyDataset(
+        x=X_public,
+        y=y_public,
+        transform=transform,
+        return_idx=return_idx,
+    )
+    private_dataset_list = [
+        NumpyDataset(
+            x=X_private_list[i],
+            y=y_private_list[i],
+            transform=transform,
+            return_idx=return_idx,
+        )
+        for i in range(client_num)
+    ]
+
+    g = torch.Generator()
+    g.manual_seed(seed)
+
+    print("prepare public dataloader")
+    try:
+        public_dataloader = torch.utils.data.DataLoader(
+            public_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+            generator=g,
+        )
+    except:
+        public_dataloader = torch.utils.data.DataLoader(
+            public_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+        )
+
+    print("prepare local dataloader")
+    try:
+        local_dataloaders = [
+            torch.utils.data.DataLoader(
+                private_dataset_list[i],
+                batch_size=batch_size,
+                shuffle=True,
+                num_workers=num_workers,
+                worker_init_fn=worker_init_fn,
+                generator=g,
+            )
+            for i in range(client_num)
+        ]
+    except:
+        local_dataloaders = [
+            torch.utils.data.DataLoader(
+                private_dataset_list[i],
+                batch_size=batch_size,
+                shuffle=True,
+                num_workers=num_workers,
+                worker_init_fn=worker_init_fn,
+            )
+            for i in range(client_num)
+        ]
+
+    return public_dataloader, local_dataloaders, local_identities
 
 
 def prepare_att_dataloaders(
@@ -607,5 +704,7 @@ def prepare_dataloaders(dataset_name, *args, **kwargs):
         return prepare_lfw_dataloaders(*args, **kwargs)
     elif dataset_name == "AT&T":
         return prepare_att_dataloaders(*args, **kwargs)
+    elif dataset_name == "MNIST":
+        return prepare_mnist_dataloaders(*args, **kwargs)
     else:
         raise NotImplementedError(f"{dataset_name} is not supported")
