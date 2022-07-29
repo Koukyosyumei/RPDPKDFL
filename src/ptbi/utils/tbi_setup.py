@@ -23,15 +23,33 @@ def setup_training_based_inversion(
         if attack_type == "ptbi":
             if ablation_study != 3:
                 inv = get_invmodel_class(invmodel_type)(
-                    input_dim=num_classes * 2, channel=config_dataset["channel"]
+                    input_dim=num_classes * 2,
+                    output_shape=(
+                        config_dataset["channel"],
+                        config_dataset["height"],
+                        config_dataset["width"],
+                    ),
+                    channel=config_dataset["channel"],
                 ).to(device)
             else:
                 inv = get_invmodel_class(invmodel_type)(
-                    input_dim=num_classes, channel=config_dataset["channel"]
+                    input_dim=num_classes,
+                    output_shape=(
+                        config_dataset["channel"],
+                        config_dataset["height"],
+                        config_dataset["width"],
+                    ),
+                    channel=config_dataset["channel"],
                 ).to(device)
         elif attack_type == "tbi":
             inv = get_invmodel_class(invmodel_type)(
-                input_dim=num_classes, channel=config_dataset["channel"]
+                input_dim=num_classes,
+                output_shape=(
+                    config_dataset["channel"],
+                    config_dataset["height"],
+                    config_dataset["width"],
+                ),
+                channel=config_dataset["channel"],
             ).to(device)
         inv_optimizer = torch.optim.Adam(
             inv.parameters(), lr=inv_lr, weight_decay=0.0001
