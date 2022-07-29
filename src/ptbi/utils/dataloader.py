@@ -53,7 +53,7 @@ def prepare_mnist_dataloaders(
             temp_size = labels[labels == i].shape[0]
             temp_pub_x = imgs[labels == i][: int(temp_size / 2)]
             temp_pub_x[:, 10 : 10 + blur_strength, :] = np.random.uniform(
-                0, 255, temp_pub_x[:, 10:blur_strength, :].shape
+                0, 255, temp_pub_x[:, 10 : 10 + blur_strength, :].shape
             )
             X_public_list.append(temp_pub_x)
             y_public_list.append(labels[labels == i][: int(temp_size / 2)])
