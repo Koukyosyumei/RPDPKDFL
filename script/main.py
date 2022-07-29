@@ -40,6 +40,14 @@ def add_args(parser):
     )
 
     parser.add_argument(
+        "-u",
+        "--blur_strength",
+        type=int,
+        default=10,
+        help="strength of blur",
+    )
+
+    parser.add_argument(
         "-p",
         "--path_to_datafolder",
         type=str,
@@ -109,6 +117,9 @@ if __name__ == "__main__":
     args["config_dataset"] = config_dataset[args["dataset"]]
     args["config_dataset"]["data_folder"] = parsed_args.path_to_datafolder
     args["config_fedkd"] = config_fedkd[args["fedkd_type"]]
+
+    if args["dataset"] == "AT&T":
+        args["config_dataset"]["blur_strength"] = parsed_args.blur_strength
 
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id += f"_{args['dataset']}_{args['fedkd_type']}_{args['evaluation_type']}_{args['client_num']}"
