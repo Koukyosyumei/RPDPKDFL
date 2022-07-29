@@ -43,6 +43,8 @@ def prepare_mnist_dataloaders(
         for idx in name_id_list:
             name_id2client_id[idx] = client_id
 
+    print(name_id2client_id)
+
     X_public_list = []
     y_public_list = []
     X_private_lists = [[] for _ in range(client_num)]
@@ -55,6 +57,7 @@ def prepare_mnist_dataloaders(
             temp_pub_x[:, 10 : 10 + blur_strength, :] = np.random.uniform(
                 0, 255, temp_pub_x[:, 10 : 10 + blur_strength, :].shape
             )
+            print(temp_pub_x.shape)
             X_public_list.append(temp_pub_x)
             y_public_list.append(labels[labels == i][: int(temp_size / 2)])
             X_private_lists[name_id2client_id[i]].append(
@@ -64,13 +67,17 @@ def prepare_mnist_dataloaders(
                 labels[labels == i][int(temp_size / 2) :]
             )
         else:
+            print(imgs[labels == i].shape)
             X_public_list.append(imgs[labels == i])
             y_public_list.append(labels[labels == i])
 
-    X_public = np.stack(X_public_list)
-    y_public = np.array(y_public_list)
-    X_private_list = [np.stack(x) for x in X_private_lists]
-    y_private_list = [np.array(y) for y in y_private_lists]
+    X_public = np.vstack(X_public_list)
+    y_public = np.concatenate(y_public_list)
+    print(X_public.shape)
+    print(y_public.shape)
+
+    X_private_list = [np.vstack(x) for x in X_private_lists]
+    y_private_list = [np.concatenate(y) for y in y_private_lists]
 
     transforms_list = [transforms.ToTensor()]
     # if channel == 1:

@@ -53,7 +53,7 @@ def setup_training_based_inversion(
 
 def setup_tbi_optimizers(dataset_name, config_dataset):
     transforms_list = [transforms.ToTensor()]
-    if dataset_name != "AT&T":
+    if dataset_name not in ["AT&T", "MNIST"]:
         if "channel" not in config_dataset or config_dataset["channel"] != 3:
             transforms_list.append(transforms.Grayscale())
     if "crop" in config_dataset and config_dataset["crop"]:

@@ -4,7 +4,7 @@ import torch.nn as nn
 
 
 class InvLM(nn.Module):
-    def __init__(self, input_dim=10, output_shape=(1, 28, 28)):
+    def __init__(self, input_dim=10, output_shape=(1, 28, 28), channel=1):
         super(InvLM, self).__init__()
         self.output_shape = output_shape
         self.fc = nn.Linear(input_dim, np.prod(output_shape))
