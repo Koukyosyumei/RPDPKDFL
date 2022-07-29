@@ -35,6 +35,10 @@ def add_args(parser):
     )
 
     parser.add_argument(
+        "-r" "--learning_rate", type=float, default=0.001, help="learning rate"
+    )
+
+    parser.add_argument(
         "-s",
         "--softmax_tempreature",
         type=float,
@@ -91,10 +95,10 @@ if __name__ == "__main__":
 
     args["attack_type"] = parsed_args.attack_type
     args["client_num"] = parsed_args.client_num
+    args["lr"] = parsed_args.lr
 
     if args["dataset"] == "AT&T":
         args["num_classes"] = 400
-        args["inv_epoch"] = 6
 
     if parsed_args.ablation_study == 0:
         if parsed_args.fedkd_type == "DSFL":
