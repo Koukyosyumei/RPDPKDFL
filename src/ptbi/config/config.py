@@ -1,7 +1,7 @@
 _config_att = {
     "height": 64,
     "width": 64,
-    "crop": True,
+    "crop": False,
     "channel": 1,
     "data_folder": "/content/RPDPKDFL/data",
     "target_celeblities_num": 20,
