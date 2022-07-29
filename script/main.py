@@ -149,8 +149,12 @@ if __name__ == "__main__":
     args["config_dataset"]["data_folder"] = parsed_args.path_to_datafolder
     args["config_fedkd"] = config_fedkd[args["fedkd_type"]]
 
-    if args["dataset"] == "AT&T":
+    if args["dataset"] in ["AT&T", "MNIST"]:
         args["config_dataset"]["blur_strength"] = parsed_args.blur_strength
+
+    if args["dataset"] in ["MNIST"]:
+        args["model_type"] = "LM"
+        args["invmodel_type"] = "InvLM"
 
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id += f"_{args['dataset']}_{args['fedkd_type']}_{args['evaluation_type']}_{args['client_num']}"

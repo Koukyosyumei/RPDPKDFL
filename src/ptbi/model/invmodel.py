@@ -1,5 +1,18 @@
+import numpy as np
 import torch
 import torch.nn as nn
+
+
+class InvLM(nn.Module):
+    def __init__(self, input_dim=10, output_shape=(1, 28, 28)):
+        super(InvLM, self).__init__()
+        self.output_shape = output_shape
+        self.fc = nn.Linear(input_dim, np.prod(output_shape))
+
+    def forward(self, x):
+        batch_size = x.shape[0]
+        x = x.reshape(batch_size, -1)
+        return self.fc(x).reshape((batch_size,) + self.output_shape)
 
 
 class InvCNN(nn.Module):
@@ -46,6 +59,8 @@ class InvCNN(nn.Module):
 def get_invmodel_class(invmodel_type):
     if invmodel_type == "InvCNN":
         model_class = InvCNN
+    elif invmodel_type == "InvLM":
+        model_class = InvLM
     else:
         raise NotImplementedError(f"{invmodel_type} is not supported.")
     return model_class
