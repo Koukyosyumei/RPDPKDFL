@@ -10,7 +10,7 @@ from aijack.utils import NumpyDataset, worker_init_fn
 
 
 def prepare_att_dataloaders(
-    data_folder="/content",
+    data_folder="/att",
     client_num=2,
     channel=1,
     batch_size=1,
@@ -23,7 +23,7 @@ def prepare_att_dataloaders(
     target_celeblities_num=100,
     blur_strength=10,
 ):
-    file_paths = glob.glob(f"{data_folder}/att/*/*.pgm")
+    file_paths = glob.glob(f"{data_folder}/*/*.pgm")
     file_paths.sort()
     random.shuffle(file_paths)
 
@@ -41,6 +41,7 @@ def prepare_att_dataloaders(
     local_identities = np.array_split(
         random.sample(np.unique(labels).tolist(), target_celeblities_num), client_num
     )
+    local_identities = [li.tolist() for li in local_identities]
 
     name_id2client_id = {}
     for client_id, name_id_list in enumerate(local_identities):
@@ -155,6 +156,8 @@ def prepare_att_dataloaders(
             )
             for i in range(client_num)
         ]
+
+    print(local_identities)
 
     return public_dataloader, local_dataloaders, local_identities
 

@@ -89,6 +89,9 @@ if __name__ == "__main__":
     args["attack_type"] = parsed_args.attack_type
     args["client_num"] = parsed_args.client_num
 
+    if args["dataset"] == "AT&T":
+        args["num_classes"] = 400
+
     if parsed_args.ablation_study == 0:
         if parsed_args.fedkd_type == "DSFL":
             args["inv_pj"] = 1.5 * (
