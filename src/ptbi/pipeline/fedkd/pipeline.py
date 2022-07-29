@@ -118,7 +118,7 @@ def attack_fedkd(
     )
 
     # --- Setup transformers --- #
-    inv_transform = setup_tbi_optimizers(config_dataset)
+    inv_transform = setup_tbi_optimizers(dataset, config_dataset)
 
     # --- Setup loss function --- #
     criterion = torch.nn.MSELoss()
@@ -136,7 +136,6 @@ def attack_fedkd(
     if fedkd_type == "DSFL":
         id2label = {la: i for i, la in enumerate(np.unique(sum(local_identities, [])))}
     else:
-        print(local_identities)
         id2label = {la: la for la in sum(local_identities, [])}
 
     if attack_type == "ptbi":

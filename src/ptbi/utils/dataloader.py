@@ -157,8 +157,6 @@ def prepare_att_dataloaders(
             for i in range(client_num)
         ]
 
-    print(local_identities)
-
     return public_dataloader, local_dataloaders, local_identities
 
 

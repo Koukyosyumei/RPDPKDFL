@@ -51,10 +51,11 @@ def setup_training_based_inversion(
     return temp_path_list, inv, inv_optimizer, inv_optimizer_finetune
 
 
-def setup_tbi_optimizers(config_dataset):
+def setup_tbi_optimizers(dataset_name, config_dataset):
     transforms_list = [transforms.ToTensor()]
-    if "channel" not in config_dataset or config_dataset["channel"] != 3:
-        transforms_list.append(transforms.Grayscale())
+    if dataset_name != "AT&T":
+        if "channel" not in config_dataset or config_dataset["channel"] != 3:
+            transforms_list.append(transforms.Grayscale())
     if "crop" in config_dataset and config_dataset["crop"]:
         transforms_list.append(
             transforms.CenterCrop(
