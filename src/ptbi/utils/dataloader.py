@@ -5,8 +5,56 @@ import cv2
 import numpy as np
 import pandas as pd
 import torch
+import torchvision
 import torchvision.transforms as transforms
 from aijack.utils import NumpyDataset, worker_init_fn
+
+
+def prepare_mnist_dataloaders(
+    data_folder="/att",
+    client_num=2,
+    channel=1,
+    batch_size=1,
+    seed=42,
+    num_workers=2,
+    height=64,
+    width=64,
+    num_classes=10,
+    crop=True,
+    target_celeblities_num=5,
+    blur_strength=10,
+):
+
+    dataset_train = torchvision.datasets.MNIST(
+        root=data_folder, train=True, download=True
+    )
+
+    imgs = dataset_train.train_data.numpy()
+    labels = dataset_train.train_labels.numpy()
+
+    local_identities = np.array_split(
+        random.sample(np.unique(list(range(10))).tolist(), target_celeblities_num),
+        client_num,
+    )
+    local_identities = [li.tolist() for li in local_identities]
+
+    name_id2client_id = {}
+    for client_id, name_id_list in enumerate(local_identities):
+        for idx in name_id_list:
+            name_id2client_id[idx] = client_id
+
+    X_public_list = []
+    y_public_list = []
+    X_private_lists = [[] for _ in range(client_num)]
+    y_private_lists = [[] for _ in range(client_num)]
+
+    for i in range(num_classes):
+        if i not in name_id2client_id:
+            X_public_list.append(imgs[labels == i])
+            y_public_list.append(labels[labels == i])
+        else:
+            X_private_lists[name_id2client_id[i]].append(imgs[labels == i])
+            y_private_lists[name_id2client_id[i]].append(labels[labels == i])
 
 
 def prepare_att_dataloaders(

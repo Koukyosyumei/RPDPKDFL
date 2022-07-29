@@ -94,6 +94,7 @@ if __name__ == "__main__":
 
     if args["dataset"] == "AT&T":
         args["num_classes"] = 400
+        args["inv_epoch"] = 6
 
     if parsed_args.ablation_study == 0:
         if parsed_args.fedkd_type == "DSFL":
