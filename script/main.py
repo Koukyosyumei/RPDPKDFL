@@ -35,6 +35,10 @@ def add_args(parser):
     )
 
     parser.add_argument(
+        "-g", "--random_seed", type=int, default=42, help="seed of random generator"
+    )
+
+    parser.add_argument(
         "-r", "--learning_rate", type=float, default=0.001, help="learning rate"
     )
 
@@ -164,7 +168,9 @@ if __name__ == "__main__":
     with open(os.path.join(run_dir, "args.txt"), "w") as convert_file:
         convert_file.write(str(args))
 
-    result = attack_fedkd(seed=42, output_dir=run_dir, temp_dir=run_dir, **args)
+    result = attack_fedkd(
+        seed=parsed_args.random_seed, output_dir=run_dir, temp_dir=run_dir, **args
+    )
     print(result)
 
     with open(os.path.join(run_dir, "result.txt"), "w") as convert_file:
