@@ -152,7 +152,7 @@ if __name__ == "__main__":
     if args["dataset"] in ["AT&T", "MNIST"]:
         args["config_dataset"]["blur_strength"] = parsed_args.blur_strength
 
-    if args["dataset"] in ["AT&T", "MNIST"]:
+    if args["dataset"] in ["MNIST"]:
         args["model_type"] = "LM"
         args["invmodel_type"] = "InvLM"
 
