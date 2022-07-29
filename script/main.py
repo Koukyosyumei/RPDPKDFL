@@ -177,6 +177,8 @@ if __name__ == "__main__":
     args["random_seed"] = parsed_args.random_seed
     with open(os.path.join(run_dir, "args.txt"), "w") as convert_file:
         convert_file.write(str(args))
+    args.pop("alpha")
+    args.pop("random_seed")
 
     result = attack_fedkd(
         seed=parsed_args.random_seed, output_dir=run_dir, temp_dir=run_dir, **args
