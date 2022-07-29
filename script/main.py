@@ -2,6 +2,7 @@ import argparse
 import os
 from datetime import datetime
 
+from ptbi.attack import get_pj
 from ptbi.config.config import config_base, config_dataset, config_fedkd
 from ptbi.pipeline.fedkd.pipeline import attack_fedkd
 
@@ -26,6 +27,8 @@ def add_args(parser):
         default="ptbi",
         help="type of attack; ptbi or tbi",
     )
+
+    parser.add_argument("-h", "--alpha", type=float, default=-1, help="alpha")
 
     parser.add_argument(
         "-c", "--client_num", type=int, default=10, help="number of clients"
@@ -94,11 +97,20 @@ if __name__ == "__main__":
 
     if parsed_args.ablation_study == 0:
         if parsed_args.fedkd_type == "DSFL":
-            args["inv_pj"] = 1.5 * (
-                1 / config_dataset[args["dataset"]]["target_celeblities_num"]
-            )
+            if parsed_args.alpha < 0:
+                args["inv_pj"] = 1.5 * (
+                    1 / config_dataset[args["dataset"]]["target_celeblities_num"]
+                )
+            else:
+                args["inv_pj"] = get_pj(
+                    config_dataset[args["dataset"]]["target_celeblities_num"],
+                    parsed_args.alpha,
+                )
         else:
-            args["inv_pj"] = 1.5 * (1 / args["num_classes"])
+            if parsed_args.alpha < 0:
+                args["inv_pj"] = 1.5 * (1 / args["num_classes"])
+            else:
+                args["inv_pj"] = get_pj(args["num_classes"], parsed_args.alpha)
     elif parsed_args.ablation_study == 1:
         args["inv_pj"] = 1  # without entropy term
     elif parsed_args.ablation_study == 2:
@@ -106,11 +118,20 @@ if __name__ == "__main__":
     elif parsed_args.ablation_study == 3:
         print("use only the global logit")
         if parsed_args.fedkd_type == "DSFL":
-            args["inv_pj"] = 1.5 * (
-                1 / config_dataset[args["dataset"]]["target_celeblities_num"]
-            )
+            if parsed_args.alpha < 0:
+                args["inv_pj"] = 1.5 * (
+                    1 / config_dataset[args["dataset"]]["target_celeblities_num"]
+                )
+            else:
+                args["inv_pj"] = get_pj(
+                    config_dataset[args["dataset"]]["target_celeblities_num"],
+                    parsed_args.alpha,
+                )
         else:
-            args["inv_pj"] = 1.5 * (1 / args["num_classes"])
+            if parsed_args.alpha < 0:
+                args["inv_pj"] = 1.5 * (1 / args["num_classes"])
+            else:
+                args["inv_pj"] = get_pj(args["num_classes"], parsed_args.alpha)
     else:
         raise ValueError("parsed_args.ablation_study should be 0, 1, 2 or 3.")
 
