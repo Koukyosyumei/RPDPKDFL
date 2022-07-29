@@ -28,7 +28,7 @@ def add_args(parser):
         help="type of attack; ptbi or tbi",
     )
 
-    parser.add_argument("-h", "--alpha", type=float, default=-1, help="alpha")
+    parser.add_argument("-l", "--alpha", type=float, default=-1, help="alpha")
 
     parser.add_argument(
         "-c", "--client_num", type=int, default=10, help="number of clients"
