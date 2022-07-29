@@ -98,7 +98,9 @@ if __name__ == "__main__":
     args["lr"] = parsed_args.learning_rate
 
     if args["dataset"] == "AT&T":
-        args["num_classes"] = 400
+        args["num_classes"] = 40
+    elif args["dataset"] == "MNIST":
+        args["num_classes"] = 10
 
     if parsed_args.ablation_study == 0:
         if parsed_args.fedkd_type == "DSFL":
