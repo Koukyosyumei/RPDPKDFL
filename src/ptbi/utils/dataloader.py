@@ -111,7 +111,7 @@ def prepare_att_dataloaders(
                 label2cnt[y] += 1
 
             if label2cnt[y] <= 5:
-                x[40:50, :] = 0
+                x[40 : 40 + blur_strength, :] = 0
                 X_public_list.append(x)
                 # X_public_list.append(cv2.blur(x, (blur_strength, blur_strength)))
                 y_public_list.append(y)
