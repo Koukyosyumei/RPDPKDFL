@@ -1,3 +1,13 @@
+_config_att = {
+    "height": 64,
+    "width": 64,
+    "crop": True,
+    "channel": 1,
+    "data_folder": "/content/RPDPKDFL/data",
+    "target_celeblities_num": 20,
+    "blur_strength": 10,
+}
+
 _config_lag = {
     "height": 64,
     "width": 64,
@@ -15,7 +25,7 @@ _config_lfw = {
     "target_celeblities_num": 200,
 }
 
-config_dataset = {"LAG": _config_lag, "LFW": _config_lfw}
+config_dataset = {"AT&T": _config_att, "LAG": _config_lag, "LFW": _config_lfw}
 
 _config_dsfl = {
     "aggregation": "ERA",
