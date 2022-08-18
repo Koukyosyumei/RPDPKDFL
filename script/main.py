@@ -42,6 +42,13 @@ def add_args(parser):
     )
 
     parser.add_argument(
+        "--tot_class_num", type=int, default=300, help="number of total classes"
+    )
+    parser.add_argument(
+        "--tar_class_num", type=int, default=30, help="number of target classes"
+    )
+
+    parser.add_argument(
         "-g", "--random_seed", type=int, default=42, help="seed of random generator"
     )
 
@@ -101,6 +108,7 @@ if __name__ == "__main__":
     parsed_args = add_args(parser)
 
     args = config_base
+    args["num_classes"] = parsed_args.tot_class_num
     args["dataset"] = parsed_args.dataset
     args["fedkd_type"] = parsed_args.fedkd_type
 
@@ -163,6 +171,8 @@ if __name__ == "__main__":
     if args["dataset"] in ["AT&T", "MNIST"]:
         args["config_dataset"]["blur_strength"] = parsed_args.blur_strength
 
+    args["config_dataset"]["target_celeblities_num"] = parsed_args.tar_class_num
+
     if args["dataset"] in ["MNIST"]:
         args["model_type"] = "LM"
         args["invmodel_type"] = "InvLM"
@@ -180,9 +190,16 @@ if __name__ == "__main__":
     args.pop("alpha")
     args.pop("random_seed")
 
+    print("Start experiment ...")
+    print("dataset is ", args["dataset"])
+    print("#classes is ", args["num_classes"])
+    print("#target classes is ", args["config_dataset"]["target_celeblities_num"])
+
     result = attack_fedkd(
         seed=parsed_args.random_seed, output_dir=run_dir, temp_dir=run_dir, **args
     )
+
+    print("Results:")
     print(result)
 
     with open(os.path.join(run_dir, "result.txt"), "w") as convert_file:
