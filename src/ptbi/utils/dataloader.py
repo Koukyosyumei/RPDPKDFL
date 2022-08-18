@@ -442,8 +442,10 @@ def prepare_lfw_dataloaders(
         y_private_train_list.append(y_private_train)
         y_private_test_list.append(y_private_test)
 
-    X_test = np.stack(X_private_test_list + [X_public_train])
-    y_test = np.stack(y_private_test_list + [y_public_train])
+    print(X_private_test_list[0].shape)
+    print(X_public_test.shape)
+    X_test = np.concatenate(X_private_test_list + [X_public_test], axis=1)
+    y_test = np.concatenate(y_private_test_list + [y_public_test], axis=1)
 
     transforms_list = [transforms.ToTensor()]
     if channel == 1:
