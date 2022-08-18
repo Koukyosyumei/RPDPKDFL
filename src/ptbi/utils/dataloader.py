@@ -8,6 +8,7 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 from aijack.utils import NumpyDataset, worker_init_fn
+from sklearn.model_selection import train_test_split
 
 
 def prepare_mnist_dataloaders(
@@ -420,6 +421,30 @@ def prepare_lfw_dataloaders(
     X_private_list = [np.stack(x) for x in X_private_lists]
     y_private_list = [np.array(y) for y in y_private_lists]
 
+    X_public_train, X_public_test, y_public_train, y_public_test = train_test_split(
+        X_public, y_public, test_size=0.1, random_state=42
+    )
+
+    X_private_train_list = []
+    X_private_test_list = []
+    y_private_train_list = []
+    y_private_test_list = []
+
+    for X_private, y_private in zip(X_private_list, y_private_list):
+        (
+            X_private_train,
+            X_private_test,
+            y_private_train,
+            y_private_test,
+        ) = train_test_split(X_private, y_private, test_size=0.1, random_state=42)
+        X_private_train_list.append(X_private_train)
+        X_private_test_list.append(X_private_test)
+        y_private_train_list.append(y_private_train)
+        y_private_test_list.append(y_private_test)
+
+    X_test = np.stack(X_private_test_list + [X_public_train])
+    y_test = np.stack(y_private_test_list + [y_public_train])
+
     transforms_list = [transforms.ToTensor()]
     if channel == 1:
         transforms_list.append(transforms.Grayscale())
@@ -434,29 +459,37 @@ def prepare_lfw_dataloaders(
     transform = transforms.Compose(transforms_list)
     return_idx = True
 
-    public_dataset = NumpyDataset(
-        x=X_public,
-        y=y_public,
+    public_dataset_train = NumpyDataset(
+        x=X_public_train,
+        y=y_public_train,
         transform=transform,
         return_idx=return_idx,
     )
-    private_dataset_list = [
+
+    private_dataset_train_list = [
         NumpyDataset(
-            x=X_private_list[i],
-            y=y_private_list[i],
+            x=X_private_train_list[i],
+            y=y_private_train_list[i],
             transform=transform,
             return_idx=return_idx,
         )
         for i in range(client_num)
     ]
 
+    test_dataset = NumpyDataset(
+        x=X_test,
+        y=y_test,
+        transform=transform,
+        return_idx=return_idx,
+    )
+
     g = torch.Generator()
     g.manual_seed(seed)
 
     print("prepare public dataloader")
     try:
-        public_dataloader = torch.utils.data.DataLoader(
-            public_dataset,
+        public_train_dataloader = torch.utils.data.DataLoader(
+            public_dataset_train,
             batch_size=batch_size,
             shuffle=True,
             num_workers=num_workers,
@@ -464,8 +497,8 @@ def prepare_lfw_dataloaders(
             generator=g,
         )
     except:
-        public_dataloader = torch.utils.data.DataLoader(
-            public_dataset,
+        public_train_dataloader = torch.utils.data.DataLoader(
+            public_dataset_train,
             batch_size=batch_size,
             shuffle=True,
             num_workers=num_workers,
@@ -474,9 +507,9 @@ def prepare_lfw_dataloaders(
 
     print("prepare local dataloader")
     try:
-        local_dataloaders = [
+        local_train_dataloaders = [
             torch.utils.data.DataLoader(
-                private_dataset_list[i],
+                private_dataset_train_list[i],
                 batch_size=batch_size,
                 shuffle=True,
                 num_workers=num_workers,
@@ -486,9 +519,9 @@ def prepare_lfw_dataloaders(
             for i in range(client_num)
         ]
     except:
-        local_dataloaders = [
+        local_train_dataloaders = [
             torch.utils.data.DataLoader(
-                private_dataset_list[i],
+                private_dataset_train_list[i],
                 batch_size=batch_size,
                 shuffle=True,
                 num_workers=num_workers,
@@ -497,7 +530,30 @@ def prepare_lfw_dataloaders(
             for i in range(client_num)
         ]
 
-    return public_dataloader, local_dataloaders, local_identities
+    try:
+        test_dataloader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+            generator=g,
+        )
+    except:
+        test_dataloader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+        )
+
+    return (
+        public_train_dataloader,
+        local_train_dataloaders,
+        test_dataloader,
+        local_identities,
+    )
 
 
 def prepare_lag_dataloaders(

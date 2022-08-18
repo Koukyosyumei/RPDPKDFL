@@ -74,7 +74,12 @@ def attack_fedkd(
     print("device is ", device)
 
     # --- Setup DataLoaders --- #
-    (public_dataloader, local_dataloaders, local_identities,) = prepare_dataloaders(
+    (
+        public_train_dataloader,
+        local_train_dataloaders,
+        test_dataloader,
+        local_identities,
+    ) = prepare_dataloaders(
         dataset_name=dataset,
         client_num=client_num,
         batch_size=batch_size,
@@ -219,8 +224,9 @@ def attack_fedkd(
     api = get_fedkd_api(
         fedkd_type,
         model_class,
-        public_dataloader,
-        local_dataloaders,
+        public_train_dataloader,
+        local_train_dataloaders,
+        test_dataloader,
         num_classes,
         client_num,
         config_dataset["channel"],
@@ -245,8 +251,8 @@ def attack_fedkd(
             inv_path_list,
             inv,
             inv_optimizer,
-            public_dataloader,
-            local_dataloaders,
+            public_train_dataloader,
+            local_train_dataloaders,
             dataset,
             output_dim,
             inv_pj,
@@ -277,8 +283,8 @@ def attack_fedkd(
         result = evaluation_full(
             client_num,
             num_classes,
-            public_dataloader,
-            local_dataloaders,
+            public_train_dataloader,
+            local_train_dataloaders,
             local_identities,
             id2label,
             attack_type,
