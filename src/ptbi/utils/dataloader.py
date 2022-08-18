@@ -422,7 +422,7 @@ def prepare_lfw_dataloaders(
     y_private_list = [np.array(y) for y in y_private_lists]
 
     X_public_train, X_public_test, y_public_train, y_public_test = train_test_split(
-        X_public, y_public, test_size=0.1, random_state=42
+        X_public, y_public, test_size=0.1, random_state=42, stratify=y_public_list
     )
 
     X_private_train_list = []
@@ -436,7 +436,9 @@ def prepare_lfw_dataloaders(
             X_private_test,
             y_private_train,
             y_private_test,
-        ) = train_test_split(X_private, y_private, test_size=0.1, random_state=42)
+        ) = train_test_split(
+            X_private, y_private, test_size=0.1, random_state=42, stratify=y_private
+        )
         X_private_train_list.append(X_private_train)
         X_private_test_list.append(X_private_test)
         y_private_train_list.append(y_private_train)
@@ -444,8 +446,11 @@ def prepare_lfw_dataloaders(
 
     print(X_private_test_list[0].shape)
     print(X_public_test.shape)
-    X_test = np.concatenate(X_private_test_list + [X_public_test], axis=1)
-    y_test = np.concatenate(y_private_test_list + [y_public_test], axis=1)
+    X_test = np.concatenate(X_private_test_list + [X_public_test], axis=0)
+    y_test = np.concatenate(y_private_test_list + [y_public_test], axis=0)
+
+    print(X_test.shape)
+    print(y_test.shape)
 
     transforms_list = [transforms.ToTensor()]
     if channel == 1:
