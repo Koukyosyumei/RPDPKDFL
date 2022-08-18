@@ -5,8 +5,313 @@ import cv2
 import numpy as np
 import pandas as pd
 import torch
+import torchvision
 import torchvision.transforms as transforms
 from aijack.utils import NumpyDataset, worker_init_fn
+
+
+def prepare_mnist_dataloaders(
+    data_folder="/att",
+    client_num=2,
+    channel=1,
+    batch_size=1,
+    seed=42,
+    num_workers=2,
+    height=64,
+    width=64,
+    num_classes=10,
+    crop=True,
+    target_celeblities_num=5,
+    blur_strength=10,
+):
+
+    dataset_train = torchvision.datasets.MNIST(
+        root=data_folder, train=True, download=True
+    )
+
+    imgs = dataset_train.train_data.numpy()
+    labels = dataset_train.train_labels.numpy()
+
+    local_identities = np.array_split(
+        random.sample(np.unique(list(range(10))).tolist(), target_celeblities_num),
+        client_num,
+    )
+    local_identities = [li.tolist() for li in local_identities]
+
+    name_id2client_id = {}
+    for client_id, name_id_list in enumerate(local_identities):
+        for idx in name_id_list:
+            name_id2client_id[idx] = client_id
+
+    print(name_id2client_id)
+
+    X_public_list = []
+    y_public_list = []
+    X_private_lists = [[] for _ in range(client_num)]
+    y_private_lists = [[] for _ in range(client_num)]
+
+    for i in range(num_classes):
+        if i in name_id2client_id:
+            temp_size = labels[labels == i].shape[0]
+            temp_pub_x = imgs[labels == i][: int(temp_size / 2)]
+            temp_pub_x[:, 10 : 10 + blur_strength, :] = np.random.uniform(
+                0, 255, temp_pub_x[:, 10 : 10 + blur_strength, :].shape
+            )
+            print(temp_pub_x.shape)
+            X_public_list.append(temp_pub_x)
+            y_public_list.append(labels[labels == i][: int(temp_size / 2)])
+            X_private_lists[name_id2client_id[i]].append(
+                imgs[labels == i][int(temp_size / 2) :]
+            )
+            y_private_lists[name_id2client_id[i]].append(
+                labels[labels == i][int(temp_size / 2) :]
+            )
+        else:
+            print(imgs[labels == i].shape)
+            X_public_list.append(imgs[labels == i])
+            y_public_list.append(labels[labels == i])
+
+    X_public = np.vstack(X_public_list)
+    y_public = np.concatenate(y_public_list)
+    print(X_public.shape)
+    print(y_public.shape)
+
+    X_private_list = [np.vstack(x) for x in X_private_lists]
+    y_private_list = [np.concatenate(y) for y in y_private_lists]
+
+    transforms_list = [transforms.ToTensor()]
+    # if channel == 1:
+    #    transforms_list.append(transforms.Grayscale())
+    if crop:
+        transforms_list.append(transforms.CenterCrop((max(height, width))))
+    else:
+        transforms_list.append(transforms.Resize((height, width)))
+
+    transforms_list.append(transforms.Normalize((0.5,), (0.5,)))
+    # if channel == 1:
+    #    transforms_list.append(transforms.Normalize((0.5,), (0.5,)))
+    # else:
+    #    transforms_list.append(transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
+    transform = transforms.Compose(transforms_list)
+    return_idx = True
+
+    public_dataset = NumpyDataset(
+        x=X_public,
+        y=y_public,
+        transform=transform,
+        return_idx=return_idx,
+    )
+    private_dataset_list = [
+        NumpyDataset(
+            x=X_private_list[i],
+            y=y_private_list[i],
+            transform=transform,
+            return_idx=return_idx,
+        )
+        for i in range(client_num)
+    ]
+
+    g = torch.Generator()
+    g.manual_seed(seed)
+
+    print("prepare public dataloader")
+    try:
+        public_dataloader = torch.utils.data.DataLoader(
+            public_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+            generator=g,
+        )
+    except:
+        public_dataloader = torch.utils.data.DataLoader(
+            public_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+        )
+
+    print("prepare local dataloader")
+    try:
+        local_dataloaders = [
+            torch.utils.data.DataLoader(
+                private_dataset_list[i],
+                batch_size=batch_size,
+                shuffle=True,
+                num_workers=num_workers,
+                worker_init_fn=worker_init_fn,
+                generator=g,
+            )
+            for i in range(client_num)
+        ]
+    except:
+        local_dataloaders = [
+            torch.utils.data.DataLoader(
+                private_dataset_list[i],
+                batch_size=batch_size,
+                shuffle=True,
+                num_workers=num_workers,
+                worker_init_fn=worker_init_fn,
+            )
+            for i in range(client_num)
+        ]
+
+    return public_dataloader, local_dataloaders, local_identities
+
+
+def prepare_att_dataloaders(
+    data_folder="/att",
+    client_num=2,
+    channel=1,
+    batch_size=1,
+    seed=42,
+    num_workers=2,
+    height=64,
+    width=64,
+    num_classes=1000,
+    crop=True,
+    target_celeblities_num=100,
+    blur_strength=10,
+):
+    file_paths = glob.glob(f"{data_folder}/*/*.pgm")
+    file_paths.sort()
+    random.shuffle(file_paths)
+
+    # load images
+    imgs = []
+    labels = []
+    for p in file_paths:
+        img = cv2.imread(p, 0)
+        label = int(p.replace("\\", "/").split("/")[-2][1:]) - 1
+        imgs.append(img)
+        labels.append(label)
+    imgs = np.stack(imgs)
+    labels = np.array(labels)
+
+    local_identities = np.array_split(
+        random.sample(np.unique(labels).tolist(), target_celeblities_num), client_num
+    )
+    local_identities = [li.tolist() for li in local_identities]
+
+    name_id2client_id = {}
+    for client_id, name_id_list in enumerate(local_identities):
+        for idx in name_id_list:
+            name_id2client_id[idx] = client_id
+
+    X_public_list = []
+    y_public_list = []
+    X_private_lists = [[] for _ in range(client_num)]
+    y_private_lists = [[] for _ in range(client_num)]
+
+    label2cnt = {}
+
+    for x, y in zip(imgs, labels):
+        if y in name_id2client_id:
+            if y not in label2cnt:
+                label2cnt[y] = 1
+            else:
+                label2cnt[y] += 1
+
+            if label2cnt[y] <= 5:
+                # x[40 : 40 + blur_strength, :] = 0
+                # X_public_list.append(x)
+                X_public_list.append(cv2.blur(x, (blur_strength, blur_strength)))
+                y_public_list.append(y)
+            else:
+                X_private_lists[name_id2client_id[y]].append(x)
+                y_private_lists[name_id2client_id[y]].append(y)
+
+        else:
+            X_public_list.append(x)
+            y_public_list.append(y)
+
+    X_public = np.stack(X_public_list)
+    y_public = np.array(y_public_list)
+    X_private_list = [np.stack(x) for x in X_private_lists]
+    y_private_list = [np.array(y) for y in y_private_lists]
+
+    transforms_list = [transforms.ToTensor()]
+    # if channel == 1:
+    #    transforms_list.append(transforms.Grayscale())
+    if crop:
+        transforms_list.append(transforms.CenterCrop((max(height, width))))
+    else:
+        transforms_list.append(transforms.Resize((height, width)))
+
+    transforms_list.append(transforms.Normalize((0.5,), (0.5,)))
+    # if channel == 1:
+    #    transforms_list.append(transforms.Normalize((0.5,), (0.5,)))
+    # else:
+    #    transforms_list.append(transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
+    transform = transforms.Compose(transforms_list)
+    return_idx = True
+
+    public_dataset = NumpyDataset(
+        x=X_public,
+        y=y_public,
+        transform=transform,
+        return_idx=return_idx,
+    )
+    private_dataset_list = [
+        NumpyDataset(
+            x=X_private_list[i],
+            y=y_private_list[i],
+            transform=transform,
+            return_idx=return_idx,
+        )
+        for i in range(client_num)
+    ]
+
+    g = torch.Generator()
+    g.manual_seed(seed)
+
+    print("prepare public dataloader")
+    try:
+        public_dataloader = torch.utils.data.DataLoader(
+            public_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+            generator=g,
+        )
+    except:
+        public_dataloader = torch.utils.data.DataLoader(
+            public_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+        )
+
+    print("prepare local dataloader")
+    try:
+        local_dataloaders = [
+            torch.utils.data.DataLoader(
+                private_dataset_list[i],
+                batch_size=batch_size,
+                shuffle=True,
+                num_workers=num_workers,
+                worker_init_fn=worker_init_fn,
+                generator=g,
+            )
+            for i in range(client_num)
+        ]
+    except:
+        local_dataloaders = [
+            torch.utils.data.DataLoader(
+                private_dataset_list[i],
+                batch_size=batch_size,
+                shuffle=True,
+                num_workers=num_workers,
+                worker_init_fn=worker_init_fn,
+            )
+            for i in range(client_num)
+        ]
+
+    return public_dataloader, local_dataloaders, local_identities
 
 
 def prepare_lfw_dataloaders(
@@ -404,5 +709,9 @@ def prepare_dataloaders(dataset_name, *args, **kwargs):
         return prepare_lag_dataloaders(*args, **kwargs)
     elif dataset_name == "LFW":
         return prepare_lfw_dataloaders(*args, **kwargs)
+    elif dataset_name == "AT&T":
+        return prepare_att_dataloaders(*args, **kwargs)
+    elif dataset_name == "MNIST":
+        return prepare_mnist_dataloaders(*args, **kwargs)
     else:
         raise NotImplementedError(f"{dataset_name} is not supported")

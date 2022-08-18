@@ -1,9 +1,17 @@
 import argparse
 import os
+import random
+import string
 from datetime import datetime
 
+from ptbi.attack import get_pj
 from ptbi.config.config import config_base, config_dataset, config_fedkd
 from ptbi.pipeline.fedkd.pipeline import attack_fedkd
+
+
+def randomname(n):
+    randlst = [random.choice(string.ascii_letters + string.digits) for i in range(n)]
+    return "".join(randlst)
 
 
 def add_args(parser):
@@ -27,8 +35,18 @@ def add_args(parser):
         help="type of attack; ptbi or tbi",
     )
 
+    parser.add_argument("-l", "--alpha", type=float, default=-1, help="alpha")
+
     parser.add_argument(
         "-c", "--client_num", type=int, default=10, help="number of clients"
+    )
+
+    parser.add_argument(
+        "-g", "--random_seed", type=int, default=42, help="seed of random generator"
+    )
+
+    parser.add_argument(
+        "-r", "--learning_rate", type=float, default=0.001, help="learning rate"
     )
 
     parser.add_argument(
@@ -37,6 +55,14 @@ def add_args(parser):
         type=float,
         default=1.0,
         help="tempreature $\tau$",
+    )
+
+    parser.add_argument(
+        "-u",
+        "--blur_strength",
+        type=int,
+        default=10,
+        help="strength of blur",
     )
 
     parser.add_argument(
@@ -80,14 +106,29 @@ if __name__ == "__main__":
 
     args["attack_type"] = parsed_args.attack_type
     args["client_num"] = parsed_args.client_num
+    args["lr"] = parsed_args.learning_rate
+
+    if args["dataset"] == "AT&T":
+        args["num_classes"] = 40
+    elif args["dataset"] == "MNIST":
+        args["num_classes"] = 10
 
     if parsed_args.ablation_study == 0:
         if parsed_args.fedkd_type == "DSFL":
-            args["inv_pj"] = 1.5 * (
-                1 / config_dataset[args["dataset"]]["target_celeblities_num"]
-            )
+            if parsed_args.alpha < 0:
+                args["inv_pj"] = 1.5 * (
+                    1 / config_dataset[args["dataset"]]["target_celeblities_num"]
+                )
+            else:
+                args["inv_pj"] = get_pj(
+                    config_dataset[args["dataset"]]["target_celeblities_num"],
+                    parsed_args.alpha,
+                )
         else:
-            args["inv_pj"] = 1.5 * (1 / args["num_classes"])
+            if parsed_args.alpha < 0:
+                args["inv_pj"] = 1.5 * (1 / args["num_classes"])
+            else:
+                args["inv_pj"] = get_pj(args["num_classes"], parsed_args.alpha)
     elif parsed_args.ablation_study == 1:
         args["inv_pj"] = 1  # without entropy term
     elif parsed_args.ablation_study == 2:
@@ -95,11 +136,20 @@ if __name__ == "__main__":
     elif parsed_args.ablation_study == 3:
         print("use only the global logit")
         if parsed_args.fedkd_type == "DSFL":
-            args["inv_pj"] = 1.5 * (
-                1 / config_dataset[args["dataset"]]["target_celeblities_num"]
-            )
+            if parsed_args.alpha < 0:
+                args["inv_pj"] = 1.5 * (
+                    1 / config_dataset[args["dataset"]]["target_celeblities_num"]
+                )
+            else:
+                args["inv_pj"] = get_pj(
+                    config_dataset[args["dataset"]]["target_celeblities_num"],
+                    parsed_args.alpha,
+                )
         else:
-            args["inv_pj"] = 1.5 * (1 / args["num_classes"])
+            if parsed_args.alpha < 0:
+                args["inv_pj"] = 1.5 * (1 / args["num_classes"])
+            else:
+                args["inv_pj"] = get_pj(args["num_classes"], parsed_args.alpha)
     else:
         raise ValueError("parsed_args.ablation_study should be 0, 1, 2 or 3.")
 
@@ -110,15 +160,29 @@ if __name__ == "__main__":
     args["config_dataset"]["data_folder"] = parsed_args.path_to_datafolder
     args["config_fedkd"] = config_fedkd[args["fedkd_type"]]
 
+    if args["dataset"] in ["AT&T", "MNIST"]:
+        args["config_dataset"]["blur_strength"] = parsed_args.blur_strength
+
+    if args["dataset"] in ["MNIST"]:
+        args["model_type"] = "LM"
+        args["invmodel_type"] = "InvLM"
+
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
+    run_id += "_" + randomname(10)
     run_id += f"_{args['dataset']}_{args['fedkd_type']}_{args['evaluation_type']}_{args['client_num']}"
     run_dir = os.path.join(parsed_args.output_folder, run_id)
     os.makedirs(run_dir)
 
+    args["alpha"] = parsed_args.alpha
+    args["random_seed"] = parsed_args.random_seed
     with open(os.path.join(run_dir, "args.txt"), "w") as convert_file:
         convert_file.write(str(args))
+    args.pop("alpha")
+    args.pop("random_seed")
 
-    result = attack_fedkd(seed=42, output_dir=run_dir, temp_dir=run_dir, **args)
+    result = attack_fedkd(
+        seed=parsed_args.random_seed, output_dir=run_dir, temp_dir=run_dir, **args
+    )
     print(result)
 
     with open(os.path.join(run_dir, "result.txt"), "w") as convert_file:

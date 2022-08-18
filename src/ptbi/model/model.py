@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class LM(nn.Module):
-    def __init__(self, input_dim=64 * 64, output_dim=20, hidden_dim=None):
+    def __init__(self, input_dim=64 * 64, output_dim=20, hidden_dim=None, channel=1):
         super(LM, self).__init__()
         self.fla = nn.Flatten()
         self.fc = nn.Linear(input_dim, output_dim)

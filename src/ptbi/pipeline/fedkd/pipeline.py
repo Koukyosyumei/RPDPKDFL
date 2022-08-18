@@ -118,7 +118,7 @@ def attack_fedkd(
     )
 
     # --- Setup transformers --- #
-    inv_transform = setup_tbi_optimizers(config_dataset)
+    inv_transform = setup_tbi_optimizers(dataset, config_dataset)
 
     # --- Setup loss function --- #
     criterion = torch.nn.MSELoss()

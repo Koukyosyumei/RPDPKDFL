@@ -23,15 +23,33 @@ def setup_training_based_inversion(
         if attack_type == "ptbi":
             if ablation_study != 3:
                 inv = get_invmodel_class(invmodel_type)(
-                    input_dim=num_classes * 2, channel=config_dataset["channel"]
+                    input_dim=num_classes * 2,
+                    output_shape=(
+                        config_dataset["channel"],
+                        config_dataset["height"],
+                        config_dataset["width"],
+                    ),
+                    channel=config_dataset["channel"],
                 ).to(device)
             else:
                 inv = get_invmodel_class(invmodel_type)(
-                    input_dim=num_classes, channel=config_dataset["channel"]
+                    input_dim=num_classes,
+                    output_shape=(
+                        config_dataset["channel"],
+                        config_dataset["height"],
+                        config_dataset["width"],
+                    ),
+                    channel=config_dataset["channel"],
                 ).to(device)
         elif attack_type == "tbi":
             inv = get_invmodel_class(invmodel_type)(
-                input_dim=num_classes, channel=config_dataset["channel"]
+                input_dim=num_classes,
+                output_shape=(
+                    config_dataset["channel"],
+                    config_dataset["height"],
+                    config_dataset["width"],
+                ),
+                channel=config_dataset["channel"],
             ).to(device)
         inv_optimizer = torch.optim.Adam(
             inv.parameters(), lr=inv_lr, weight_decay=0.0001
@@ -51,10 +69,11 @@ def setup_training_based_inversion(
     return temp_path_list, inv, inv_optimizer, inv_optimizer_finetune
 
 
-def setup_tbi_optimizers(config_dataset):
+def setup_tbi_optimizers(dataset_name, config_dataset):
     transforms_list = [transforms.ToTensor()]
-    if "channel" not in config_dataset or config_dataset["channel"] != 3:
-        transforms_list.append(transforms.Grayscale())
+    if dataset_name not in ["AT&T", "MNIST"]:
+        if "channel" not in config_dataset or config_dataset["channel"] != 3:
+            transforms_list.append(transforms.Grayscale())
     if "crop" in config_dataset and config_dataset["crop"]:
         transforms_list.append(
             transforms.CenterCrop(
