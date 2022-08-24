@@ -212,3 +212,61 @@ def evaluation_full(
             result[k + "_std"] = np.std(ssim_list[k])
 
     return result
+
+
+def estimate_client_assignment(
+    client_num,
+    local_dataloaders,
+    local_identities,
+    id2label,
+    output_dir,
+    beta=0.5,
+    epoch=5,
+):
+
+    if client_num == 1:
+        return {}
+
+    target_ids = sum(local_identities, [])
+
+    private_dataset_transformed_list = []
+    private_dataset_label_list = []
+    for i in range(client_num):
+        temp_dataset, temp_label = extract_transformd_dataset_from_dataloader(
+            local_dataloaders[i], return_idx=True
+        )
+        private_dataset_transformed_list.append(temp_dataset)
+        private_dataset_label_list.append(temp_label)
+
+    result = {}
+
+    for celeb_id in target_ids:
+        label = id2label[celeb_id]
+
+        reconstructed_imgs = []
+        for i, path in enumerate(
+            glob.glob(os.path.join(output_dir, str(epoch) + "_" + str(label) + "_*"))
+        ):
+            img = cv2.cvtColor(
+                np.load(path).transpose(1, 2, 0) * 0.5 + 0.5, cv2.COLOR_BGR2RGB
+            )
+            reconstructed_imgs.append(img)
+
+        ssim_matrix = np.zeros((len(reconstructed_imgs), len(reconstructed_imgs)))
+        tv_array = np.zeros(len(reconstructed_imgs))
+        for i in range(len(reconstructed_imgs)):
+            tv_array[i] = total_variance_numpy(reconstructed_imgs[i])
+            for j in range(len(reconstructed_imgs)):
+                if i != j:
+                    ssim_matrix[i][j] = ssim(
+                        reconstructed_imgs[i],
+                        reconstructed_imgs[j],
+                        multichannel=True,
+                        data_range=1,
+                    )
+
+        result[celeb_id] = np.argmin(
+            ssim_matrix.sum(axis=0) / (client_num - 1) + beta * tv_array
+        )
+
+    return result

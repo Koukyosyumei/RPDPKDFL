@@ -53,7 +53,7 @@ _config_fedmd = {
     "consensus_epoch": 1,
     "revisit_epoch": 1,
     "transfer_epoch_private": 5,
-    "transfer_epoch_public": 10,
+    "transfer_epoch_public": 5,
     "server_training_epoch": 1,
     "use_server_model": True,
 }
