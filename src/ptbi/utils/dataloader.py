@@ -29,6 +29,9 @@ def prepare_mnist_dataloaders(
     dataset_train = torchvision.datasets.MNIST(
         root=data_folder, train=True, download=True
     )
+    dataset_test = torchvision.datasets.MNIST(
+        root=data_folder, train=False, download=True
+    )
 
     imgs = dataset_train.train_data.numpy()
     labels = dataset_train.train_labels.numpy()
@@ -112,6 +115,13 @@ def prepare_mnist_dataloaders(
         for i in range(client_num)
     ]
 
+    test_dataset = NumpyDataset(
+        x=dataset_test.test_data.numpy(),
+        y=dataset_test.test_labels.numpy(),
+        transform=transform,
+        return_idx=return_idx,
+    )
+
     g = torch.Generator()
     g.manual_seed(seed)
 
@@ -128,6 +138,25 @@ def prepare_mnist_dataloaders(
     except:
         public_dataloader = torch.utils.data.DataLoader(
             public_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+        )
+
+    print("prepare validation dataloader")
+    try:
+        validation_dataloader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+            generator=g,
+        )
+    except:
+        validation_dataloader = torch.utils.data.DataLoader(
+            test_dataset,
             batch_size=batch_size,
             shuffle=True,
             num_workers=num_workers,
@@ -159,7 +188,7 @@ def prepare_mnist_dataloaders(
             for i in range(client_num)
         ]
 
-    return public_dataloader, local_dataloaders, local_identities
+    return public_dataloader, local_dataloaders, validation_dataloader, local_identities
 
 
 def prepare_att_dataloaders(
@@ -312,7 +341,7 @@ def prepare_att_dataloaders(
             for i in range(client_num)
         ]
 
-    return public_dataloader, local_dataloaders, local_identities
+    return public_dataloader, local_dataloaders, None, local_identities
 
 
 def prepare_lfw_dataloaders(
@@ -752,7 +781,7 @@ def prepare_lag_dataloaders(
             for i in range(client_num)
         ]
 
-    return public_dataloader, local_dataloaders, local_identities
+    return public_dataloader, local_dataloaders, None, local_identities
 
 
 def prepare_dataloaders(dataset_name, *args, **kwargs):
