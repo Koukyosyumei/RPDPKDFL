@@ -637,7 +637,14 @@ def prepare_facescrub_dataloaders(
         if i in name_id2client_id:
             idx = np.where(np_resized_labels == id2name[i])[0]
             sep_idxs = np.array_split(idx, 2)
-            X_public_list.append(cv2.blur(np_resized_imgs[sep_idxs[0]], blur_strength, blur_strength))
+            for temp_idx in range(np_resized_imgs[sep_idxs[0]].shape[0]):
+                X_public_list.append(
+                    cv2.blur(
+                        np_resized_imgs[sep_idxs[0]][temp_idx],
+                        blur_strength,
+                        blur_strength,
+                    )
+                )
             y_public_list += [i for _ in range(len(sep_idxs[0]))]
             X_private_lists[name_id2client_id[i]].append(np_resized_imgs[sep_idxs[0]])
             y_private_lists[name_id2client_id[i]] += [
