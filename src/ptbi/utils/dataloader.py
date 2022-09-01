@@ -608,18 +608,18 @@ def prepare_facescrub_dataloaders(
     target_celeblities_num=100,
 ):
     np_resized_imgs = np.load(f"{data_folder}/resized_faces.npy")
-    np_resized_labels = np.load(f"{data_folder}}/resized_labels.npy")
+    np_resized_labels = np.load(f"{data_folder}/resized_labels.npy")
 
     res = np.unique(np_resized_labels, return_counts=True)
     name2id = {name: i for i, name in enumerate(res[0])}
-    id2name = {v:k for k, v in name2id.items()}
+    id2name = {v: k for k, v in name2id.items()}
 
     local_identities_names = np.array_split(
         random.sample(res[0].tolist(), target_celeblities_num),
         client_num,
     )
     local_identities = [
-    [name2id[name] for name in name_list] for name_list in local_identities_names
+        [name2id[name] for name in name_list] for name_list in local_identities_names
     ]
 
     name_id2client_id = {}
@@ -633,17 +633,19 @@ def prepare_facescrub_dataloaders(
     y_private_lists = [[] for _ in range(client_num)]
 
     for i in range(res[0].shape[0]):
-    if i in name_id2client_id:
-        idx = np.where(np_resized_labels == id2name[i])[0]
-        sep_idxs = np.array_split(idx, 2)
-        X_public_list.append(np_resized_imgs[sep_idxs[0]])
-        y_public_list += [i for _ in range(len(sep_idxs[0]))]
-        X_private_lists[name_id2client_id[i]].append(np_resized_imgs[sep_idxs[0]])
-        y_private_lists[name_id2client_id[i]] += [i for _ in range(len(sep_idxs[0]))]
-    else:
-        idx = np.where(np_resized_labels == id2name[i])[0]
-        X_public_list.append(np_resized_imgs[idx])
-        y_public_list += [i for _ in range(len(idx))]
+        if i in name_id2client_id:
+            idx = np.where(np_resized_labels == id2name[i])[0]
+            sep_idxs = np.array_split(idx, 2)
+            X_public_list.append(np_resized_imgs[sep_idxs[0]])
+            y_public_list += [i for _ in range(len(sep_idxs[0]))]
+            X_private_lists[name_id2client_id[i]].append(np_resized_imgs[sep_idxs[0]])
+            y_private_lists[name_id2client_id[i]] += [
+                i for _ in range(len(sep_idxs[0]))
+            ]
+        else:
+            idx = np.where(np_resized_labels == id2name[i])[0]
+            X_public_list.append(np_resized_imgs[idx])
+            y_public_list += [i for _ in range(len(idx))]
 
     X_public = np.concatenate(X_public_list)
     y_public = np.array(y_public_list)
