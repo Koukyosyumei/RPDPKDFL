@@ -35,11 +35,20 @@ _config_lfw = {
     "target_celeblities_num": 200,
 }
 
+_config_facescrub = {
+    "height": 64,
+    "width": 64,
+    "channel": 1,
+    "crop": False,
+    "target_celeblities_num": 200,
+}
+
 config_dataset = {
     "AT&T": _config_att,
     "LAG": _config_lag,
     "LFW": _config_lfw,
     "MNIST": _config_mnist,
+    "FaceScrub": _config_facescrub,
 }
 
 _config_dsfl = {
