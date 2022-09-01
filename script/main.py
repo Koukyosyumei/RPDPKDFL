@@ -170,7 +170,7 @@ if __name__ == "__main__":
     args["config_dataset"]["data_folder"] = parsed_args.path_to_datafolder
     args["config_fedkd"] = config_fedkd[args["fedkd_type"]]
 
-    if args["dataset"] in ["AT&T", "MNIST"]:
+    if args["dataset"] in ["AT&T", "MNIST", "FaceScrub"]:
         args["config_dataset"]["blur_strength"] = parsed_args.blur_strength
 
     args["config_dataset"]["target_celeblities_num"] = parsed_args.tar_class_num

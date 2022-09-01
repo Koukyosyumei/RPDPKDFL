@@ -606,6 +606,7 @@ def prepare_facescrub_dataloaders(
     num_classes=530,
     crop=True,
     target_celeblities_num=100,
+    blur_strength=10,
 ):
     np_resized_imgs = np.load(f"{data_folder}/resized_faces.npy")
     np_resized_labels = np.load(f"{data_folder}/resized_labels.npy")
@@ -636,7 +637,7 @@ def prepare_facescrub_dataloaders(
         if i in name_id2client_id:
             idx = np.where(np_resized_labels == id2name[i])[0]
             sep_idxs = np.array_split(idx, 2)
-            X_public_list.append(np_resized_imgs[sep_idxs[0]])
+            X_public_list.append(cv2.blur(np_resized_imgs[sep_idxs[0]], blur_strength, blur_strength))
             y_public_list += [i for _ in range(len(sep_idxs[0]))]
             X_private_lists[name_id2client_id[i]].append(np_resized_imgs[sep_idxs[0]])
             y_private_lists[name_id2client_id[i]] += [
@@ -675,13 +676,8 @@ def prepare_facescrub_dataloaders(
         y_private_train_list.append(y_private_train)
         y_private_test_list.append(y_private_test)
 
-    print(X_private_test_list[0].shape)
-    print(X_public_test.shape)
     X_test = np.concatenate(X_private_test_list + [X_public_test], axis=0)
     y_test = np.concatenate(y_private_test_list + [y_public_test], axis=0)
-
-    print(X_test.shape)
-    print(y_test.shape)
 
     transforms_list = [transforms.ToTensor()]
     if channel == 1:
