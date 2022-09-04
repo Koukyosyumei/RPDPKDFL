@@ -14,6 +14,8 @@ from aijack.collaborative import (
     FedMDServer,
 )
 
+WEIGHT_DECAY = 0.0003
+
 
 def setup_fedmd(
     model_class,
@@ -52,7 +54,7 @@ def setup_fedmd(
         for i in range(client_num)
     ]
     client_optimizers = [
-        optim.Adam(client.parameters(), lr=lr, weight_decay=0.0001)
+        optim.Adam(client.parameters(), lr=lr, weight_decay=WEIGHT_DECAY)
         for client in clients
     ]
 
@@ -62,7 +64,7 @@ def setup_fedmd(
             input_dim=input_dim, output_dim=output_dim, channel=channel
         ).to(device)
         server_optimizer = optim.Adam(
-            server_model.parameters(), lr=lr, weight_decay=0.0001
+            server_model.parameters(), lr=lr, weight_decay=WEIGHT_DECAY
         )
         server = FedMDServer(clients, server_model=server_model, device=device).to(
             device
@@ -129,7 +131,7 @@ def setup_fedgems(
         for i in range(client_num)
     ]
     client_optimizers = [
-        optim.Adam(client.parameters(), lr=lr, weight_decay=0.0001)
+        optim.Adam(client.parameters(), lr=lr, weight_decay=WEIGHT_DECAY)
         for client in clients
     ]
 
@@ -151,7 +153,7 @@ def setup_fedgems(
         epsilon=epsilon,
         device=device,
     ).to(device)
-    server_optimizer = optim.Adam(server.parameters(), lr=lr, weight_decay=0.0001)
+    server_optimizer = optim.Adam(server.parameters(), lr=lr, weight_decay=WEIGHT_DECAY)
 
     # set up FedGEMS
     fedgems_api = FedGEMSAPI(
@@ -229,7 +231,7 @@ def setup_dsfl(
         for i in range(client_num)
     ]
     client_optimizers = [
-        optim.Adam(client.parameters(), lr=lr, weight_decay=0.0001)
+        optim.Adam(client.parameters(), lr=lr, weight_decay=WEIGHT_DECAY)
         for client in clients
     ]
 
@@ -245,7 +247,7 @@ def setup_dsfl(
         era_temperature=era_temperature,
         device=device,
     ).to(device)
-    server_optimizer = optim.Adam(server.parameters(), lr=lr, weight_decay=0.0001)
+    server_optimizer = optim.Adam(server.parameters(), lr=lr, weight_decay=WEIGHT_DECAY)
 
     # set up FedGEMS
     fedgems_api = DSFLAPI(
