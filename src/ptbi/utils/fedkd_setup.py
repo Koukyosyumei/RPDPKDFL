@@ -14,7 +14,7 @@ from aijack.collaborative import (
     FedMDServer,
 )
 
-WEIGHT_DECAY = 0.00001
+WEIGHT_DECAY = 0.0003
 
 
 def setup_fedmd(
