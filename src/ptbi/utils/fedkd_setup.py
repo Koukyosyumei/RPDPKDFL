@@ -2,19 +2,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from aijack.collaborative import (
-    DSFLAPI,
-    DSFLClient,
-    DSFLServer,
-    FedGEMSAPI,
-    FedGEMSClient,
-    FedGEMSServer,
-    FedMDAPI,
-    FedMDClient,
-    FedMDServer,
-)
+from aijack.collaborative import (DSFLAPI, DSFLClient, DSFLServer, FedGEMSAPI,
+                                  FedGEMSClient, FedGEMSServer, FedMDAPI,
+                                  FedMDClient, FedMDServer)
 
-WEIGHT_DECAY = 0.0003
+WEIGHT_DECAY = 0.00003
 
 
 def setup_fedmd(
