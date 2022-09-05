@@ -58,7 +58,7 @@ def reconstruct_private_data_and_quick_evaluate(
 
     for target_client_id, target_list in enumerate(local_identities):
 
-        checkpoint = torch.load(inv_path_list[target_client_id])
+        checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
         inv.load_state_dict(checkpoint["model"])
         inv_optimizer.load_state_dict(checkpoint["optimizer"])
 
@@ -147,7 +147,7 @@ def reconstruct_all_possible_targets(
     target_ids = sum(local_identities, [])
     for target_client_id in range(client_num):
 
-        checkpoint = torch.load(inv_path_list[target_client_id])
+        checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
         inv.load_state_dict(checkpoint["model"])
         inv_optimizer.load_state_dict(checkpoint["optimizer"])
 

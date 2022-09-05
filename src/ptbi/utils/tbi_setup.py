@@ -62,8 +62,8 @@ def setup_training_based_inversion(
             "optimizer": inv_optimizer.state_dict(),
             "finetune_optimizer": inv_optimizer_finetune.state_dict(),
         }
-        temp_path = os.path.join(temp_dir, f"client_{i}.pth")
-        torch.save(state, temp_path)
+        temp_path = os.path.join(temp_dir, f"client_{i}")
+        torch.save(state, temp_path + ".pth")
         temp_path_list.append(temp_path)
 
     return temp_path_list, inv, inv_optimizer, inv_optimizer_finetune

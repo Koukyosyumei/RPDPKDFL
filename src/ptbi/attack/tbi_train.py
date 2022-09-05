@@ -118,7 +118,7 @@ def get_inv_train_fn_ptbi(
                 inv_batch_size,
             )
 
-            checkpoint = torch.load(inv_path_list[target_client_id])
+            checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
             inv.load_state_dict(checkpoint["model"])
             inv_optimizer.load_state_dict(checkpoint["optimizer"])
             inv_optimizer_finetune.load_state_dict(checkpoint["finetune_optimizer"])
@@ -147,8 +147,9 @@ def get_inv_train_fn_ptbi(
                 "optimizer": inv_optimizer.state_dict(),
                 "finetune_optimizer": inv_optimizer_finetune.state_dict(),
             }
-            torch.save(state, inv_path_list[target_client_id])
+            torch.save(state, inv_path_list[target_client_id] + ".pth")
 
+        """
         print("saving the reconstructed images...")
         reconstruct_all_possible_targets(
             attack_type,
@@ -166,6 +167,7 @@ def get_inv_train_fn_ptbi(
             ablation_study,
             base_name=api.epoch,
         )
+        """
 
     return inv_train
 
@@ -217,7 +219,7 @@ def get_inv_train_fn_tbi(
                 inv_batch_size,
             )
 
-            checkpoint = torch.load(inv_path_list[target_client_id])
+            checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
             inv.load_state_dict(checkpoint["model"])
             inv_optimizer.load_state_dict(checkpoint["optimizer"])
 
@@ -247,8 +249,10 @@ def get_inv_train_fn_tbi(
                     f.write(f"{target_client_id}, {i}, {tbi_running_loss}\n")
 
             state = {"model": inv.state_dict(), "optimizer": inv_optimizer.state_dict()}
-            torch.save(state, inv_path_list[target_client_id])
+            torch.save(state, inv_path_list[target_client_id] + ".pth")
+            torch.save(state, inv_path_list[target_client_id] + f"_{api.epoch}.pth")
 
+        """
         print("saving the reconstructed images...")
         reconstruct_all_possible_targets(
             attack_type,
@@ -266,6 +270,7 @@ def get_inv_train_fn_tbi(
             ablation_study,
             base_name=api.epoch,
         )
+        """
 
     return inv_train
 
@@ -310,7 +315,7 @@ def get_inv_train_fn_ablation_3(
                 inv_batch_size,
             )
 
-            checkpoint = torch.load(inv_path_list[target_client_id])
+            checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
             inv.load_state_dict(checkpoint["model"])
             inv_optimizer.load_state_dict(checkpoint["optimizer"])
 
@@ -333,6 +338,7 @@ def get_inv_train_fn_ablation_3(
                 )
 
             state = {"model": inv.state_dict(), "optimizer": inv_optimizer.state_dict()}
-            torch.save(state, inv_path_list[target_client_id])
+            torch.save(state, inv_path_list[target_client_id] + ".pth")
+            torch.save(state, inv_path_list[target_client_id] + f"_{api.epoch}.pth")
 
     return inv_train
