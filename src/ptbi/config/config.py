@@ -57,7 +57,7 @@ _config_dsfl = {
     "era_temperature": 0.1,
     "epoch_local_training": 2,
     "epoch_local_distillation": 2,
-    "epoch_global_distillation": 2,
+    "epoch_global_distillation": 1,
 }
 _config_fedmd = {
     "consensus_epoch": 1,
