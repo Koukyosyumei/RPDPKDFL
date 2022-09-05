@@ -148,6 +148,7 @@ def get_inv_train_fn_ptbi(
                 "finetune_optimizer": inv_optimizer_finetune.state_dict(),
             }
             torch.save(state, inv_path_list[target_client_id] + ".pth")
+            torch.save(state, inv_path_list[target_client_id] + f"_{api.epoch}.pth")
 
         """
         print("saving the reconstructed images...")
