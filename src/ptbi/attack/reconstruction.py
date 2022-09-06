@@ -60,7 +60,8 @@ def reconstruct_private_data_and_quick_evaluate(
 
         checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
         inv.load_state_dict(checkpoint["model"])
-        inv_optimizer.load_state_dict(checkpoint["optimizer"])
+        if inv_optimizer is not None:
+            inv_optimizer.load_state_dict(checkpoint["optimizer"])
 
         for celeb_id in target_list:
             target_label = id2label[celeb_id]
@@ -147,9 +148,16 @@ def reconstruct_all_possible_targets(
     target_ids = sum(local_identities, [])
     for target_client_id in range(client_num):
 
-        checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
+        if device == "cpu":
+            checkpoint = torch.load(
+                inv_path_list[target_client_id] + ".pth",
+                map_location=torch.device("cpu"),
+            )
+        else:
+            checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
         inv.load_state_dict(checkpoint["model"])
-        inv_optimizer.load_state_dict(checkpoint["optimizer"])
+        if inv_optimizer is not None:
+            inv_optimizer.load_state_dict(checkpoint["optimizer"])
 
         for celeb_id in target_ids:
             target_label = id2label[celeb_id]
