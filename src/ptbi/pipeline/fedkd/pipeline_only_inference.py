@@ -16,22 +16,32 @@ from ..evaluation.evaluation import evaluation_full
 
 def inference(
     fedkd_type="FedGEMS",
+    model_type="LM",
     invmodel_type="InvCNN",
     attack_type="ptbi",
     dataset="AT&T",
     client_num=2,
     batch_size=4,
+    inv_batch_size=1,
+    lr=0.01,
     num_classes=20,
     num_communication=5,
     seed=42,
     num_workers=2,
+    inv_epoch=10,
+    inv_lr=0.003,
+    inv_tempreature=1.0,
+    use_finetune=True,
     inv_pj=0.5,
     beta=0.5,
     evaluation_type="quick",
     ablation_study=0,
+    config_fedkd=None,
     config_dataset=None,
-    model_dir="",
+    config_attack_nes=None,
     output_dir="",
+    model_dir="",
+    temp_dir="./",
 ):
     # --- Fix seed --- #
     os.environ["PYTHONHASHSEED"] = str(seed)
