@@ -207,7 +207,7 @@ if __name__ == "__main__":
 
     result = inference(
         seed=parsed_args.random_seed,
-        model_dir=parsed_args.model_dir,
+        model_dir=parsed_args.model_folder,
         output_dir=run_dir,
         temp_dir=run_dir,
         **args,
