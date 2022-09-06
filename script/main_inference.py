@@ -62,8 +62,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parsed_args = add_args(parser)
 
-    with open(os.path.join(parsed_args.model_folder, "args.txt"), "r") as convert_file:
-        args = json.load(convert_file.readlines[0])
+    with open(os.path.join(parsed_args.model_folder, "args.txt"), "r") as f:
+        args = f.read()
+
+    args = json.loads(
+        args.replace("'", '"')
+        .replace("<lambda>", "")
+        .replace("<", '"')
+        .replace(">", '"')
+        .replace("None", '"None"')
+        .replace("False", '"False"')
+        .replace("True", '"True"')
+        .replace("inf", '"inf"')
+    )
 
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id += "_" + randomname(10)
