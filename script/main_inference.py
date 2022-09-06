@@ -28,6 +28,10 @@ def add_args(parser):
     )
 
     parser.add_argument(
+        "-g", "--random_seed", type=int, default=42, help="seed of random generator"
+    )
+
+    parser.add_argument(
         "-m",
         "--model_folder",
         type=str,
