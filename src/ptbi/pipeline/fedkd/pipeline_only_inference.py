@@ -96,6 +96,12 @@ def inference(
         else input_dim * config_dataset["channel"]
     )
 
+    output_dim = (
+        num_classes
+        if fedkd_type != "DSFL"
+        else config_dataset["target_celeblities_num"]
+    )
+
     if ablation_study in [0, 1, 3]:
         inv_alpha = get_alpha(output_dim, inv_pj)
         pi = get_pi(output_dim, inv_alpha)
@@ -114,7 +120,7 @@ def inference(
     if attack_type == "ptbi":
         if ablation_study != 3:
             inv = get_invmodel_class(invmodel_type)(
-                input_dim=num_classes * 2,
+                input_dim=output_dim * 2,
                 output_shape=(
                     config_dataset["channel"],
                     config_dataset["height"],
@@ -124,7 +130,7 @@ def inference(
             ).to(device)
         else:
             inv = get_invmodel_class(invmodel_type)(
-                input_dim=num_classes,
+                input_dim=output_dim,
                 output_shape=(
                     config_dataset["channel"],
                     config_dataset["height"],
@@ -134,7 +140,7 @@ def inference(
             ).to(device)
     elif attack_type == "tbi":
         inv = get_invmodel_class(invmodel_type)(
-            input_dim=num_classes,
+            input_dim=output_dim,
             output_shape=(
                 config_dataset["channel"],
                 config_dataset["height"],
