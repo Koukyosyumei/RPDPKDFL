@@ -144,7 +144,7 @@ def setup_inv_dataloader(
     public_x_tensor = torch.cat(public_x_list)
     y_pred_server_tensor = torch.cat(y_pred_server_list)
     y_pred_local_tensor = torch.cat(y_pred_local_list)
-    flag_tensor = torch.cat(flag_list)
+    flag_tensor = torch.cat(flag_list).reshape(-1, 1)
     prediction_dataloader = torch.utils.data.DataLoader(
         torch.utils.data.TensorDataset(
             public_x_tensor, y_pred_server_tensor, y_pred_local_tensor, flag_tensor
