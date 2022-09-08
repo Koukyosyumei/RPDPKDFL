@@ -79,6 +79,7 @@ def attack_fedkd(
         local_train_dataloaders,
         test_dataloader,
         local_identities,
+        is_sensitive_flag,
     ) = prepare_dataloaders(
         dataset_name=dataset,
         client_num=client_num,
@@ -147,6 +148,7 @@ def attack_fedkd(
         if ablation_study != 3:
             inv_train = get_inv_train_fn_ptbi(
                 client_num,
+                is_sensitive_flag,
                 local_identities,
                 inv_transform,
                 return_idx,
