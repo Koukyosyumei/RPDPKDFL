@@ -132,7 +132,7 @@ def setup_inv_dataloader(
     flag_list = []
     for data in inv_public_dataloader:
         idx = data[0]
-        flag_list.append(is_sensitive_flag[idx])
+        flag_list.append(torch.Tensor(is_sensitive_flag[idx]))
         x = data[1].to(device).detach()
         y_pred_server = torch.softmax(api.server(x) / inv_tempreature, dim=-1).detach()
         y_pred_local = torch.softmax(
