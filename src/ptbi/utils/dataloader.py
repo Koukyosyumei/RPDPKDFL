@@ -852,7 +852,7 @@ def prepare_lag_dataloaders(
     print(df[df["alloc"] == 0]["path"].tolist()[:10])
 
     X_public = np.stack([cv2.imread(p) for p in df[df["alloc"] == 0]["path"].tolist()])
-    is_sensitive_public = df[df["alloc"] == 0]["ay"].values()
+    is_sensitive_public = df[df["alloc"] == 0]["ay"].values
     y_public = np.array([name2id[n] for n in df[df["alloc"] == 0]["name"].tolist()])
     X_private_list = [
         np.stack([cv2.imread(p) for p in df[df["alloc"] == i + 1]["path"].tolist()])
