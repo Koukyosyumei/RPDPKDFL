@@ -72,6 +72,7 @@ def inference(
         local_train_dataloaders,
         test_dataloader,
         local_identities,
+        is_sensitive_flag,
     ) = prepare_dataloaders(
         dataset_name=dataset,
         client_num=client_num,

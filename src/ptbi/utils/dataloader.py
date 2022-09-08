@@ -434,6 +434,7 @@ def prepare_lfw_dataloaders(
 
     X_public_list = []
     y_public_list = []
+    is_sensitive_public_list = []
     X_private_lists = [[] for _ in range(client_num)]
     y_private_lists = [[] for _ in range(client_num)]
 
@@ -446,9 +447,11 @@ def prepare_lfw_dataloaders(
         else:
             X_public_list.append(cv2.imread(path))
             y_public_list.append(name2id[name])
+            is_sensitive_public_list.append(1 - ismask)
 
     X_public = np.stack(X_public_list)
     y_public = np.array(y_public_list)
+    is_sensitive_public = np.array(is_sensitive_public_list)
     X_private_list = [np.stack(x) for x in X_private_lists]
     y_private_list = [np.array(y) for y in y_private_lists]
 
@@ -534,6 +537,7 @@ def prepare_lfw_dataloaders(
         local_dataloaders,
         None,
         local_identities,
+        is_sensitive_public,
     )
 
 
@@ -573,6 +577,7 @@ def prepare_facescrub_dataloaders(
 
     X_public_list = []
     y_public_list = []
+    is_sensitive_public_list = []
     X_private_lists = [[] for _ in range(client_num)]
     y_private_lists = [[] for _ in range(client_num)]
 
@@ -590,6 +595,7 @@ def prepare_facescrub_dataloaders(
                 )
             X_public_list.append(np.stack(temp_array))
             y_public_list += [i for _ in range(len(sep_idxs[0]))]
+            is_sensitive_public_list += [1 for _ in range(len(sep_idxs[0]))]
             X_private_lists[name_id2client_id[i]].append(np_resized_imgs[sep_idxs[0]])
             y_private_lists[name_id2client_id[i]] += [
                 i for _ in range(len(sep_idxs[0]))
@@ -598,9 +604,11 @@ def prepare_facescrub_dataloaders(
             idx = np.where(np_resized_labels == id2name[i])[0]
             X_public_list.append(np_resized_imgs[idx])
             y_public_list += [i for _ in range(len(idx))]
+            is_sensitive_public_list += [0 for _ in range(len(idx))]
 
     X_public = np.concatenate(X_public_list)
     y_public = np.array(y_public_list)
+    is_sensitive_public = np.array(is_sensitive_public_list)
     X_private_list = [np.concatenate(x) for x in X_private_lists]
     y_private_list = [np.array(y) for y in y_private_lists]
 
@@ -738,6 +746,7 @@ def prepare_facescrub_dataloaders(
         local_train_dataloaders,
         test_dataloader,
         local_identities,
+        is_sensitive_public,
     )
 
 
@@ -843,6 +852,7 @@ def prepare_lag_dataloaders(
     print(df[df["alloc"] == 0]["path"].tolist()[:10])
 
     X_public = np.stack([cv2.imread(p) for p in df[df["alloc"] == 0]["path"].tolist()])
+    is_sensitive_public = df[df["alloc"] == 0]["ay"].values()
     y_public = np.array([name2id[n] for n in df[df["alloc"] == 0]["name"].tolist()])
     X_private_list = [
         np.stack([cv2.imread(p) for p in df[df["alloc"] == i + 1]["path"].tolist()])
@@ -930,7 +940,13 @@ def prepare_lag_dataloaders(
             for i in range(client_num)
         ]
 
-    return public_dataloader, local_dataloaders, None, local_identities
+    return (
+        public_dataloader,
+        local_dataloaders,
+        None,
+        local_identities,
+        is_sensitive_public,
+    )
 
 
 def prepare_dataloaders(dataset_name, *args, **kwargs):

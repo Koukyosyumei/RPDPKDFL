@@ -32,7 +32,8 @@ def train_inv_model_bw(data, device, inv_model, optimizer, criterion):
     x = data[0].to(device)
     y_pred_server = data[1].to(device)
     y_pred_local = data[2].to(device)
-    y_preds_server_and_local = torch.cat([y_pred_server, y_pred_local], dim=1)
+    flag = data[3].to(device)
+    y_preds_server_and_local = torch.cat([y_pred_server, y_pred_local, flag], dim=1)
 
     optimizer.zero_grad()
     x_rec_original = inv_model(y_preds_server_and_local.reshape(x.shape[0], -1, 1, 1))
@@ -67,6 +68,7 @@ def train_ptbi_inv_model(
 
 def get_inv_train_fn_ptbi(
     client_num,
+    is_sensitive_flag,
     local_identities,
     inv_transform,
     return_idx,
@@ -106,6 +108,7 @@ def get_inv_train_fn_ptbi(
             target_labels = sum(local_identities, [])
             prediction_dataloader = setup_inv_dataloader(
                 target_labels,
+                is_sensitive_flag,
                 api,
                 target_client_api,
                 inv_transform,
@@ -124,7 +127,7 @@ def get_inv_train_fn_ptbi(
             inv_optimizer_finetune.load_state_dict(checkpoint["finetune_optimizer"])
 
             for i in range(1, inv_epoch + 1):
-                (inv_running_loss, x, x_rec,) = train_ptbi_inv_model(
+                (inv_running_loss, x, x_rec) = train_ptbi_inv_model(
                     prediction_dataloader,
                     device,
                     inv,

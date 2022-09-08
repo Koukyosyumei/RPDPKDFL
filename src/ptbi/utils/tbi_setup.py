@@ -94,6 +94,7 @@ def setup_tbi_optimizers(dataset_name, config_dataset):
 
 def setup_inv_dataloader(
     target_labels,
+    is_sensitive_flag,
     api,
     target_client_api,
     inv_transform,
@@ -128,7 +129,10 @@ def setup_inv_dataloader(
     public_x_list = []
     y_pred_server_list = []
     y_pred_local_list = []
+    flag_list = []
     for data in inv_public_dataloader:
+        idx = data[0]
+        flag_list.append(is_sensitive_flag[idx])
         x = data[1].to(device).detach()
         y_pred_server = torch.softmax(api.server(x) / inv_tempreature, dim=-1).detach()
         y_pred_local = torch.softmax(
@@ -140,9 +144,10 @@ def setup_inv_dataloader(
     public_x_tensor = torch.cat(public_x_list)
     y_pred_server_tensor = torch.cat(y_pred_server_list)
     y_pred_local_tensor = torch.cat(y_pred_local_list)
+    flag_tensor = torch.cat(flag_list)
     prediction_dataloader = torch.utils.data.DataLoader(
         torch.utils.data.TensorDataset(
-            public_x_tensor, y_pred_server_tensor, y_pred_local_tensor
+            public_x_tensor, y_pred_server_tensor, y_pred_local_tensor, flag_tensor
         ),
         batch_size=inv_batch_size,
         shuffle=True,
