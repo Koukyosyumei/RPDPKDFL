@@ -83,7 +83,7 @@ def reconstruct_private_data_and_quick_evaluate(
             dummy_pred_server[:, target_label] = inv_pj
             dummy_pred_local = torch.zeros(1, output_dim).to(device)
             dummy_pred_local[:, target_label] = 1.0
-            dummy_flag = torch.Tensor([1]).to(device)
+            dummy_flag = torch.Tensor([[1]]).to(device)
             dummy_preds = torch.cat(
                 [dummy_pred_server, dummy_pred_local, dummy_flag], dim=1
             ).to(device)
@@ -167,7 +167,7 @@ def reconstruct_all_possible_targets(
             dummy_pred_server[:, target_label] = inv_pj
             dummy_pred_local = torch.zeros(1, output_dim).to(device)
             dummy_pred_local[:, target_label] = 1.0
-            dummy_flag = torch.Tensor([1]).to(device)
+            dummy_flag = torch.Tensor([[1]]).to(device)
             dummy_preds = torch.cat(
                 [dummy_pred_server, dummy_pred_local, dummy_flag], dim=1
             ).to(device)
