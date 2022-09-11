@@ -1,10 +1,11 @@
 import argparse
-import json
 import os
 import random
 import string
 from datetime import datetime
 
+from ptbi.attack import get_pj
+from ptbi.config.config import config_base, config_dataset, config_fedkd
 from ptbi.pipeline.fedkd.pipeline_confidence_gap import confidence_gap_fedkd
 
 
@@ -14,15 +15,37 @@ def randomname(n):
 
 
 def add_args(parser):
+    parser.add_argument(
+        "-t",
+        "--fedkd_type",
+        type=str,
+        default="fedgems",
+        help="type of FedKD; FedMD, FedGEMS, or FedGEMS",
+    )
+
+    parser.add_argument(
+        "-d", "--dataset", type=str, default="LAG", help="type of dataset; LAG or LFW"
+    )
+
+    parser.add_argument(
+        "-a",
+        "--attack_type",
+        type=str,
+        default="ptbi",
+        help="type of attack; ptbi or tbi",
+    )
 
     parser.add_argument("-l", "--alpha", type=float, default=-1, help="alpha")
 
     parser.add_argument(
-        "-p",
-        "--path_to_datafolder",
-        type=str,
-        default="/content/lag",
-        help="path to the data folder",
+        "-c", "--client_num", type=int, default=10, help="number of clients"
+    )
+
+    parser.add_argument(
+        "--tot_class_num", type=int, default=300, help="number of total classes"
+    )
+    parser.add_argument(
+        "--tar_class_num", type=int, default=30, help="number of target classes"
     )
 
     parser.add_argument(
@@ -30,11 +53,31 @@ def add_args(parser):
     )
 
     parser.add_argument(
-        "-m",
-        "--model_folder",
+        "-r", "--learning_rate", type=float, default=0.001, help="learning rate"
+    )
+
+    parser.add_argument(
+        "-s",
+        "--softmax_tempreature",
+        type=float,
+        default=1.0,
+        help="tempreature $\tau$",
+    )
+
+    parser.add_argument(
+        "-u",
+        "--blur_strength",
+        type=int,
+        default=10,
+        help="strength of blur",
+    )
+
+    parser.add_argument(
+        "-p",
+        "--path_to_datafolder",
         type=str,
-        default="/content/drive/MyDrive/results/",
-        help="path to the model folder",
+        default="/content/lag",
+        help="path to the data folder",
     )
 
     parser.add_argument(
@@ -64,19 +107,77 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parsed_args = add_args(parser)
 
-    with open(os.path.join(parsed_args.model_folder, "args.txt"), "r") as f:
-        args = f.read()
+    args = config_base
+    args["num_classes"] = parsed_args.tot_class_num
+    args["dataset"] = parsed_args.dataset
+    args["fedkd_type"] = parsed_args.fedkd_type
 
-    args = json.loads(
-        args.replace("'", '"')
-        .replace("<lambda>", "")
-        .replace("<", '"')
-        .replace(">", '"')
-        .replace("None", '"None"')
-        .replace("False", '"False"')
-        .replace("True", '"True"')
-        .replace("inf", '"inf"')
-    )
+    args["attack_type"] = parsed_args.attack_type
+    args["client_num"] = parsed_args.client_num
+    args["lr"] = parsed_args.learning_rate
+
+    if args["dataset"] == "AT&T":
+        args["num_classes"] = 40
+    elif args["dataset"] == "MNIST":
+        args["num_classes"] = 10
+    elif args["dataset"] == "FaceScrub":
+        args["num_classes"] = 530
+
+    if parsed_args.ablation_study == 0:
+        if parsed_args.fedkd_type == "DSFL":
+            if parsed_args.alpha < 0:
+                args["inv_pj"] = 1.5 * (
+                    1 / config_dataset[args["dataset"]]["target_celeblities_num"]
+                )
+            else:
+                args["inv_pj"] = get_pj(
+                    config_dataset[args["dataset"]]["target_celeblities_num"],
+                    parsed_args.alpha,
+                )
+        else:
+            if parsed_args.alpha < 0:
+                args["inv_pj"] = 1.5 * (1 / args["num_classes"])
+            else:
+                args["inv_pj"] = get_pj(args["num_classes"], parsed_args.alpha)
+    elif parsed_args.ablation_study == 1:
+        args["inv_pj"] = 1  # without entropy term
+    elif parsed_args.ablation_study == 2:
+        print("inv_pj = 1/output_dim")
+    elif parsed_args.ablation_study == 3:
+        print("use only the global logit")
+        if parsed_args.fedkd_type == "DSFL":
+            if parsed_args.alpha < 0:
+                args["inv_pj"] = 1.5 * (
+                    1 / config_dataset[args["dataset"]]["target_celeblities_num"]
+                )
+            else:
+                args["inv_pj"] = get_pj(
+                    config_dataset[args["dataset"]]["target_celeblities_num"],
+                    parsed_args.alpha,
+                )
+        else:
+            if parsed_args.alpha < 0:
+                args["inv_pj"] = 1.5 * (1 / args["num_classes"])
+            else:
+                args["inv_pj"] = get_pj(args["num_classes"], parsed_args.alpha)
+    else:
+        raise ValueError("parsed_args.ablation_study should be 0, 1, 2 or 3.")
+
+    args["ablation_study"] = parsed_args.ablation_study
+    args["inv_tempreature"] = parsed_args.softmax_tempreature
+
+    args["config_dataset"] = config_dataset[args["dataset"]]
+    args["config_dataset"]["data_folder"] = parsed_args.path_to_datafolder
+    args["config_fedkd"] = config_fedkd[args["fedkd_type"]]
+
+    if args["dataset"] in ["AT&T", "MNIST", "FaceScrub"]:
+        args["config_dataset"]["blur_strength"] = parsed_args.blur_strength
+
+    args["config_dataset"]["target_celeblities_num"] = parsed_args.tar_class_num
+
+    if args["dataset"] in ["MNIST"]:
+        args["model_type"] = "LM"
+        args["invmodel_type"] = "InvLM"
 
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id += "_" + randomname(10)
@@ -97,9 +198,5 @@ if __name__ == "__main__":
     print("#target classes is ", args["config_dataset"]["target_celeblities_num"])
 
     confidence_gap_fedkd(
-        seed=parsed_args.random_seed,
-        model_dir=parsed_args.model_folder,
-        output_dir=run_dir,
-        temp_dir=run_dir,
-        **args,
+        seed=parsed_args.random_seed, output_dir=run_dir, temp_dir=run_dir, **args
     )
