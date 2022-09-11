@@ -90,7 +90,6 @@ def confidence_gap_fedkd(
         data_size = 0
         for data in dataloader:
             _, x, _ = data
-            print(x.shape)
             x = x.to(device)
             y_preds = model(x)
             y_preds = y_preds.cpu()
