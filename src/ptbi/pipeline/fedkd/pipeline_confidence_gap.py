@@ -86,7 +86,8 @@ def confidence_gap_fedkd(
     )
 
     def calculate_entropy_from_dataloader(model, dataloader, device):
-        entropy_tensors = []
+        entropy_sum = 0
+        data_size = 0
         for data in dataloader:
             _, x, _ = data
             print(x.shape)
@@ -95,8 +96,9 @@ def confidence_gap_fedkd(
             y_preds = y_preds.cpu()
             y_probs = y_preds.softmax(dim=1)
             y_entropy = (-1 * y_probs * torch.log(y_probs)).sum(dim=1)
-            entropy_tensors.append(y_entropy)
-        entropy = torch.mean(torch.stack(entropy_tensors))
+            data_size += x.shape[0]
+            entropy_sum = y_entropy.sum()
+        entropy = entropy_sum / data_size
         return entropy
 
     def calculate_entropy(api):
