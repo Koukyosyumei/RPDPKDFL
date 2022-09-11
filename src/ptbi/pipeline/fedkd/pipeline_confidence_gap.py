@@ -91,6 +91,7 @@ def confidence_gap_fedkd(
             _, x, _ = data
             x = x.to(device)
             y_preds = model(x)
+            y_preds = y_preds.cpu()
             y_probs = y_preds.softmax(dim=1)
             y_entropy = (-1 * y_probs * torch.log(y_probs)).sum(dim=1)
             entropy_tensors.append(y_entropy)
