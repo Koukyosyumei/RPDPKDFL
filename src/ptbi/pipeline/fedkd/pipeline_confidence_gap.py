@@ -89,6 +89,7 @@ def confidence_gap_fedkd(
         entropy_tensors = []
         for data in dataloader:
             _, x, _ = data
+            print(x.shape)
             x = x.to(device)
             y_preds = model(x)
             y_preds = y_preds.cpu()
