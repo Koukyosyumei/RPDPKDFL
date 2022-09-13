@@ -124,7 +124,7 @@ if __name__ == "__main__":
     elif args["dataset"] == "FaceScrub":
         args["num_classes"] = 530
 
-    if parsed_args.ablation_study == 0:
+    if parsed_args.ablation_study in [0, 4]:
         if parsed_args.fedkd_type == "DSFL":
             if parsed_args.alpha < 0:
                 args["inv_pj"] = 1.5 * (
