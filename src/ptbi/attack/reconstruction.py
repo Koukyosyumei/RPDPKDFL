@@ -13,6 +13,7 @@ from .confidence import get_alpha, get_pi
 
 def reconstruct_private_data_and_quick_evaluate(
     attack_type,
+    is_sensitive_flag,
     local_identities,
     inv_path_list,
     inv,
@@ -83,10 +84,16 @@ def reconstruct_private_data_and_quick_evaluate(
             dummy_pred_server[:, target_label] = inv_pj
             dummy_pred_local = torch.zeros(1, output_dim).to(device)
             dummy_pred_local[:, target_label] = 1.0
-            dummy_flag = torch.Tensor([[1]]).to(device)
-            dummy_preds = torch.cat(
-                [dummy_pred_server, dummy_pred_local, dummy_flag], dim=1
-            ).to(device)
+
+            if is_sensitive_flag is not None:
+                dummy_flag = torch.Tensor([[1]]).to(device)
+                dummy_preds = torch.cat(
+                    [dummy_pred_server, dummy_pred_local, dummy_flag], dim=1
+                ).to(device)
+            else:
+                dummy_preds = torch.cat(
+                    [dummy_pred_server, dummy_pred_local], dim=1
+                ).to(device)
 
             if attack_type == "ptbi":
                 x_rec = inv(dummy_preds.reshape(1, -1, 1, 1))
@@ -132,6 +139,7 @@ def reconstruct_private_data_and_quick_evaluate(
 
 def reconstruct_all_possible_targets(
     attack_type,
+    is_sensitive_flag,
     local_identities,
     inv_path_list,
     inv,
@@ -169,10 +177,16 @@ def reconstruct_all_possible_targets(
             dummy_pred_server[:, target_label] = inv_pj
             dummy_pred_local = torch.zeros(1, output_dim).to(device)
             dummy_pred_local[:, target_label] = 1.0
-            dummy_flag = torch.Tensor([[1]]).to(device)
-            dummy_preds = torch.cat(
-                [dummy_pred_server, dummy_pred_local, dummy_flag], dim=1
-            ).to(device)
+
+            if is_sensitive_flag is not None:
+                dummy_flag = torch.Tensor([[1]]).to(device)
+                dummy_preds = torch.cat(
+                    [dummy_pred_server, dummy_pred_local, dummy_flag], dim=1
+                ).to(device)
+            else:
+                dummy_preds = torch.cat(
+                    [dummy_pred_server, dummy_pred_local], dim=1
+                ).to(device)
 
             if attack_type == "ptbi":
                 if ablation_study != 3:

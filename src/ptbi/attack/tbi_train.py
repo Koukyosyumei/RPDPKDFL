@@ -160,6 +160,7 @@ def get_inv_train_fn_ptbi(
             print("saving the reconstructed images...")
             reconstruct_all_possible_targets(
                 attack_type,
+                is_sensitive_flag,
                 local_identities,
                 inv_path_list,
                 inv,
