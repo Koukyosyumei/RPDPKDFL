@@ -23,7 +23,7 @@ def setup_training_based_inversion(
         if attack_type == "ptbi":
             if ablation_study != 3:
                 inv = get_invmodel_class(invmodel_type)(
-                    input_dim=num_classes * 2,
+                    input_dim=num_classes * 2 + 1,
                     output_shape=(
                         config_dataset["channel"],
                         config_dataset["height"],

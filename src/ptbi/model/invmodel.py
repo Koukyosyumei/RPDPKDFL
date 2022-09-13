@@ -7,7 +7,7 @@ class InvLM(nn.Module):
     def __init__(self, input_dim=10, output_shape=(1, 28, 28), channel=1):
         super(InvLM, self).__init__()
         self.output_shape = output_shape
-        self.fc = nn.Linear(input_dim + 1, np.prod(output_shape))
+        self.fc = nn.Linear(input_dim, np.prod(output_shape))
 
     def forward(self, x):
         batch_size = x.shape[0]
@@ -18,7 +18,7 @@ class InvLM(nn.Module):
 class InvCNN(nn.Module):
     def __init__(self, input_dim=40, output_shape=None, channel=3):
         super(InvCNN, self).__init__()
-        self.ct1 = nn.ConvTranspose2d(input_dim + 1, 1024, (4, 4), stride=(1, 1))
+        self.ct1 = nn.ConvTranspose2d(input_dim, 1024, (4, 4), stride=(1, 1))
         self.bn1 = torch.nn.BatchNorm2d(
             1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
         )
