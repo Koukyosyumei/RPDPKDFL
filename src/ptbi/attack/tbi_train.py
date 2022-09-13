@@ -32,8 +32,11 @@ def train_inv_model_bw(data, device, inv_model, optimizer, criterion):
     x = data[0].to(device)
     y_pred_server = data[1].to(device)
     y_pred_local = data[2].to(device)
-    flag = data[3].to(device)
-    y_preds_server_and_local = torch.cat([y_pred_server, y_pred_local, flag], dim=1)
+    if len(data) == 4:
+        flag = data[3].to(device)
+        y_preds_server_and_local = torch.cat([y_pred_server, y_pred_local, flag], dim=1)
+    else:
+        y_preds_server_and_local = torch.cat([y_pred_server, y_pred_local], dim=1)
 
     optimizer.zero_grad()
     x_rec_original = inv_model(y_preds_server_and_local.reshape(x.shape[0], -1, 1, 1))
