@@ -31,6 +31,16 @@ def setup_training_based_inversion(
                     ),
                     channel=config_dataset["channel"],
                 ).to(device)
+            elif ablation_study == 4:
+                inv = get_invmodel_class(invmodel_type)(
+                    input_dim=num_classes * 2,
+                    output_shape=(
+                        config_dataset["channel"],
+                        config_dataset["height"],
+                        config_dataset["width"],
+                    ),
+                    channel=config_dataset["channel"],
+                ).to(device)
             else:
                 inv = get_invmodel_class(invmodel_type)(
                     input_dim=num_classes,
