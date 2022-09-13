@@ -38,7 +38,7 @@ _config_lfw = {
 _config_facescrub = {
     "height": 64,
     "width": 64,
-    "channel": 1,
+    "channel": 3,
     "crop": False,
     "target_celeblities_num": 200,
     "blur_strength": 10,

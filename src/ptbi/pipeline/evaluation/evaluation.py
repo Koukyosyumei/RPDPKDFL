@@ -129,6 +129,36 @@ def evaluation_full(
     for celeb_id in target_ids:
         label = id2label[celeb_id]
 
+        np.save(
+            os.path.join(output_dir, "private_" + str(label)),
+            cv2.cvtColor(
+                private_dataset_transformed[private_dataset_label == label]
+                .mean(dim=0)
+                .detach()
+                .cpu()
+                .numpy()
+                .transpose(1, 2, 0)
+                * 0.5
+                + 0.5,
+                cv2.COLOR_BGR2RGB,
+            ),
+        )
+
+        np.save(
+            os.path.join(output_dir, "public_" + str(label)),
+            cv2.cvtColor(
+                public_dataset_transformed[public_dataset_label == label]
+                .mean(dim=0)
+                .detach()
+                .cpu()
+                .numpy()
+                .transpose(1, 2, 0)
+                * 0.5
+                + 0.5,
+                cv2.COLOR_BGR2RGB,
+            ),
+        )
+
         reconstructed_imgs = []
         for i, path in enumerate(
             glob.glob(os.path.join(output_dir, str(epoch) + "_" + str(label) + "_*"))
