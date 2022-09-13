@@ -210,6 +210,7 @@ def get_inv_train_fn_tbi(
             target_labels = sum(local_identities, [])
             prediction_dataloader = setup_inv_dataloader(
                 target_labels,
+                None,
                 api,
                 target_client_api,
                 inv_transform,

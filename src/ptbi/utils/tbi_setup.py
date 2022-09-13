@@ -132,7 +132,8 @@ def setup_inv_dataloader(
     flag_list = []
     for data in inv_public_dataloader:
         idx = data[0]
-        flag_list.append(torch.Tensor(is_sensitive_flag[idx]))
+        if is_sensitive_flag is not None:
+            flag_list.append(torch.Tensor(is_sensitive_flag[idx]))
         x = data[1].to(device).detach()
         y_pred_server = torch.softmax(api.server(x) / inv_tempreature, dim=-1).detach()
         y_pred_local = torch.softmax(
@@ -144,16 +145,31 @@ def setup_inv_dataloader(
     public_x_tensor = torch.cat(public_x_list)
     y_pred_server_tensor = torch.cat(y_pred_server_list)
     y_pred_local_tensor = torch.cat(y_pred_local_list)
-    flag_tensor = torch.cat(flag_list).reshape(-1, 1)
-    prediction_dataloader = torch.utils.data.DataLoader(
-        torch.utils.data.TensorDataset(
-            public_x_tensor, y_pred_server_tensor, y_pred_local_tensor, flag_tensor
-        ),
-        batch_size=inv_batch_size,
-        shuffle=True,
-        num_workers=num_workers,
-        worker_init_fn=worker_init_fn,
-        generator=g,
-    )
+    flag_tensor = None
+    if is_sensitive_flag is not None:
+        flag_tensor = torch.cat(flag_list).reshape(-1, 1)
+
+    if is_sensitive_flag is not None:
+        prediction_dataloader = torch.utils.data.DataLoader(
+            torch.utils.data.TensorDataset(
+                public_x_tensor, y_pred_server_tensor, y_pred_local_tensor, flag_tensor
+            ),
+            batch_size=inv_batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+            generator=g,
+        )
+    else:
+        prediction_dataloader = torch.utils.data.DataLoader(
+            torch.utils.data.TensorDataset(
+                public_x_tensor, y_pred_server_tensor, y_pred_local_tensor, None
+            ),
+            batch_size=inv_batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+            generator=g,
+        )
 
     return prediction_dataloader
