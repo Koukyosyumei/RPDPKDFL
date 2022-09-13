@@ -151,27 +151,26 @@ def get_inv_train_fn_ptbi(
                 "finetune_optimizer": inv_optimizer_finetune.state_dict(),
             }
             torch.save(state, inv_path_list[target_client_id] + ".pth")
-            torch.save(state, inv_path_list[target_client_id] + f"_{api.epoch}.pth")
+            # torch.save(state, inv_path_list[target_client_id] + f"_{api.epoch}.pth")
 
-        """
-        print("saving the reconstructed images...")
-        reconstruct_all_possible_targets(
-            attack_type,
-            local_identities,
-            inv_path_list,
-            inv,
-            inv_optimizer,
-            output_dim,
-            inv_pj,
-            pi,
-            id2label,
-            client_num,
-            output_dir,
-            device,
-            ablation_study,
-            base_name=api.epoch,
-        )
-        """
+        if api.epoch % 2 == 1:
+            print("saving the reconstructed images...")
+            reconstruct_all_possible_targets(
+                attack_type,
+                local_identities,
+                inv_path_list,
+                inv,
+                inv_optimizer,
+                output_dim,
+                inv_pj,
+                pi,
+                id2label,
+                client_num,
+                output_dir,
+                device,
+                ablation_study,
+                base_name=api.epoch,
+            )
 
     return inv_train
 
@@ -254,26 +253,27 @@ def get_inv_train_fn_tbi(
 
             state = {"model": inv.state_dict(), "optimizer": inv_optimizer.state_dict()}
             torch.save(state, inv_path_list[target_client_id] + ".pth")
-            torch.save(state, inv_path_list[target_client_id] + f"_{api.epoch}.pth")
+            # torch.save(state, inv_path_list[target_client_id] + f"_{api.epoch}.pth")
 
         """
-        print("saving the reconstructed images...")
-        reconstruct_all_possible_targets(
-            attack_type,
-            local_identities,
-            inv_path_list,
-            inv,
-            inv_optimizer,
-            output_dim,
-            inv_pj,
-            pi,
-            id2label,
-            client_num,
-            output_dir,
-            device,
-            ablation_study,
-            base_name=api.epoch,
-        )
+        if api.epoch % 2 == 1:
+            print("saving the reconstructed images...")
+            reconstruct_all_possible_targets(
+                attack_type,
+                local_identities,
+                inv_path_list,
+                inv,
+                inv_optimizer,
+                output_dim,
+                inv_pj,
+                pi,
+                id2label,
+                client_num,
+                output_dir,
+                device,
+                ablation_study,
+                base_name=api.epoch,
+            )
         """
 
     return inv_train
@@ -343,6 +343,6 @@ def get_inv_train_fn_ablation_3(
 
             state = {"model": inv.state_dict(), "optimizer": inv_optimizer.state_dict()}
             torch.save(state, inv_path_list[target_client_id] + ".pth")
-            torch.save(state, inv_path_list[target_client_id] + f"_{api.epoch}.pth")
+            # torch.save(state, inv_path_list[target_client_id] + f"_{api.epoch}.pth")
 
     return inv_train
