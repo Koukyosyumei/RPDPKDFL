@@ -163,7 +163,7 @@ def setup_inv_dataloader(
     else:
         prediction_dataloader = torch.utils.data.DataLoader(
             torch.utils.data.TensorDataset(
-                public_x_tensor, y_pred_server_tensor, y_pred_local_tensor, None
+                public_x_tensor, y_pred_server_tensor, y_pred_local_tensor
             ),
             batch_size=inv_batch_size,
             shuffle=True,
