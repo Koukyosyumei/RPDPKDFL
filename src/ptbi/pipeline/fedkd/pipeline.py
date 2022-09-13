@@ -144,6 +144,9 @@ def attack_fedkd(
     else:
         id2label = {la: la for la in sum(local_identities, [])}
 
+    if ablation_study in [3, 4]:
+        is_sensitive_flag = None
+
     if attack_type == "ptbi":
         if ablation_study != 3:
             inv_train = get_inv_train_fn_ptbi(

@@ -96,7 +96,8 @@ def add_args(parser):
         help="type of ablation study; 0:normal(Q=p'_{c_i, j}+p'_{s, j}+\alpha H(p'_s)), \
                                       1:without entropy (Q=p'_{c_i, j}+p'_{s, j})\
                                       2:without p'_{s, j} (Q=p'_{c_i, j}+\alpha H(p'_s))\
-                                      3:without local logit (Q=p'_{s, j}+\alpha H(p'_s))",
+                                      3:without local logit (Q=p'_{s, j}+\alpha H(p'_s))\
+                                      4:without sensitive flag",
     )
 
     args = parser.parse_args()
