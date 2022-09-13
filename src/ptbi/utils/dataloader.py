@@ -741,6 +741,8 @@ def prepare_facescrub_dataloaders(
             worker_init_fn=worker_init_fn,
         )
 
+    print("sensitive labels are", local_identities)
+
     return (
         public_train_dataloader,
         local_train_dataloaders,

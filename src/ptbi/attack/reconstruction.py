@@ -160,6 +160,8 @@ def reconstruct_all_possible_targets(
         if inv_optimizer is not None:
             inv_optimizer.load_state_dict(checkpoint["optimizer"])
 
+        print(target_ids)
+
         for celeb_id in target_ids:
             target_label = id2label[celeb_id]
 
