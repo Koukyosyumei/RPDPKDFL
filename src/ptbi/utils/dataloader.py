@@ -595,7 +595,7 @@ def prepare_facescrub_dataloaders(
                 )
             X_public_list.append(np.stack(temp_array))
             y_public_list += [i for _ in range(len(sep_idxs[0]))]
-            is_sensitive_public_list += [1 for _ in range(len(sep_idxs[0]))]
+            is_sensitive_public_list += [0 for _ in range(len(sep_idxs[0]))]
             X_private_lists[name_id2client_id[i]].append(np_resized_imgs[sep_idxs[0]])
             y_private_lists[name_id2client_id[i]] += [
                 i for _ in range(len(sep_idxs[0]))
@@ -604,7 +604,7 @@ def prepare_facescrub_dataloaders(
             idx = np.where(np_resized_labels == id2name[i])[0]
             X_public_list.append(np_resized_imgs[idx])
             y_public_list += [i for _ in range(len(idx))]
-            is_sensitive_public_list += [0 for _ in range(len(idx))]
+            is_sensitive_public_list += [1 for _ in range(len(idx))]
 
     X_public = np.concatenate(X_public_list)
     y_public = np.array(y_public_list)
