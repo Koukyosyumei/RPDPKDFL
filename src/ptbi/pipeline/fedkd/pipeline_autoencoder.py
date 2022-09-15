@@ -25,7 +25,7 @@ from ...attack.tbi_train import (
     get_inv_train_fn_ptbi,
     get_inv_train_fn_tbi,
 )
-from ...model.invmodel import LMAE
+from ...model.invmodel import AE
 from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
@@ -119,7 +119,7 @@ def ae_attack_fedkd(
         **config_dataset,
     )
 
-    ae = LMAE().to(device)
+    ae = AE().to(device)
     inv_optimizer = torch.optim.Adam(ae.parameters(), lr=0.001, weight_decay=0.0001)
 
     for epoch in range(5):
