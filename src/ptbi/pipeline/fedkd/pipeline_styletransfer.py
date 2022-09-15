@@ -34,7 +34,7 @@ from ..evaluation.evaluation import evaluation_full
 
 def unloader(img):
     image = img.clone()
-    image - image.cpu()  # we clone the tensor to not do changes on it
+    image = image.cpu()  # we clone the tensor to not do changes on it
     image = image.squeeze(0)
     return transforms.ToPILImage()(image)
 
