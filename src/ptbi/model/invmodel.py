@@ -401,7 +401,7 @@ class AE(nn.Module):
         return z
 
     def decode(self, z):
-        return self.decoder(z)
+        return torch.tanh(self.decoder(z))
 
 
 class InvLM(nn.Module):
