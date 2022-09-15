@@ -294,7 +294,7 @@ class ResNetDecoder(nn.Module):
         self.upscale1 = Interpolate(size=input_height // self.upscale_factor)
 
         self.conv1 = nn.Conv2d(
-            64 * block.expansion, 1, kernel_size=3, stride=1, padding=1, bias=False
+            64 * block.expansion, 3, kernel_size=3, stride=1, padding=1, bias=False
         )
 
     def _make_layer(self, block, planes, blocks, scale=1):
