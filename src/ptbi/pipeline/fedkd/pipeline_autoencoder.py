@@ -3,6 +3,7 @@ import os
 import pickle
 import random
 
+import cv2
 import numpy as np
 import torch
 import torchvision.models as models
@@ -140,9 +141,24 @@ def ae_attack_fedkd(
 
         figure = plt.figure()
         figure.add_subplot(1, 3, 1)
-        plt.imshow(x1[0].detach().cpu().numpy().transpose(1, 2, 0))
+        plt.imshow(
+            cv2.cvtColor(
+                x1[0].detach().cpu().numpy().transpose(1, 2, 0) * 0.5 + 0.5,
+                cv2.COLOR_BGR2RGB,
+            )
+        )
         figure.add_subplot(1, 3, 2)
-        plt.imshow(x2[0].detach().cpu().numpy().transpose(1, 2, 0))
+        plt.imshow(
+            cv2.cvtColor(
+                x2[0].detach().cpu().numpy().transpose(1, 2, 0) * 0.5 + 0.5,
+                cv2.COLOR_BGR2RGB,
+            )
+        )
         figure.add_subplot(1, 3, 3)
-        plt.imshow(x3[0].detach().cpu().numpy().transpose(1, 2, 0))
+        plt.imshow(
+            cv2.cvtColor(
+                x3[0].detach().cpu().numpy().transpose(1, 2, 0) * 0.5 + 0.5,
+                cv2.COLOR_BGR2RGB,
+            )
+        )
         plt.savefig(f"{epoch}.png")
