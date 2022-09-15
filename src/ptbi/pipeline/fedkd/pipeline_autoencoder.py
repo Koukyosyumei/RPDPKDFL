@@ -130,19 +130,19 @@ def ae_attack_fedkd(
 
             inv_optimizer.zero_grad()
             x3 = ae(x1)
-            loss = torch.mean((x3 - x2) ** 2)
+            loss = torch.nn.MSELoss()(x3, x2)
             loss.backward()
             inv_optimizer.step()
 
             running_loss += loss.item()
 
+        print(f"epoch={epoch}", running_loss)
+
         figure = plt.figure()
         figure.add_subplot(1, 3, 1)
-        plt.imshow(x1[0].detach().cpu().transpose(1, 2, 0))
+        plt.imshow(x1[0].detach().cpu().numpy().transpose(1, 2, 0))
         figure.add_subplot(1, 3, 2)
-        plt.imshow(x2[0].detach().cpu().transpose(1, 2, 0))
+        plt.imshow(x2[0].detach().cpu().numpy().transpose(1, 2, 0))
         figure.add_subplot(1, 3, 3)
-        plt.imshow(x3[0].detach().cpu().transpose(1, 2, 0))
+        plt.imshow(x3[0].detach().cpu().numpy().transpose(1, 2, 0))
         plt.savefig(f"{epoch}.png")
-
-        print(f"epoch={epoch}", running_loss)
