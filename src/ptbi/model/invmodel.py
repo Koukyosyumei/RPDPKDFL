@@ -3,6 +3,34 @@ import torch
 import torch.nn as nn
 
 
+class LMAE(nn.Module):
+    def __init__(self, channel=3, height=64, width=64):
+        super(LMAE, self).__init__()
+        self.channel = channel
+        self.height = height
+        self.width = width
+
+        self.fc1 = nn.Linear(channel * height * width, 1000)
+        self.fc2 = nn.Linear(1000, 50)
+        self.fc3 = nn.Linear(50, 1000)
+        self.fc4 = nn.Linear(1000, channel * height * width)
+
+    def forward(self, x):
+        batch_size = x.shape[0]
+        x = x.reshape(batch_size, -1)
+
+        x = self.fc1(x)
+        x = torch.tanh(x)
+        x = self.fc2(x)
+        x = torch.tanh(x)
+        x = self.fc3(x)
+        x = torch.tanh(x)
+        x = self.fc4(x)
+        x = torch.sigmoid(x)
+        x = x.reshape(batch_size, (self.channel, self.height, self.width))
+        return x
+
+
 class InvLM(nn.Module):
     def __init__(self, input_dim=10, output_shape=(1, 28, 28), channel=1):
         super(InvLM, self).__init__()
