@@ -68,7 +68,7 @@ def add_args(parser):
         "-u",
         "--blur_strength",
         type=int,
-        default=10,
+        default=15,
         help="strength of blur",
     )
 

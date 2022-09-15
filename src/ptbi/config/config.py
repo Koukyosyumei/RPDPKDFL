@@ -40,11 +40,11 @@ _config_lfw = {
 _config_facescrub = {
     "height": 64,
     "width": 64,
-    "channel": 3,
+    "channel": 1,
     "crop": False,
     "target_celeblities_num": 200,
-    "blur_strength": 10,
-    "weight_decay": 0.01,
+    "blur_strength": 15,
+    "weight_decay": 0.001,
 }
 
 config_dataset = {
