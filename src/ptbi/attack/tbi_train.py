@@ -127,7 +127,7 @@ def get_inv_train_fn_ptbi(
             checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
             inv.load_state_dict(checkpoint["model"])
             inv_optimizer.load_state_dict(checkpoint["optimizer"])
-            inv_optimizer_finetune.load_state_dict(checkpoint["finetune_optimizer"])
+            # inv_optimizer_finetune.load_state_dict(checkpoint["finetune_optimizer"])
 
             for i in range(1, inv_epoch + 1):
                 (inv_running_loss, x, x_rec) = train_ptbi_inv_model(
@@ -151,7 +151,7 @@ def get_inv_train_fn_ptbi(
             state = {
                 "model": inv.state_dict(),
                 "optimizer": inv_optimizer.state_dict(),
-                "finetune_optimizer": inv_optimizer_finetune.state_dict(),
+                #"finetune_optimizer": inv_optimizer_finetune.state_dict(),
             }
             torch.save(state, inv_path_list[target_client_id] + ".pth")
             # torch.save(state, inv_path_list[target_client_id] + f"_{api.epoch}.pth")
