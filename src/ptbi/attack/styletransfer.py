@@ -147,6 +147,7 @@ def run_style_transfer(
     content_img,
     style_img,
     input_img,
+    device,
     num_steps=300,
     style_weight=1000000,
     content_weight=1,
@@ -154,7 +155,7 @@ def run_style_transfer(
     """Run the style transfer."""
     print("Building the style transfer model..")
     model, style_losses, content_losses = get_style_model_and_losses(
-        cnn, normalization_mean, normalization_std, style_img, content_img
+        cnn, normalization_mean, normalization_std, style_img, content_img, device
     )
 
     # We want to optimize the input and not the model parameters so we

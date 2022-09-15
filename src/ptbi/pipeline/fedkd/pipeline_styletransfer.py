@@ -141,6 +141,7 @@ def st_attack_fedkd(
         content_img,
         style_img,
         input_img,
+        device,
     )
 
     plt.imshow(unloader(output))
