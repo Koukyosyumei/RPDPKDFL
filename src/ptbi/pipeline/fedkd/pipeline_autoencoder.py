@@ -25,7 +25,7 @@ from ...attack.tbi_train import (
     get_inv_train_fn_ptbi,
     get_inv_train_fn_tbi,
 )
-from ...model.inv_model import LMAE
+from ...model.invmodel import LMAE
 from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
@@ -125,8 +125,8 @@ def ae_attack_fedkd(
     for epoch in range(5):
         running_loss = 0
         for data in inv_dataloader:
-            x1 = data[0].to(device)
-            x2 = data[1].to(device)
+            x1 = data[1].to(device)
+            x2 = data[2].to(device)
 
             inv_optimizer.zero_grad()
             x3 = ae(x1)

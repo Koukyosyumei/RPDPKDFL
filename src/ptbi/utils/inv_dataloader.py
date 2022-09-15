@@ -11,6 +11,49 @@ from aijack.utils import NumpyDataset, worker_init_fn
 from sklearn.model_selection import train_test_split
 
 
+class NumpyAEDataset(NumpyDataset):
+    """This class allows you to convert numpy.array to torch.Dataset
+    Args:
+        x (np.array):
+        y (np.array):
+        transform (torch.transform):
+    Attriutes
+        x (np.array):
+        y (np.array):
+        transform (torch.transform):
+    """
+
+    def __init__(self, x, y=None, transform=None, return_idx=False):
+        self.x = x
+        self.y = y
+        self.transform = transform
+        self.return_idx = return_idx
+
+    def __getitem__(self, index):
+        x = self.x[index]
+        if self.y is not None:
+            y = self.y[index]
+
+        if self.transform is not None:
+            x = self.transform(x)
+            y = self.transform(y)
+
+        if not self.return_idx:
+            if self.y is not None:
+                return x, y
+            else:
+                return x
+        else:
+            if self.y is not None:
+                return index, x, y
+            else:
+                return index, x
+
+    def __len__(self):
+        """get the number of rows of self.x"""
+        return len(self.x)
+
+
 def prepare_inv_lag_dataloaders(
     data_folder="../input/large-agegap",
     client_num=2,
@@ -161,7 +204,7 @@ def prepare_inv_lag_dataloaders(
 
     print(X_public_input_inv.shape, X_public_output_inv.shape)
 
-    public_inv_dataset = NumpyDataset(
+    public_inv_dataset = NumpyAEDataset(
         x=X_public_input_inv,
         y=X_public_output_inv,
         transform=transform,
@@ -316,19 +359,19 @@ def prepare_inv_lfw_dataloaders(
     transform = transforms.Compose(transforms_list)
     return_idx = True
 
-    sensitive_idx = np.where(is_sensitive_public == 1)
-    nonsensitive_idx = np.where(is_sensitive_public == 0)
+    sensitive_idx = np.where(is_sensitive_public == 1)[0]
+    nonsensitive_idx = np.where(is_sensitive_public == 0)[0]
     X_public_input_inv = []
     X_public_output_inv = []
     for y in list(np.unique(y_public)):
         y_idx = np.where(y_public == y)[0]
-        y_sensitive_idx = list(set(y_idx) & set(sensitive_idx))
-        y_nonsensitive_idx = list(set(y_idx) & set(nonsensitive_idx))
+        y_sensitive_idx = list(set(list(y_idx)) & set(list(sensitive_idx)))
+        y_nonsensitive_idx = list(set(list(y_idx)) & set(list(nonsensitive_idx)))
 
         pairs = sum(
             [[(ys, yn) for yn in y_nonsensitive_idx] for ys in y_sensitive_idx], []
         )
-        pairs = random.sample(pairs, 50)
+        pairs = random.sample(pairs, min(50, len(pairs)))
 
         for pair in pairs:
             X_public_input_inv.append(X_public[pair[1]])
@@ -339,7 +382,7 @@ def prepare_inv_lfw_dataloaders(
 
     print(X_public_input_inv.shape, X_public_output_inv.shape)
 
-    public_inv_dataset = NumpyDataset(
+    public_inv_dataset = NumpyAEDataset(
         x=X_public_input_inv,
         y=X_public_output_inv,
         transform=transform,

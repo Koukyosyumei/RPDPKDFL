@@ -10,14 +10,14 @@ class LMAE(nn.Module):
         self.height = height
         self.width = width
 
+        self.fla = nn.Flatten()
         self.fc1 = nn.Linear(channel * height * width, 1000)
         self.fc2 = nn.Linear(1000, 50)
         self.fc3 = nn.Linear(50, 1000)
         self.fc4 = nn.Linear(1000, channel * height * width)
 
     def forward(self, x):
-        batch_size = x.shape[0]
-        x = x.reshape(batch_size, -1)
+        x = self.fla(x)
 
         x = self.fc1(x)
         x = torch.tanh(x)
@@ -27,7 +27,7 @@ class LMAE(nn.Module):
         x = torch.tanh(x)
         x = self.fc4(x)
         x = torch.sigmoid(x)
-        x = x.reshape(batch_size, (self.channel, self.height, self.width))
+        x = x.reshape((-1, self.channel, self.height, self.width))
         return x
 
 
