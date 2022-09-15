@@ -77,6 +77,8 @@ def get_style_model_and_losses(
     style_layers=style_layers_default,
 ):
     # normalization module
+    normalization_mean = normalization_mean.to(device)
+    normalization_std = normalization_std.to(device)
     normalization = Normalization(normalization_mean, normalization_std).to(device)
 
     # just in order to have an iterable access to or list of content/syle
@@ -119,8 +121,6 @@ def get_style_model_and_losses(
 
         if name in style_layers:
             # add style loss:
-            print(style_img.device)
-            model = model.to(device)
             target_feature = model(style_img).detach()
             style_loss = StyleLoss(target_feature)
             model.add_module("style_loss_{}".format(i), style_loss)
