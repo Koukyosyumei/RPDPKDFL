@@ -123,7 +123,7 @@ def ae_attack_fedkd(
     ae = AE().to(device)
     inv_optimizer = torch.optim.Adam(ae.parameters(), lr=0.00003, weight_decay=0.0001)
 
-    for epoch in range(5):
+    for epoch in range(1, 101):
         running_loss = 0
         for data in inv_dataloader:
             x1 = data[1].to(device)
@@ -162,3 +162,8 @@ def ae_attack_fedkd(
             )
         )
         plt.savefig(f"{epoch}.png")
+
+        if epoch % 50 == 0:
+            torch.save(
+                ae.to("cpu").state_dict(), os.path.join(output_dir, f"ae_{epoch}.pth")
+            )
