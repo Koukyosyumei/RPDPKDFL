@@ -14,18 +14,24 @@ from PIL import Image
 from ...attack.confidence import get_alpha, get_pi
 from ...attack.reconstruction import (
     reconstruct_all_possible_targets,
-    reconstruct_private_data_and_quick_evaluate)
-from ...attack.styletransfer import (cnn_normalization_mean,
-                                     cnn_normalization_std, run_style_transfer)
-from ...attack.tbi_train import (get_inv_train_fn_ablation_3,
-                                 get_inv_train_fn_ptbi, get_inv_train_fn_tbi)
+    reconstruct_private_data_and_quick_evaluate,
+)
+from ...attack.styletransfer import (
+    cnn_normalization_mean,
+    cnn_normalization_std,
+    run_style_transfer,
+)
+from ...attack.tbi_train import (
+    get_inv_train_fn_ablation_3,
+    get_inv_train_fn_ptbi,
+    get_inv_train_fn_tbi,
+)
 from ...model.invmodel import AE
 from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
 from ...utils.inv_dataloader import prepare_inv_dataloaders
-from ...utils.tbi_setup import (setup_tbi_optimizers,
-                                setup_training_based_inversion)
+from ...utils.tbi_setup import setup_tbi_optimizers, setup_training_based_inversion
 from ..evaluation.evaluation import evaluation_full
 
 
@@ -131,7 +137,7 @@ def ae_attack_fedkd(
 
             running_loss += loss.item()
 
-        print(f"epoch={epoch}", running_loss)
+        print(f"epoch={epoch}", running_loss / len(inv_dataloader))
 
         figure = plt.figure()
         figure.add_subplot(1, 3, 1)
