@@ -6,8 +6,7 @@ from datetime import datetime
 
 from ptbi.attack import get_pj
 from ptbi.config.config import config_base, config_dataset, config_fedkd
-from ptbi.pipeline.fedkd.pipeline import attack_fedkd
-from ptbi.pipeline.fedkd.pipeline_styletransfer import st_attack_fedkd
+from ptbi.pipeline.fedkd.pipeline_autoencoder import ae_attack_fedkd
 
 
 def randomname(n):
