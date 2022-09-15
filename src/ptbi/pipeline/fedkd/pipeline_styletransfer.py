@@ -8,6 +8,7 @@ import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
 from matplotlib import pyplot as plt
+from PIL import Image
 
 from ...attack.confidence import get_alpha, get_pi
 from ...attack.reconstruction import (
@@ -115,9 +116,9 @@ def st_attack_fedkd(
     content_img = public_train_dataloader.dataset.x[np.where(is_sensitive_flag == 0)[0]]
     input_img = copy.deepcopy(content_img)
 
-    style_img = loader(style_img).unsqueeze(0).to(device)
-    content_img = loader(content_img).unsqueeze(0).to(device)
-    input_img = loader(input_img).unsqueeze(0).to(device)
+    style_img = loader(Image.fromarray(style_img)).unsqueeze(0).to(device)
+    content_img = loader(Image.fromarray(content_img)).unsqueeze(0).to(device)
+    input_img = loader(Image.fromarray(input_img)).unsqueeze(0).to(device)
 
     figure = plt.figure()
     figure.add_subplot(1, 3, 1)
