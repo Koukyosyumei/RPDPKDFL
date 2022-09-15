@@ -12,16 +12,22 @@ from matplotlib import pyplot as plt
 from ...attack.confidence import get_alpha, get_pi
 from ...attack.reconstruction import (
     reconstruct_all_possible_targets,
-    reconstruct_private_data_and_quick_evaluate)
-from ...attack.styletransfer import (cnn_normalization_mean,
-                                     cnn_normalization_std, run_style_transfer)
-from ...attack.tbi_train import (get_inv_train_fn_ablation_3,
-                                 get_inv_train_fn_ptbi, get_inv_train_fn_tbi)
+    reconstruct_private_data_and_quick_evaluate,
+)
+from ...attack.styletransfer import (
+    cnn_normalization_mean,
+    cnn_normalization_std,
+    run_style_transfer,
+)
+from ...attack.tbi_train import (
+    get_inv_train_fn_ablation_3,
+    get_inv_train_fn_ptbi,
+    get_inv_train_fn_tbi,
+)
 from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
-from ...utils.tbi_setup import (setup_tbi_optimizers,
-                                setup_training_based_inversion)
+from ...utils.tbi_setup import setup_tbi_optimizers, setup_training_based_inversion
 from ..evaluation.evaluation import evaluation_full
 
 
@@ -109,6 +115,10 @@ def st_attack_fedkd(
     content_img = public_train_dataloader.dataset.x[np.where(is_sensitive_flag == 0)[0]]
     input_img = copy.deepcopy(content_img)
 
+    style_img = loader(style_img).unsqueeze(0).to(device)
+    content_img = loader(content_img).unsqueeze(0).to(device)
+    input_img = loader(input_img).unsqueeze(0).to(device)
+
     figure = plt.figure()
     figure.add_subplot(1, 3, 1)
     plt.imshow(unloader(style_img))
@@ -118,10 +128,6 @@ def st_attack_fedkd(
     plt.imshow(unloader(input_img))
     plt.savefig("data.png")
     plt.close()
-
-    style_img = loader(style_img).unsqueeze(0).to(device)
-    content_img = loader(content_img).unsqueeze(0).to(device)
-    input_img = loader(input_img).unsqueeze(0).to(device)
 
     cnn = models.vgg19(pretrained=True).features.to(device).eval()
     output = run_style_transfer(
