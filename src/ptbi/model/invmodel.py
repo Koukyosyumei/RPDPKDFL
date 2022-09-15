@@ -203,11 +203,11 @@ class ResNetEncoder(nn.Module):
 
         if self.first_conv:
             self.conv1 = nn.Conv2d(
-                1, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False
+                3, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False
             )
         else:
             self.conv1 = nn.Conv2d(
-                1, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False
+                3, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False
             )
 
         self.bn1 = nn.BatchNorm2d(self.inplanes)
