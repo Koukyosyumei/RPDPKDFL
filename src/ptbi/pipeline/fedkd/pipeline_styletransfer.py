@@ -113,7 +113,10 @@ def st_attack_fedkd(
     )
 
     style_img = local_train_dataloaders[0].dataset.x[0]
-    content_img = public_train_dataloader.dataset.x[np.where(is_sensitive_flag == 0)[0]]
+    print(np.where(is_sensitive_flag == 0)[0])
+    content_img = public_train_dataloader.dataset.x[
+        np.where(is_sensitive_flag == 0)[0][0]
+    ]
     input_img = copy.deepcopy(content_img)
 
     style_img = loader(Image.fromarray(style_img)).unsqueeze(0).to(device)
