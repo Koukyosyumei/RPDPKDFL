@@ -64,19 +64,19 @@ def setup_training_based_inversion(
         inv_optimizer = torch.optim.Adam(
             inv.parameters(), lr=inv_lr, weight_decay=0.0001
         )
-        inv_optimizer_finetune = torch.optim.Adam(
-            inv.parameters(), lr=inv_lr / 5, weight_decay=0.0001
-        )
+        # inv_optimizer_finetune = torch.optim.Adam(
+        #    inv.parameters(), lr=inv_lr / 5, weight_decay=0.0001
+        # )
         state = {
             "model": inv.state_dict(),
             "optimizer": inv_optimizer.state_dict(),
-            "finetune_optimizer": inv_optimizer_finetune.state_dict(),
+            # "finetune_optimizer": inv_optimizer_finetune.state_dict(),
         }
         temp_path = os.path.join(temp_dir, f"client_{i}")
         torch.save(state, temp_path + ".pth")
         temp_path_list.append(temp_path)
 
-    return temp_path_list, inv, inv_optimizer, inv_optimizer_finetune
+    return temp_path_list, inv, inv_optimizer, None
 
 
 def setup_tbi_optimizers(dataset_name, config_dataset):

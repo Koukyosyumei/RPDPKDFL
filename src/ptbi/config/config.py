@@ -25,6 +25,7 @@ _config_lag = {
     "channel": 3,
     "data_folder": "/content/lag",
     "target_celeblities_num": 200,
+    "weight_decay": 0.0001,
 }
 
 _config_lfw = {
@@ -33,6 +34,7 @@ _config_lfw = {
     "channel": 3,
     "crop": False,
     "target_celeblities_num": 200,
+    "weight_decay": 0.0001,
 }
 
 _config_facescrub = {
@@ -42,6 +44,7 @@ _config_facescrub = {
     "crop": False,
     "target_celeblities_num": 200,
     "blur_strength": 10,
+    "weight_decay": 0.01,
 }
 
 config_dataset = {
