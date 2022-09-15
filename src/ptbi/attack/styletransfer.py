@@ -86,7 +86,7 @@ def get_style_model_and_losses(
 
     # assuming that cnn is a nn.Sequential, so we make a new nn.Sequential
     # to put in modules that are supposed to be activated sequentially
-    model = nn.Sequential(normalization)
+    model = nn.Sequential(normalization).to(device)
 
     i = 0  # increment every time we see a conv
     for layer in cnn.children():
@@ -119,6 +119,7 @@ def get_style_model_and_losses(
 
         if name in style_layers:
             # add style loss:
+            print(style_img.device)
             target_feature = model(style_img).detach()
             style_loss = StyleLoss(target_feature)
             model.add_module("style_loss_{}".format(i), style_loss)
