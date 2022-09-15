@@ -171,6 +171,7 @@ if __name__ == "__main__":
     args["config_dataset"]["data_folder"] = parsed_args.path_to_datafolder
     args["config_fedkd"] = config_fedkd[args["fedkd_type"]]
     args["config_fedkd"]["weight_decay"] = args["config_dataset"]["weight_decay"]
+    args["config_dataset"].pop("weight_decay")
 
     if args["dataset"] in ["AT&T", "MNIST", "FaceScrub"]:
         args["config_dataset"]["blur_strength"] = parsed_args.blur_strength
