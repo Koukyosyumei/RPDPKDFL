@@ -10,7 +10,6 @@ from ..utils.utils_data import (
     extract_transformd_dataset_from_dataloader,
     imshow_dataloader,
 )
-from .confidence import get_alpha, get_pi
 
 
 def reconstruct_private_data_and_quick_evaluate(
@@ -224,6 +223,8 @@ def reconstruct_pair_all_possible_targets(
     output_dir,
     device,
     ablation_study,
+    X_pub_nonsensitive_tensor,
+    y_pub_nonsensitive_tensor,
     base_name="",
 ):
     target_ids = sum(local_identities, [])
@@ -245,7 +246,14 @@ def reconstruct_pair_all_possible_targets(
         for celeb_id in target_ids:
             target_label = id2label[celeb_id]
 
+            # dummy_x = torch.zeros(1, 3, 128, 64).to(device)
+
             dummy_x = torch.zeros(1, 3, 128, 64).to(device)
+            x_nonsensitive = X_pub_nonsensitive_tensor[
+                torch.where(y_pub_nonsensitive_tensor == target_label)
+            ][[0]]
+            dummy_x = torch.concat([x_nonsensitive, torch.zeros(1, 3, 64, 64)], dim=2)
+
             dummy_x.requires_grad = True
             best_x = dummy_x.clone()
             best_score = -1 * float("inf")
