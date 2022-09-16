@@ -257,7 +257,7 @@ def reconstruct_pair_all_possible_targets(
 
             plt.imshow(
                 cv2.cvtColor(
-                    dummy_x_sensitive.clone().detach().numpy(),
+                    dummy_x_sensitive.clone().detach().cpu().numpy(),
                     cv2.COLOR_BGR2RGB,
                 )
             )
