@@ -270,18 +270,18 @@ def reconstruct_pair_all_possible_targets(
                 if y_pred[:, [target_label]].item() > best_score:
                     best_x = dummy_x.clone()
                     best_score = y_pred[:, [target_label]].item()
-                    # best_epoch = i
 
                 grad = dummy_x.grad
-                dummy_x = dummy_x + 0.1 * grad
+                dummy_x = dummy_x + 0.3 * grad
                 dummy_x = torch.clip(dummy_x, 0, 1)
 
             np.save(
                 os.path.join(output_dir, f"{target_label}_{target_client_id}"),
                 best_x.detach().cpu().numpy()[0],
             )
-            best_x_sensitive = (
-                best_x.detach().cpu().numpy()[0].transpose(1, 2, 0)[:64] * 0.5 + 0.5
+            best_x_sensitive = cv2.cvtColor(
+                best_x.detach().cpu().numpy()[0].transpose(1, 2, 0)[:64] * 0.5 + 0.5,
+                cv2.COLOR_BGR2RGB,
             )
             plt.imshow(
                 cv2.cvtColor(
