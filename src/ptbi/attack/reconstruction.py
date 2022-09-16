@@ -252,7 +252,9 @@ def reconstruct_pair_all_possible_targets(
             x_nonsensitive = X_pub_nonsensitive_tensor[
                 torch.where(y_pub_nonsensitive_tensor == target_label)
             ][[0]]
-            dummy_x = torch.concat([x_nonsensitive, torch.zeros(1, 3, 64, 64)], dim=2)
+            dummy_x = torch.concat(
+                [x_nonsensitive, torch.zeros(1, 3, 64, 64)], dim=2
+            ).to(device)
 
             dummy_x.requires_grad = True
             best_x = dummy_x.clone()
