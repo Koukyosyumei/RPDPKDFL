@@ -212,7 +212,7 @@ if __name__ == "__main__":
         seed=parsed_args.random_seed,
         output_dir=run_dir,
         temp_dir=run_dir,
-        model_dir=args.path_to_modelfolder,
+        model_dir=parsed_args.path_to_modelfolder,
         **args,
     )
 
