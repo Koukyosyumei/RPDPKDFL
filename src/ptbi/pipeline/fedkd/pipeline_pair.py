@@ -55,6 +55,7 @@ def pair_attack_fedkd(
     config_attack_nes=None,
     output_dir="",
     temp_dir="./",
+    model_dir="./",
 ):
     # --- Fix seed --- #
     os.environ["PYTHONHASHSEED"] = str(seed)

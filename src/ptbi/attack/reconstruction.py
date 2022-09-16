@@ -281,7 +281,7 @@ def reconstruct_pair_all_possible_targets(
                 best_x.detach().cpu().numpy()[0],
             )
             best_x_sensitive = (
-                best_x.detach().cpu().numpy()[0].transpose(1, 2, 0)[64:] * 0.5 + 0.5
+                best_x.detach().cpu().numpy()[0].transpose(1, 2, 0)[:64] * 0.5 + 0.5
             )
             plt.imshow(
                 cv2.cvtColor(

@@ -81,6 +81,14 @@ def add_args(parser):
     )
 
     parser.add_argument(
+        "-m",
+        "--path_to_modelfolder",
+        type=str,
+        default="/content/",
+        help="path to the trained model folder",
+    )
+
+    parser.add_argument(
         "-o",
         "--output_folder",
         type=str,
@@ -201,7 +209,11 @@ if __name__ == "__main__":
     print("#target classes is ", args["config_dataset"]["target_celeblities_num"])
 
     result = pair_attack_fedkd(
-        seed=parsed_args.random_seed, output_dir=run_dir, temp_dir=run_dir, **args
+        seed=parsed_args.random_seed,
+        output_dir=run_dir,
+        temp_dir=run_dir,
+        model_dir=args.path_to_modelfolder,
+        **args,
     )
 
     # print("Results:")
