@@ -49,8 +49,7 @@ def train_inv_model_bw(data, device, inv_model, optimizer, criterion):
 def train_paired_inv_model_bw(data, device, sub_model, optimizer, criterion):
     x_nonsensitive = data[0].to(device)
     x_sensitive = data[1].to(device)
-    x = torch.concat([x_nonsensitive, x_sensitive], dim=1)
-    print(x.shape)
+    x = torch.concat([x_nonsensitive, x_sensitive], dim=2)
 
     y = data[2].to(device)
 

@@ -224,13 +224,13 @@ def setup_paired_inv_dataloader(
     public_x_list = []
     y_local_list = []
     y_pred_local_list = []
-    is_sensitive_flag = []
+    is_sensitive_flag_list = []
     flag_list = []
 
     for data in inv_public_dataloader:
         idx = data[0]
-        if is_sensitive_flag is not None:
-            flag_list.append(torch.Tensor(is_sensitive_flag[idx]))
+        # if is_sensitive_flag is not None:
+        #    flag_list.append(torch.Tensor(is_sensitive_flag[idx]))
         x = data[1].to(device).detach()
         y_pred_local = torch.softmax(
             target_client_api(x) / inv_tempreature, dim=-1
@@ -238,13 +238,13 @@ def setup_paired_inv_dataloader(
         public_x_list.append(x.cpu())
         y_pred_local_list.append(y_pred_local.cpu())
 
-        y_local_list.append(data[2].to(device).detach().numpy())
-        is_sensitive_flag.append(is_sensitive_flag[idx.numpy()])
+        y_local_list.append(data[2].detach().numpy())
+        is_sensitive_flag_list.append(is_sensitive_flag[idx])
 
     public_x_tensor = torch.cat(public_x_list)
     y_pred_local_tensor = torch.cat(y_pred_local_list)
-    y_local_array = np.stack(y_local_list)
-    is_sensitive_flag_array = np.stack(is_sensitive_flag)
+    y_local_array = np.concatenate(y_local_list)
+    is_sensitive_flag_array = np.concatenate(is_sensitive_flag_list)
 
     sensitive_idx = np.where(is_sensitive_flag_array == 1)[0]
     nonsensitive_idx = np.where(is_sensitive_flag_array == 0)[0]
@@ -252,8 +252,11 @@ def setup_paired_inv_dataloader(
     X_paired_nonsensitive_list = []
     X_paired_sensitive_list = []
     y_paired_list = []
-    for target_y in list(target_labels):
-        y_idx = torch.where(y_local_array == target_y)[0]
+
+    for target_y in range(1000):
+        if target_y in target_labels:
+            continue
+        y_idx = np.where(y_local_array == target_y)[0]
         y_sensitive_idx = list(set(list(y_idx)) & set(list(sensitive_idx)))
         y_nonsensitive_idx = list(set(list(y_idx)) & set(list(nonsensitive_idx)))
 
@@ -263,15 +266,19 @@ def setup_paired_inv_dataloader(
         pairs = random.sample(pairs, min(50, len(pairs)))
 
         for pair in pairs:
-            X_paired_nonsensitive_list.append(public_x_tensor[pair[0]])
-            X_paired_sensitive_list.append(public_x_tensor[pair[1]])
+            X_paired_nonsensitive_list.append(public_x_tensor[[pair[0]]])
+            X_paired_sensitive_list.append(public_x_tensor[[pair[1]]])
             y_paired_list.append(
-                y_pred_local_tensor[pair[0]] / 2 + y_pred_local_tensor[pair[1]] / 2
+                y_pred_local_tensor[[pair[0]]] / 2 + y_pred_local_tensor[[pair[1]]] / 2
             )
 
     x_paired_nonsensitive = torch.cat(X_paired_nonsensitive_list)
     x_paired_sensitive = torch.cat(X_paired_sensitive_list)
     y_paired = torch.cat(y_paired_list)
+
+    print(x_paired_nonsensitive.shape)
+    print(x_paired_sensitive.shape)
+    print(y_paired.shape)
 
     prediction_dataloader = torch.utils.data.DataLoader(
         torch.utils.data.TensorDataset(
@@ -288,10 +295,8 @@ def setup_paired_inv_dataloader(
 
 
 class SubLM(nn.Module):
-    def __init__(self):
-        super(SubLM, self).__init__(
-            self, input_dim=3 * 64 * 64, hidden_dim=2000, output_dim=1000
-        )
+    def __init__(self, input_dim=3 * 128 * 64, hidden_dim=2000, output_dim=1000):
+        super(SubLM, self).__init__()
         self.fla = nn.Flatten()
         self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, output_dim)

@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import torch
+from matplotlib import pyplot as plt
 
 from ..pipeline.evaluation.evaluation import evaluate_ssim
 from ..utils.utils_data import (
@@ -202,6 +203,65 @@ def reconstruct_all_possible_targets(
                     f"{base_name}_{target_label}_{target_client_id}_{attack_type}",
                 ),
                 x_rec[0].detach().cpu().numpy(),
+            )
+
+    return None
+
+
+def reconstruct_pair_all_possible_targets(
+    attack_type,
+    is_sensitive_flag,
+    local_identities,
+    inv_path_list,
+    inv,
+    inv_optimizer,
+    output_dim,
+    inv_pj,
+    pi,
+    id2label,
+    client_num,
+    output_dir,
+    device,
+    ablation_study,
+    base_name="",
+):
+    target_ids = sum(local_identities, [])
+    for target_client_id in range(client_num):
+
+        if device == "cpu":
+            checkpoint = torch.load(
+                inv_path_list[target_client_id] + ".pth",
+                map_location=torch.device("cpu"),
+            )
+        else:
+            checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
+        inv.load_state_dict(checkpoint["model"])
+        if inv_optimizer is not None:
+            inv_optimizer.load_state_dict(checkpoint["optimizer"])
+
+        print(target_ids)
+
+        for celeb_id in target_ids:
+            target_label = id2label[celeb_id]
+
+            dummy_x = torch.zeros(1, 3, 128, 64).to(device)
+            dummy_x.requires_grad = True
+
+            for i in range(100):
+                dummy_x = dummy_x.detach()
+                dummy_x.requires_grad = True
+                y_pred = inv(dummy_x)
+                y_pred[:, [target_label]].backward()
+                grad = dummy_x.grad
+                dummy_x = dummy_x + 0.03 * grad
+                dummy_x = torch.clip(dummy_x, 0, 1)
+
+            plt.imshow(dummy_x.detach().cpu().numpy()[0][0], cmap="gray")
+            plt.savefig(
+                os.path.join(
+                    output_dir,
+                    f"{base_name}_{target_label}_{target_client_id}_{attack_type}.png",
+                )
             )
 
     return None

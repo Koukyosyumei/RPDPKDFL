@@ -116,7 +116,7 @@ def pair_attack_fedkd(
         inv,
         inv_optimizer,
         inv_optimizer_finetune,
-    ) = setup_training_based_inversion(
+    ) = setup_paired_inversion(
         attack_type,
         invmodel_type,
         output_dim,
