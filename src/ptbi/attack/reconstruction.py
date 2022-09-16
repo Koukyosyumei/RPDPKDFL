@@ -16,22 +16,19 @@ def reconstruct_all_possible_targets(
     base_name="",
 ):
     target_ids = sum(local_identities, [])
-    for target_client_id in range(client_num):
 
-        print(target_ids)
+    for celeb_id in target_ids:
+        target_label = id2label[celeb_id]
+        dummy_pred_local = torch.zeros(1, output_dim).to(device)
+        dummy_pred_local[:, target_label] = 1.0
+        x_rec = inv(dummy_pred_local.reshape(1, -1, 1, 1))
 
-        for celeb_id in target_ids:
-            target_label = id2label[celeb_id]
-            dummy_pred_local = torch.zeros(1, output_dim).to(device)
-            dummy_pred_local[:, target_label] = 1.0
-            x_rec = inv(dummy_pred_local.reshape(1, -1, 1, 1))
-
-            np.save(
-                os.path.join(
-                    output_dir,
-                    f"{base_name}_{target_label}_{target_client_id}_{attack_type}",
-                ),
-                x_rec[0].detach().cpu().numpy(),
-            )
+        np.save(
+            os.path.join(
+                output_dir,
+                f"{base_name}_{target_label}_{attack_type}",
+            ),
+            x_rec[0].detach().cpu().numpy(),
+        )
 
     return None

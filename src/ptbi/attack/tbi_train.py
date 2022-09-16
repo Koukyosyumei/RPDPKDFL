@@ -2,7 +2,8 @@ import os
 
 import torch
 
-from ..utils.tbi_setup import setup_our_inv_dataloader, setup_tbi_inv_dataloader
+from ..utils.tbi_setup import (setup_our_inv_dataloader,
+                               setup_tbi_inv_dataloader)
 from .reconstruction import reconstruct_all_possible_targets
 
 
@@ -33,18 +34,13 @@ def train_our_inv_model(data, device, ae, inv_model, optimizer, criterion, gamma
 
 
 def train_our_inv_model_on_logits_dataloader(
-    prediction_dataloader, device, ae, inv, inv_optimizer, criterion
+    prediction_dataloader, device, ae, inv, inv_optimizer, criterion, gamma=0.1
 ):
     inv_running_loss = 0
     running_size = 0
     for data in prediction_dataloader:
         loss, x, x_rec = train_our_inv_model(
-            data,
-            device,
-            ae,
-            inv,
-            inv_optimizer,
-            criterion,
+            data, device, ae, inv, inv_optimizer, criterion, gamma=gamma
         )
         inv_running_loss += loss.item()
         running_size += x.shape[0]
@@ -75,6 +71,7 @@ def get_our_inv_train_func(
     id2label,
     output_dir,
     ablation_study,
+    gamma=0.1,
 ):
     def inv_train(api):
         target_client_apis = [
@@ -113,6 +110,7 @@ def get_our_inv_train_func(
                 inv,
                 inv_optimizer,
                 criterion,
+                gamma=gamma,
             )
 
             print(f"inv epoch={i}, inv loss ", inv_running_loss)

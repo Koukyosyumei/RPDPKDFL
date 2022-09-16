@@ -6,10 +6,7 @@ import numpy as np
 import torch
 from skimage.metrics import structural_similarity as ssim
 
-from ...utils.utils_data import (
-    extract_transformd_dataset_from_dataloader,
-    total_variance_numpy,
-)
+from ...utils.utils_data import extract_transformd_dataset_from_dataloader
 
 
 def evaluate_ssim(
@@ -159,34 +156,13 @@ def evaluation_full(
             ),
         )
 
-        reconstructed_imgs = []
-        for i, path in enumerate(
-            glob.glob(os.path.join(output_dir, str(epoch) + "_" + str(label) + "_*"))
-        ):
-            img = cv2.cvtColor(
-                np.load(path).transpose(1, 2, 0) * 0.5 + 0.5, cv2.COLOR_BGR2RGB
-            )
-            reconstructed_imgs.append(img)
-
-        if client_num > 1:
-            ssim_matrix = np.zeros((len(reconstructed_imgs), len(reconstructed_imgs)))
-            tv_array = np.zeros(len(reconstructed_imgs))
-            for i in range(len(reconstructed_imgs)):
-                tv_array[i] = total_variance_numpy(reconstructed_imgs[i])
-                for j in range(len(reconstructed_imgs)):
-                    if i != j:
-                        ssim_matrix[i][j] = ssim(
-                            reconstructed_imgs[i],
-                            reconstructed_imgs[j],
-                            multichannel=True,
-                            data_range=1,
-                        )
-
-            best_img = reconstructed_imgs[
-                np.argmin(ssim_matrix.sum(axis=0) / (client_num - 1) + beta * tv_array)
-            ]
-        else:
-            best_img = reconstructed_imgs[0]
+        temp_path = glob.glob(
+            os.path.join(output_dir, str(epoch) + "_" + str(label) + "_*")
+        )[0]
+        best_img = cv2.cvtColor(
+            np.load(temp_path).transpose(1, 2, 0) * 0.5 + 0.5, cv2.COLOR_BGR2RGB
+        )
+        # best_img = reconstructed_img
 
         ssim_private_list = [
             ssim(
@@ -240,63 +216,5 @@ def evaluation_full(
         if len(ssim_list[k]) > 0:
             result[k + "_mean"] = np.mean(ssim_list[k])
             result[k + "_std"] = np.std(ssim_list[k])
-
-    return result
-
-
-def estimate_client_assignment(
-    client_num,
-    local_dataloaders,
-    local_identities,
-    id2label,
-    output_dir,
-    beta=0.5,
-    epoch=5,
-):
-
-    if client_num == 1:
-        return {}
-
-    target_ids = sum(local_identities, [])
-
-    private_dataset_transformed_list = []
-    private_dataset_label_list = []
-    for i in range(client_num):
-        temp_dataset, temp_label = extract_transformd_dataset_from_dataloader(
-            local_dataloaders[i], return_idx=True
-        )
-        private_dataset_transformed_list.append(temp_dataset)
-        private_dataset_label_list.append(temp_label)
-
-    result = {}
-
-    for celeb_id in target_ids:
-        label = id2label[celeb_id]
-
-        reconstructed_imgs = []
-        for i, path in enumerate(
-            glob.glob(os.path.join(output_dir, str(epoch) + "_" + str(label) + "_*"))
-        ):
-            img = cv2.cvtColor(
-                np.load(path).transpose(1, 2, 0) * 0.5 + 0.5, cv2.COLOR_BGR2RGB
-            )
-            reconstructed_imgs.append(img)
-
-        ssim_matrix = np.zeros((len(reconstructed_imgs), len(reconstructed_imgs)))
-        tv_array = np.zeros(len(reconstructed_imgs))
-        for i in range(len(reconstructed_imgs)):
-            tv_array[i] = total_variance_numpy(reconstructed_imgs[i])
-            for j in range(len(reconstructed_imgs)):
-                if i != j:
-                    ssim_matrix[i][j] = ssim(
-                        reconstructed_imgs[i],
-                        reconstructed_imgs[j],
-                        multichannel=True,
-                        data_range=1,
-                    )
-
-        result[celeb_id] = np.argmin(
-            ssim_matrix.sum(axis=0) / (client_num - 1) + beta * tv_array
-        )
 
     return result

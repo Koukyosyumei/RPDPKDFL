@@ -11,8 +11,7 @@ from ...model.invmodel import AE
 from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
-from ...utils.tbi_setup import (setup_tbi_optimizers,
-                                setup_training_based_inversion)
+from ...utils.tbi_setup import setup_tbi_optimizers, setup_training_based_inversion
 from ..evaluation.evaluation import evaluation_full
 
 
@@ -34,6 +33,7 @@ def attack_fedkd(
     inv_lr=0.003,
     inv_tempreature=1.0,
     beta=0.5,
+    gamma=0.1,
     ablation_study=0,
     config_fedkd=None,
     config_dataset=None,
@@ -149,6 +149,7 @@ def attack_fedkd(
             id2label,
             output_dir,
             ablation_study,
+            gamma=gamma,
         )
     elif attack_type == "tbi":
         inv_train = get_tbi_inv_train_func(
