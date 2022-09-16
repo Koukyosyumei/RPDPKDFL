@@ -1,5 +1,6 @@
 import os
 
+import cv2
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
@@ -256,7 +257,12 @@ def reconstruct_pair_all_possible_targets(
                 dummy_x = dummy_x + 0.03 * grad
                 dummy_x = torch.clip(dummy_x, 0, 1)
 
-            plt.imshow(dummy_x.detach().cpu().numpy()[0][0], cmap="gray")
+            plt.imshow(
+                cv2.cvtColor(
+                    dummy_x.detach().cpu().numpy()[0][0] * 0.5 + 0.5,
+                    cv2.COLOR_BGR2RGB,
+                )
+            )
             plt.savefig(
                 os.path.join(
                     output_dir,
