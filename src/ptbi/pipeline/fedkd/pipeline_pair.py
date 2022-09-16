@@ -24,7 +24,10 @@ from ...utils.tbi_setup import (
     setup_tbi_optimizers,
     setup_training_based_inversion,
 )
-from ..evaluation.evaluation import evaluation_full
+from ..evaluation.evaluation import (
+    evaluation_full,
+    reconstruct_pair_all_possible_targets,
+)
 
 
 def pair_attack_fedkd(
@@ -234,7 +237,18 @@ def pair_attack_fedkd(
     with open(os.path.join(output_dir, "fedkd_result.pkl"), "wb") as f:
         pickle.dump(fedkd_result, f)
 
-    result = None
+    result = reconstruct_pair_all_possible_targets(
+        client_num,
+        num_classes,
+        public_train_dataloader,
+        local_train_dataloaders,
+        local_identities,
+        id2label,
+        attack_type,
+        output_dir,
+        beta=beta,
+        epoch=num_communication,
+    )
     """
     # --- Attack --- #
     if evaluation_type == "quick":
