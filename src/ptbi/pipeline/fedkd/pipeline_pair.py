@@ -238,6 +238,7 @@ def pair_attack_fedkd(
     idx_pub_list = []
     X_pub_list = []
     y_pub_list = []
+    is_sensitive_flag_list = []
     for data in public_train_dataloader:
         pub_idx = data[0]
         pub_x = data[1]
@@ -246,10 +247,15 @@ def pair_attack_fedkd(
         idx_pub_list.append(pub_idx)
         X_pub_list.append(pub_x)
         y_pub_list.append(pub_y)
+        is_sensitive_flag_list.append(is_sensitive_flag[pub_idx])
 
     X_pub_tensor = torch.cat(X_pub_list)
     y_pub_tensor = torch.cat(y_pub_list)
-    idx_pub_array = np.concatenate(idx_pub_list)
+    is_sensitive_flag_array = np.concatenate(is_sensitive_flag_list)
+    nonsensitive_idx = np.where(is_sensitive_flag_array == 0)[0]
+
+    X_pub_nonsensitive_tensor = X_pub_tensor[nonsensitive_idx]
+    y_pub_nonsensitive_tensor = y_pub_tensor[nonsensitive_idx]
 
     result = reconstruct_pair_all_possible_targets(
         attack_type,
@@ -266,6 +272,8 @@ def pair_attack_fedkd(
         output_dir,
         device,
         ablation_study,
+        X_pub_nonsensitive_tensor,
+        y_pub_nonsensitive_tensor,
         base_name="",
     )
     """
