@@ -235,6 +235,22 @@ def pair_attack_fedkd(
     with open(os.path.join(output_dir, "fedkd_result.pkl"), "wb") as f:
         pickle.dump(fedkd_result, f)
 
+    idx_pub_list = []
+    X_pub_list = []
+    y_pub_list = []
+    for data in public_train_dataloader:
+        pub_idx = data[0]
+        pub_x = data[1]
+        pub_y = data[2]
+
+        idx_pub_list.append(pub_idx)
+        X_pub_list.append(pub_x)
+        y_pub_list.append(pub_y)
+
+    X_pub_tensor = torch.cat(X_pub_list)
+    y_pub_tensor = torch.cat(y_pub_list)
+    idx_pub_array = np.concatenate(idx_pub_list)
+
     result = reconstruct_pair_all_possible_targets(
         attack_type,
         is_sensitive_flag,

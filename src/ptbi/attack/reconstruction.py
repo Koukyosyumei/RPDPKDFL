@@ -247,22 +247,33 @@ def reconstruct_pair_all_possible_targets(
 
             dummy_x = torch.zeros(1, 3, 128, 64).to(device)
             dummy_x.requires_grad = True
+            best_x = dummy_x.clone()
+            best_score = -1 * float("inf")
+            best_epoch = 0
 
             for i in range(100):
                 dummy_x = dummy_x.detach()
                 dummy_x.requires_grad = True
                 y_pred = inv(dummy_x)
                 y_pred[:, [target_label]].backward()
+
+                if y_pred[:, [target_label]].item() > best_score:
+                    best_x = dummy_x.clone()
+                    best_score = y_pred[:, [target_label]].item()
+                    best_epoch = i
+
                 grad = dummy_x.grad
                 dummy_x = dummy_x + 0.03 * grad
                 dummy_x = torch.clip(dummy_x, 0, 1)
 
-            plt.imshow(
-                cv2.cvtColor(
-                    dummy_x.detach().cpu().numpy()[0][0] * 0.5 + 0.5,
-                    cv2.COLOR_BGR2RGB,
-                )
-            )
+            print(target_label, best_epoch)
+            plt.imshow(best_x.detach().cpu().numpy()[0].transpose(1, 2, 0))
+            # plt.imshow(
+            #    cv2.cvtColor(
+            #        best_x.detach().cpu().numpy()[0].transpose(1, 2, 0) * 0.5 + 0.5,
+            #        cv2.COLOR_BGR2RGB,
+            #    )
+            # )
             plt.savefig(
                 os.path.join(
                     output_dir,
