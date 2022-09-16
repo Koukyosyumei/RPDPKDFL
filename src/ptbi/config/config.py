@@ -93,8 +93,6 @@ config_base = {
     "num_classes": 1000,
     "inv_epoch": 3,
     "inv_lr": 0.00003,
-    "beta": 0.1,
-    "evaluation_type": "full",
 }
 
 config_gradinvattack = {

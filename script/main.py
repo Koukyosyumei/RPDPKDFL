@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id += "_" + randomname(10)
-    run_id += f"_{args['dataset']}_{args['fedkd_type']}_{args['evaluation_type']}_{args['client_num']}"
+    run_id += f"_{args['dataset']}_{args['fedkd_type']}_{args['client_num']}"
     run_dir = os.path.join(parsed_args.output_folder, run_id)
     os.makedirs(run_dir)
 

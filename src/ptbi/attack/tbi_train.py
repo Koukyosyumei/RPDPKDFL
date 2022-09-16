@@ -77,58 +77,59 @@ def get_our_inv_train_func(
     ablation_study,
 ):
     def inv_train(api):
-        for target_client_id in range(client_num):
+        target_client_apis = [
+            lambda x_: api.clients[target_client_id](x_).detach()
+            for target_client_id in range(client_num)
+        ]
 
-            def target_client_api(x_):
-                return api.clients[target_client_id](x_).detach()
+        # --- Prepare Public Dataset --- #
+        # target_labels = local_identities[target_client_id]
 
-            # --- Prepare Public Dataset --- #
-            # target_labels = local_identities[target_client_id]
-            target_labels = sum(local_identities, [])
-            prediction_dataloader = setup_our_inv_dataloader(
-                target_labels,
-                is_sensitive_flag,
-                api,
-                target_client_api,
-                inv_transform,
-                return_idx,
-                seed,
-                batch_size,
-                num_workers,
+        target_labels = sum(local_identities, [])
+        prediction_dataloader = setup_our_inv_dataloader(
+            target_labels,
+            is_sensitive_flag,
+            api,
+            target_client_apis,
+            inv_transform,
+            return_idx,
+            seed,
+            batch_size,
+            num_workers,
+            device,
+            inv_tempreature,
+            inv_batch_size,
+        )
+
+        # checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
+        # inv.load_state_dict(checkpoint["model"])
+        # inv_optimizer.load_state_dict(checkpoint["optimizer"])
+
+        for i in range(1, inv_epoch + 1):
+            (inv_running_loss, _, _) = train_our_inv_model_on_logits_dataloader(
+                prediction_dataloader,
                 device,
-                inv_tempreature,
-                inv_batch_size,
+                ae,
+                inv,
+                inv_optimizer,
+                criterion,
             )
 
-            checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
-            inv.load_state_dict(checkpoint["model"])
-            inv_optimizer.load_state_dict(checkpoint["optimizer"])
+            print(f"inv epoch={i}, inv loss ", inv_running_loss)
 
-            for i in range(1, inv_epoch + 1):
-                (inv_running_loss, _, _) = train_our_inv_model_on_logits_dataloader(
-                    prediction_dataloader,
-                    device,
-                    ae,
-                    inv,
-                    inv_optimizer,
-                    criterion,
-                )
+            with open(
+                os.path.join(output_dir, "inv_result.txt"),
+                "a",
+                encoding="utf-8",
+                newline="\n",
+            ) as f:
+                f.write(f"{i}, {inv_running_loss}\n")
 
-                print(f"inv epoch={i}, inv loss ", inv_running_loss)
-
-                with open(
-                    os.path.join(output_dir, "inv_result.txt"),
-                    "a",
-                    encoding="utf-8",
-                    newline="\n",
-                ) as f:
-                    f.write(f"{target_client_id}, {i}, {inv_running_loss}\n")
-
-            state = {
-                "model": inv.state_dict(),
-                "optimizer": inv_optimizer.state_dict(),
-            }
-            torch.save(state, inv_path_list[target_client_id] + ".pth")
+        # state = {
+        #    "model": inv.state_dict(),
+        #    "optimizer": inv_optimizer.state_dict(),
+        # }
+        # torch.save(state, inv_path_list[target_client_id] + ".pth")
 
         if api.epoch % 2 == 1:
             print("saving the reconstructed images...")
@@ -166,59 +167,60 @@ def get_tbi_inv_train_func(
     output_dir,
 ):
     def inv_train(api):
-        for target_client_id in range(client_num):
 
-            def target_client_api(x_):
-                return api.clients[target_client_id](x_).detach()
+        target_client_apis = [
+            lambda x_: api.clients[target_client_id](x_).detach()
+            for target_client_id in range(client_num)
+        ]
 
-            # --- Prepare Public Dataset --- #
-            # target_labels = local_identities[target_client_id]
-            target_labels = sum(local_identities, [])
-            prediction_dataloader = setup_tbi_inv_dataloader(
-                target_labels,
-                None,
-                api,
-                target_client_api,
-                inv_transform,
-                return_idx,
-                seed,
-                batch_size,
-                num_workers,
-                device,
-                inv_tempreature,
-                inv_batch_size,
-            )
+        # --- Prepare Public Dataset --- #
+        # target_labels = local_identities[target_client_id]
+        target_labels = sum(local_identities, [])
+        prediction_dataloader = setup_tbi_inv_dataloader(
+            target_labels,
+            None,
+            api,
+            target_client_apis,
+            inv_transform,
+            return_idx,
+            seed,
+            batch_size,
+            num_workers,
+            device,
+            inv_tempreature,
+            inv_batch_size,
+        )
 
-            checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
-            inv.load_state_dict(checkpoint["model"])
-            inv_optimizer.load_state_dict(checkpoint["optimizer"])
+        # checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
+        # inv.load_state_dict(checkpoint["model"])
+        # inv_optimizer.load_state_dict(checkpoint["optimizer"])
 
-            for i in range(1, inv_epoch + 1):
-                tbi_running_loss = 0
-                running_size = 0
-                for data in prediction_dataloader:
-                    loss, x, _ = train_tbi_inv_model(
-                        data,
-                        device,
-                        inv,
-                        inv_optimizer,
-                        criterion,
-                    )
-                    tbi_running_loss += loss.item()
-                    running_size += x.shape[0]
+        for i in range(1, inv_epoch + 1):
+            tbi_running_loss = 0
+            running_size = 0
+            for data in prediction_dataloader:
+                loss, x, _ = train_tbi_inv_model(
+                    data,
+                    device,
+                    inv,
+                    inv_optimizer,
+                    criterion,
+                )
+                tbi_running_loss += loss.item()
+                running_size += x.shape[0]
 
-                tbi_running_loss /= running_size
-                print(f"inv epoch={i}, inv loss ", tbi_running_loss)
+            tbi_running_loss /= running_size
+            print(f"inv epoch={i}, inv loss ", tbi_running_loss)
 
-                with open(
-                    os.path.join(output_dir, "inv_result.txt"),
-                    "a",
-                    encoding="utf-8",
-                    newline="\n",
-                ) as f:
-                    f.write(f"{target_client_id}, {i}, {tbi_running_loss}\n")
+            with open(
+                os.path.join(output_dir, "inv_result.txt"),
+                "a",
+                encoding="utf-8",
+                newline="\n",
+            ) as f:
+                f.write(f"{i}, {tbi_running_loss}\n")
 
-            state = {"model": inv.state_dict(), "optimizer": inv_optimizer.state_dict()}
-            torch.save(state, inv_path_list[target_client_id] + ".pth")
+        # state = {"model": inv.state_dict(), "optimizer": inv_optimizer.state_dict()}
+        # torch.save(state, inv_path_list[target_client_id] + ".pth")
 
     return inv_train
