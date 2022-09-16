@@ -224,8 +224,6 @@ def reconstruct_pair_all_possible_targets(
     output_dir,
     device,
     ablation_study,
-    X_pub_nonsensitive_tensor,
-    y_pub_nonsensitive_tensor,
     base_name="",
 ):
     target_ids = sum(local_identities, [])
@@ -247,15 +245,11 @@ def reconstruct_pair_all_possible_targets(
         for celeb_id in target_ids:
             target_label = id2label[celeb_id]
 
-            x_nonsensitive = X_pub_nonsensitive_tensor[
-                torch.where(y_pub_nonsensitive_tensor == target_label)
-            ][[0]]
-            dummy_x = torch.concat([x_nonsensitive, torch.zeros(1, 3, 64, 64)], dim=2)
-            # dummy_x = torch.zeros(1, 3, 128, 64).to(device)
+            dummy_x = torch.zeros(1, 3, 128, 64).to(device)
             dummy_x.requires_grad = True
             best_x = dummy_x.clone()
             best_score = -1 * float("inf")
-            best_epoch = 0
+            # best_epoch = 0
 
             for i in range(100):
                 dummy_x = dummy_x.detach()
@@ -266,13 +260,15 @@ def reconstruct_pair_all_possible_targets(
                 if y_pred[:, [target_label]].item() > best_score:
                     best_x = dummy_x.clone()
                     best_score = y_pred[:, [target_label]].item()
-                    best_epoch = i
+                    # best_epoch = i
 
                 grad = dummy_x.grad
-                dummy_x = dummy_x + 0.03 * grad
+                dummy_x = dummy_x + 0.1 * grad
                 dummy_x = torch.clip(dummy_x, 0, 1)
 
-            print(target_label, best_epoch, best_score)
+            np.save(
+                os.path.join(output_dir, f"{target_label}_{target_client_id}"), dummy_x
+            )
             plt.imshow(best_x.detach().cpu().numpy()[0].transpose(1, 2, 0))
             # plt.imshow(
             #    cv2.cvtColor(
