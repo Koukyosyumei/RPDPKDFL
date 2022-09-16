@@ -4,7 +4,6 @@ import random
 import string
 from datetime import datetime
 
-from ptbi.attack import get_pj
 from ptbi.config.config import config_base, config_dataset, config_fedkd
 from ptbi.pipeline.fedkd.pipeline import attack_fedkd
 
@@ -89,6 +88,14 @@ def add_args(parser):
     )
 
     parser.add_argument(
+        "-m",
+        "--path_to_model",
+        type=str,
+        default="/content/",
+        help="path to the trained model folder",
+    )
+
+    parser.add_argument(
         "-b",
         "--ablation_study",
         type=int,
@@ -123,46 +130,6 @@ if __name__ == "__main__":
         args["num_classes"] = 10
     elif args["dataset"] == "FaceScrub":
         args["num_classes"] = 530
-
-    if parsed_args.ablation_study in [0, 4]:
-        if parsed_args.fedkd_type == "DSFL":
-            if parsed_args.alpha < 0:
-                args["inv_pj"] = 1.5 * (
-                    1 / config_dataset[args["dataset"]]["target_celeblities_num"]
-                )
-            else:
-                args["inv_pj"] = get_pj(
-                    config_dataset[args["dataset"]]["target_celeblities_num"],
-                    parsed_args.alpha,
-                )
-        else:
-            if parsed_args.alpha < 0:
-                args["inv_pj"] = 1.5 * (1 / args["num_classes"])
-            else:
-                args["inv_pj"] = get_pj(args["num_classes"], parsed_args.alpha)
-    elif parsed_args.ablation_study == 1:
-        args["inv_pj"] = 1  # without entropy term
-    elif parsed_args.ablation_study == 2:
-        print("inv_pj = 1/output_dim")
-    elif parsed_args.ablation_study == 3:
-        print("use only the global logit")
-        if parsed_args.fedkd_type == "DSFL":
-            if parsed_args.alpha < 0:
-                args["inv_pj"] = 1.5 * (
-                    1 / config_dataset[args["dataset"]]["target_celeblities_num"]
-                )
-            else:
-                args["inv_pj"] = get_pj(
-                    config_dataset[args["dataset"]]["target_celeblities_num"],
-                    parsed_args.alpha,
-                )
-        else:
-            if parsed_args.alpha < 0:
-                args["inv_pj"] = 1.5 * (1 / args["num_classes"])
-            else:
-                args["inv_pj"] = get_pj(args["num_classes"], parsed_args.alpha)
-    else:
-        raise ValueError("parsed_args.ablation_study should be 0, 1, 2 or 3.")
 
     args["ablation_study"] = parsed_args.ablation_study
     args["inv_tempreature"] = parsed_args.softmax_tempreature
@@ -201,7 +168,11 @@ if __name__ == "__main__":
     print("#target classes is ", args["config_dataset"]["target_celeblities_num"])
 
     result = attack_fedkd(
-        seed=parsed_args.random_seed, output_dir=run_dir, temp_dir=run_dir, **args
+        seed=parsed_args.random_seed,
+        output_dir=run_dir,
+        temp_dir=run_dir,
+        model_path=parsed_args.path_to_model,
+        **args,
     )
 
     print("Results:")

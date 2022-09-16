@@ -5,16 +5,9 @@ import random
 import numpy as np
 import torch
 
-from ...attack.confidence import get_alpha, get_pi
-from ...attack.reconstruction import (
-    reconstruct_all_possible_targets,
-    reconstruct_private_data_and_quick_evaluate,
-)
-from ...attack.tbi_train import (
-    get_inv_train_fn_ablation_3,
-    get_inv_train_fn_ptbi,
-    get_inv_train_fn_tbi,
-)
+from ...attack.reconstruction import reconstruct_all_possible_targets
+from ...attack.tbi_train import get_our_inv_train_func, get_tbi_inv_train_func
+from ...model.invmodel import AE
 from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
@@ -39,16 +32,13 @@ def attack_fedkd(
     inv_epoch=10,
     inv_lr=0.003,
     inv_tempreature=1.0,
-    use_finetune=True,
-    inv_pj=0.5,
     beta=0.5,
-    evaluation_type="quick",
     ablation_study=0,
     config_fedkd=None,
     config_dataset=None,
-    config_attack_nes=None,
     output_dir="",
     temp_dir="./",
+    model_path="./",
 ):
     # --- Fix seed --- #
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -106,12 +96,7 @@ def attack_fedkd(
     )
 
     # --- Setup Optimizers --- #
-    (
-        inv_path_list,
-        inv,
-        inv_optimizer,
-        inv_optimizer_finetune,
-    ) = setup_training_based_inversion(
+    (inv_path_list, inv, inv_optimizer) = setup_training_based_inversion(
         attack_type,
         invmodel_type,
         output_dim,
@@ -129,76 +114,43 @@ def attack_fedkd(
     # --- Setup loss function --- #
     criterion = torch.nn.MSELoss()
 
-    if ablation_study in [0, 1, 3, 4]:
-        inv_alpha = get_alpha(output_dim, inv_pj)
-        pi = get_pi(output_dim, inv_alpha)
-    elif ablation_study == 2:
-        inv_alpha = None
-        pi = 1 / output_dim
-        inv_pj = 1 / output_dim
-    print(f"pi is {pi}")
-    print(f"pj is {inv_pj}")
-
     if fedkd_type == "DSFL":
         id2label = {la: i for i, la in enumerate(np.unique(sum(local_identities, [])))}
     else:
         id2label = {la: la for la in sum(local_identities, [])}
 
-    if ablation_study in [3, 4]:
-        is_sensitive_flag = None
-
     if attack_type == "ptbi":
-        if ablation_study != 3:
-            inv_train = get_inv_train_fn_ptbi(
-                client_num,
-                is_sensitive_flag,
-                local_identities,
-                inv_transform,
-                return_idx,
-                seed,
-                batch_size,
-                num_workers,
-                device,
-                inv_tempreature,
-                inv_batch_size,
-                inv_epoch,
-                inv_path_list,
-                inv,
-                inv_optimizer,
-                inv_optimizer_finetune,
-                criterion,
-                output_dim,
-                inv_alpha,
-                config_dataset,
-                config_attack_nes,
-                use_finetune,
-                pi,
-                inv_pj,
-                attack_type,
-                id2label,
-                output_dir,
-                ablation_study,
-            )
-        else:
-            inv_train = get_inv_train_fn_ablation_3(
-                client_num,
-                local_identities,
-                inv_transform,
-                return_idx,
-                seed,
-                batch_size,
-                num_workers,
-                device,
-                inv_tempreature,
-                inv_batch_size,
-                inv_epoch,
-                inv_path_list,
-                inv,
-                inv_optimizer,
-                criterion,
-            )
+
+        ae = AE().to(device)
+        ae.load_state_dict(torch.load(model_path))
+        ae = ae.eval()
+
+        inv_train = get_our_inv_train_func(
+            client_num,
+            is_sensitive_flag,
+            local_identities,
+            inv_transform,
+            return_idx,
+            seed,
+            batch_size,
+            num_workers,
+            device,
+            inv_tempreature,
+            inv_batch_size,
+            inv_epoch,
+            inv_path_list,
+            inv,
+            inv_optimizer,
+            ae,
+            criterion,
+            output_dim,
+            attack_type,
+            id2label,
+            output_dir,
+            ablation_study,
+        )
     elif attack_type == "tbi":
-        inv_train = get_inv_train_fn_tbi(
+        inv_train = get_tbi_inv_train_func(
             client_num,
             local_identities,
             inv_transform,
@@ -214,13 +166,7 @@ def attack_fedkd(
             inv,
             inv_optimizer,
             criterion,
-            output_dim,
-            inv_pj,
-            pi,
-            attack_type,
-            id2label,
             output_dir,
-            ablation_study,
         )
     else:
         raise NotImplementedError(f"{attack_type} is not supported")
@@ -249,56 +195,28 @@ def attack_fedkd(
         pickle.dump(fedkd_result, f)
 
     # --- Attack --- #
-    if evaluation_type == "quick":
-        result = reconstruct_private_data_and_quick_evaluate(
-            attack_type,
-            local_identities,
-            inv_path_list,
-            inv,
-            inv_optimizer,
-            public_train_dataloader,
-            local_train_dataloaders,
-            dataset,
-            output_dim,
-            inv_pj,
-            id2label,
-            client_num,
-            return_idx,
-            config_dataset,
-            output_dir,
-            device,
-        )
-    elif evaluation_type == "full":
-        reconstruct_all_possible_targets(
-            attack_type,
-            is_sensitive_flag,
-            local_identities,
-            inv_path_list,
-            inv,
-            inv_optimizer,
-            output_dim,
-            inv_pj,
-            pi,
-            id2label,
-            client_num,
-            output_dir,
-            device,
-            ablation_study,
-            base_name=str(num_communication),
-        )
-        result = evaluation_full(
-            client_num,
-            num_classes,
-            public_train_dataloader,
-            local_train_dataloaders,
-            local_identities,
-            id2label,
-            attack_type,
-            output_dir,
-            beta=beta,
-            epoch=num_communication,
-        )
-    else:
-        raise NotImplementedError(f"{evaluation_type} is not supported.")
+    reconstruct_all_possible_targets(
+        attack_type,
+        local_identities,
+        inv,
+        output_dim,
+        id2label,
+        client_num,
+        output_dir,
+        device,
+        base_name=str(num_communication),
+    )
+    result = evaluation_full(
+        client_num,
+        num_classes,
+        public_train_dataloader,
+        local_train_dataloaders,
+        local_identities,
+        id2label,
+        attack_type,
+        output_dir,
+        beta=beta,
+        epoch=num_communication,
+    )
 
     return result
