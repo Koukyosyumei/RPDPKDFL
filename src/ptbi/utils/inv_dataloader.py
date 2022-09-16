@@ -181,19 +181,19 @@ def prepare_inv_lag_dataloaders(
     transform = transforms.Compose(transforms_list)
     return_idx = True
 
-    sensitive_idx = np.where(is_sensitive_public == 1)
-    nonsensitive_idx = np.where(is_sensitive_public == 0)
+    sensitive_idx = np.where(is_sensitive_public == 1)[0]
+    nonsensitive_idx = np.where(is_sensitive_public == 0)[0]
     X_public_input_inv = []
     X_public_output_inv = []
     for y in list(np.unique(y_public)):
         y_idx = np.where(y_public == y)[0]
-        y_sensitive_idx = list(set(y_idx) & set(sensitive_idx))
-        y_nonsensitive_idx = list(set(y_idx) & set(nonsensitive_idx))
+        y_sensitive_idx = list(set(list(y_idx)) & set(list(sensitive_idx)))
+        y_nonsensitive_idx = list(set(list(y_idx)) & set(list(nonsensitive_idx)))
 
         pairs = sum(
             [[(ys, yn) for yn in y_nonsensitive_idx] for ys in y_sensitive_idx], []
         )
-        pairs = random.sample(pairs, 50)
+        pairs = random.sample(pairs, min(50, len(pairs)))
 
         for pair in pairs:
             X_public_input_inv.append(X_public[pair[1]])
