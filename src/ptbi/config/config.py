@@ -85,7 +85,7 @@ config_fedkd = {
 config_base = {
     "model_type": "CNN",
     "invmodel_type": "InvCNN",
-    "num_communication": 5,
+    "num_communication": 1,
     "batch_size": 64,
     "inv_batch_size": 8,
     "lr": 0.001,

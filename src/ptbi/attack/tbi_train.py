@@ -19,7 +19,7 @@ def train_tbi_inv_model(data, device, inv_model, optimizer, criterion):
     return loss, x, x_rec_original
 
 
-def train_our_inv_model(data, device, ae, inv_model, optimizer, criterion, gamma):
+def train_our_inv_model(data, device, ae, inv_model, optimizer, criterion, gamma=0.1):
     x = data[0].to(device)
     y_pred_local = data[1].to(device)
 
