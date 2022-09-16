@@ -1,18 +1,20 @@
 import os
 
+import cv2
 import numpy as np
 import torch
+from matplotlib import pyplot as plt
 
 from ..pipeline.evaluation.evaluation import evaluate_ssim
 from ..utils.utils_data import (
     extract_transformd_dataset_from_dataloader,
     imshow_dataloader,
 )
-from .confidence import get_alpha, get_pi
 
 
 def reconstruct_private_data_and_quick_evaluate(
     attack_type,
+    is_sensitive_flag,
     local_identities,
     inv_path_list,
     inv,
@@ -58,9 +60,10 @@ def reconstruct_private_data_and_quick_evaluate(
 
     for target_client_id, target_list in enumerate(local_identities):
 
-        checkpoint = torch.load(inv_path_list[target_client_id])
+        checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
         inv.load_state_dict(checkpoint["model"])
-        inv_optimizer.load_state_dict(checkpoint["optimizer"])
+        if inv_optimizer is not None:
+            inv_optimizer.load_state_dict(checkpoint["optimizer"])
 
         for celeb_id in target_list:
             target_label = id2label[celeb_id]
@@ -82,9 +85,16 @@ def reconstruct_private_data_and_quick_evaluate(
             dummy_pred_server[:, target_label] = inv_pj
             dummy_pred_local = torch.zeros(1, output_dim).to(device)
             dummy_pred_local[:, target_label] = 1.0
-            dummy_preds = torch.cat([dummy_pred_server, dummy_pred_local], dim=1).to(
-                device
-            )
+
+            if is_sensitive_flag is not None:
+                dummy_flag = torch.Tensor([[1]]).to(device)
+                dummy_preds = torch.cat(
+                    [dummy_pred_server, dummy_pred_local, dummy_flag], dim=1
+                ).to(device)
+            else:
+                dummy_preds = torch.cat(
+                    [dummy_pred_server, dummy_pred_local], dim=1
+                ).to(device)
 
             if attack_type == "ptbi":
                 x_rec = inv(dummy_preds.reshape(1, -1, 1, 1))
@@ -130,6 +140,7 @@ def reconstruct_private_data_and_quick_evaluate(
 
 def reconstruct_all_possible_targets(
     attack_type,
+    is_sensitive_flag,
     local_identities,
     inv_path_list,
     inv,
@@ -147,9 +158,18 @@ def reconstruct_all_possible_targets(
     target_ids = sum(local_identities, [])
     for target_client_id in range(client_num):
 
-        checkpoint = torch.load(inv_path_list[target_client_id])
+        if device == "cpu":
+            checkpoint = torch.load(
+                inv_path_list[target_client_id] + ".pth",
+                map_location=torch.device("cpu"),
+            )
+        else:
+            checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
         inv.load_state_dict(checkpoint["model"])
-        inv_optimizer.load_state_dict(checkpoint["optimizer"])
+        if inv_optimizer is not None:
+            inv_optimizer.load_state_dict(checkpoint["optimizer"])
+
+        print(target_ids)
 
         for celeb_id in target_ids:
             target_label = id2label[celeb_id]
@@ -158,9 +178,16 @@ def reconstruct_all_possible_targets(
             dummy_pred_server[:, target_label] = inv_pj
             dummy_pred_local = torch.zeros(1, output_dim).to(device)
             dummy_pred_local[:, target_label] = 1.0
-            dummy_preds = torch.cat([dummy_pred_server, dummy_pred_local], dim=1).to(
-                device
-            )
+
+            if is_sensitive_flag is not None:
+                dummy_flag = torch.Tensor([[1]]).to(device)
+                dummy_preds = torch.cat(
+                    [dummy_pred_server, dummy_pred_local, dummy_flag], dim=1
+                ).to(device)
+            else:
+                dummy_preds = torch.cat(
+                    [dummy_pred_server, dummy_pred_local], dim=1
+                ).to(device)
 
             if attack_type == "ptbi":
                 if ablation_study != 3:
@@ -176,6 +203,144 @@ def reconstruct_all_possible_targets(
                     f"{base_name}_{target_label}_{target_client_id}_{attack_type}",
                 ),
                 x_rec[0].detach().cpu().numpy(),
+            )
+
+    return None
+
+
+def reconstruct_pair_all_possible_targets(
+    ae,
+    attack_type,
+    is_sensitive_flag,
+    local_identities,
+    inv_path_list,
+    inv,
+    inv_optimizer,
+    output_dim,
+    inv_pj,
+    pi,
+    id2label,
+    client_num,
+    output_dir,
+    device,
+    ablation_study,
+    X_pub_nonsensitive_tensor,
+    y_pub_nonsensitive_tensor,
+    base_name="",
+):
+    target_ids = sum(local_identities, [])
+    for target_client_id in range(client_num):
+
+        if device == "cpu":
+            checkpoint = torch.load(
+                inv_path_list[target_client_id] + ".pth",
+                map_location=torch.device("cpu"),
+            )
+        else:
+            checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
+        inv.load_state_dict(checkpoint["model"])
+        if inv_optimizer is not None:
+            inv_optimizer.load_state_dict(checkpoint["optimizer"])
+
+        print(target_ids)
+
+        for target_label in range(1000):
+            if target_label not in target_ids:
+                continue
+            # for celeb_id in target_ids:
+            # target_label = id2label[celeb_id]
+
+            # dummy_x = torch.zeros(1, 3, 128, 64).to(device)
+
+            # dummy_x_sensitive = torch.zeros(1, 3, 64, 64).to(device)
+            x_nonsensitive = X_pub_nonsensitive_tensor[
+                torch.where(y_pub_nonsensitive_tensor == target_label)
+            ][[0]].to(device)
+            dummy_x_sensitive = ae(x_nonsensitive)
+
+            plt.imshow(
+                cv2.cvtColor(
+                    dummy_x_sensitive[0]
+                    .clone()
+                    .detach()
+                    .cpu()
+                    .numpy()
+                    .transpose(1, 2, 0),
+                    cv2.COLOR_BGR2RGB,
+                )
+            )
+            plt.savefig(
+                os.path.join(
+                    output_dir,
+                    f"ae_sensitive_{target_label}_{target_client_id}_{attack_type}.png",
+                )
+            )
+
+            dummy_x = torch.concat(
+                [dummy_x_sensitive.detach().clone(), x_nonsensitive], dim=2
+            ).to(device)
+            # dummy_x = torch.concat(
+            #    [torch.zeros(1, 3, 64, 64), x_nonsensitive], dim=2
+            # ).to(device)
+
+            dummy_x.requires_grad = True
+            best_x = dummy_x.clone()
+            best_score = -1 * float("inf")
+            # best_epoch = 0
+
+            optimizer = torch.optim.LBFGS([dummy_x], lr=0.1)
+
+            obj = lambda dummy_x: -1 * inv(dummy_x)[:, [target_label]]
+
+            for i in range(100):
+                optimizer.zero_grad()
+                # dummy_x = dummy_x.detach()
+                # dummy_x.requires_grad = True
+                loss = obj(dummy_x)
+                loss.backward()
+                optimizer.step(lambda: obj(dummy_x))
+
+                if (-1 * loss).item() > best_score:
+                    best_x = dummy_x.clone()
+                    best_score = (-1 * loss).item()
+
+                # grad = dummy_x.grad
+                # dummy_x = dummy_x + 10 * grad
+                # dummy_x = torch.clip(dummy_x, 0, 1)
+
+            np.save(
+                os.path.join(output_dir, f"{target_label}_{target_client_id}"),
+                best_x.detach().cpu().numpy()[0],
+            )
+            best_x_sensitive = cv2.cvtColor(
+                best_x.detach().cpu().numpy()[0].transpose(1, 2, 0)[:64] * 0.5 + 0.5,
+                cv2.COLOR_BGR2RGB,
+            )
+            plt.imshow(
+                cv2.cvtColor(
+                    (best_x_sensitive - best_x_sensitive.min())
+                    / (best_x_sensitive.max() - best_x_sensitive.min()),
+                    cv2.COLOR_BGR2RGB,
+                )
+            )
+            plt.savefig(
+                os.path.join(
+                    output_dir,
+                    f"sensitive_{target_label}_{target_client_id}_{attack_type}.png",
+                )
+            )
+
+            plt.imshow(
+                cv2.cvtColor(
+                    best_x.detach().cpu().numpy()[0].transpose(1, 2, 0),
+                    cv2.COLOR_BGR2RGB,
+                )
+            )
+            plt.savefig(
+                os.path.join(
+                    output_dir,
+                    f"concatenated_{target_label}_{target_client_id}_{attack_type}.png",
+                )
             )
 
     return None

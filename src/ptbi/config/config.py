@@ -25,6 +25,7 @@ _config_lag = {
     "channel": 3,
     "data_folder": "/content/lag",
     "target_celeblities_num": 200,
+    "weight_decay": 0.0001,
 }
 
 _config_lfw = {
@@ -33,6 +34,17 @@ _config_lfw = {
     "channel": 3,
     "crop": False,
     "target_celeblities_num": 200,
+    "weight_decay": 0.0001,
+}
+
+_config_facescrub = {
+    "height": 64,
+    "width": 64,
+    "channel": 1,
+    "crop": False,
+    "target_celeblities_num": 200,
+    "blur_strength": 15,
+    "weight_decay": 0.001,
 }
 
 config_dataset = {
@@ -40,6 +52,7 @@ config_dataset = {
     "LAG": _config_lag,
     "LFW": _config_lfw,
     "MNIST": _config_mnist,
+    "FaceScrub": _config_facescrub,
 }
 
 _config_dsfl = {

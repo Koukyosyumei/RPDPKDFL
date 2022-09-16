@@ -8,6 +8,7 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 from aijack.utils import NumpyDataset, worker_init_fn
+from sklearn.model_selection import train_test_split
 
 
 def prepare_mnist_dataloaders(
@@ -28,6 +29,9 @@ def prepare_mnist_dataloaders(
     dataset_train = torchvision.datasets.MNIST(
         root=data_folder, train=True, download=True
     )
+    dataset_test = torchvision.datasets.MNIST(
+        root=data_folder, train=False, download=True
+    )
 
     imgs = dataset_train.train_data.numpy()
     labels = dataset_train.train_labels.numpy()
@@ -37,6 +41,7 @@ def prepare_mnist_dataloaders(
         client_num,
     )
     local_identities = [li.tolist() for li in local_identities]
+    print(local_identities)
 
     name_id2client_id = {}
     for client_id, name_id_list in enumerate(local_identities):
@@ -57,7 +62,6 @@ def prepare_mnist_dataloaders(
             temp_pub_x[:, 10 : 10 + blur_strength, :] = np.random.uniform(
                 0, 255, temp_pub_x[:, 10 : 10 + blur_strength, :].shape
             )
-            print(temp_pub_x.shape)
             X_public_list.append(temp_pub_x)
             y_public_list.append(labels[labels == i][: int(temp_size / 2)])
             X_private_lists[name_id2client_id[i]].append(
@@ -67,17 +71,19 @@ def prepare_mnist_dataloaders(
                 labels[labels == i][int(temp_size / 2) :]
             )
         else:
-            print(imgs[labels == i].shape)
             X_public_list.append(imgs[labels == i])
             y_public_list.append(labels[labels == i])
 
     X_public = np.vstack(X_public_list)
     y_public = np.concatenate(y_public_list)
-    print(X_public.shape)
-    print(y_public.shape)
+    print("public dataset size is ", X_public.shape)
+    print("public labels are ", np.unique(y_public)[0])
 
     X_private_list = [np.vstack(x) for x in X_private_lists]
     y_private_list = [np.concatenate(y) for y in y_private_lists]
+
+    for temp in y_private_list:
+        print("private labels are ", np.unique(temp))
 
     transforms_list = [transforms.ToTensor()]
     # if channel == 1:
@@ -111,6 +117,13 @@ def prepare_mnist_dataloaders(
         for i in range(client_num)
     ]
 
+    test_dataset = NumpyDataset(
+        x=dataset_test.test_data.numpy(),
+        y=dataset_test.test_labels.numpy(),
+        transform=transform,
+        return_idx=return_idx,
+    )
+
     g = torch.Generator()
     g.manual_seed(seed)
 
@@ -127,6 +140,25 @@ def prepare_mnist_dataloaders(
     except:
         public_dataloader = torch.utils.data.DataLoader(
             public_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+        )
+
+    print("prepare validation dataloader")
+    try:
+        validation_dataloader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+            generator=g,
+        )
+    except:
+        validation_dataloader = torch.utils.data.DataLoader(
+            test_dataset,
             batch_size=batch_size,
             shuffle=True,
             num_workers=num_workers,
@@ -158,7 +190,7 @@ def prepare_mnist_dataloaders(
             for i in range(client_num)
         ]
 
-    return public_dataloader, local_dataloaders, local_identities
+    return public_dataloader, local_dataloaders, validation_dataloader, local_identities
 
 
 def prepare_att_dataloaders(
@@ -311,7 +343,7 @@ def prepare_att_dataloaders(
             for i in range(client_num)
         ]
 
-    return public_dataloader, local_dataloaders, local_identities
+    return public_dataloader, local_dataloaders, None, local_identities
 
 
 def prepare_lfw_dataloaders(
@@ -402,6 +434,7 @@ def prepare_lfw_dataloaders(
 
     X_public_list = []
     y_public_list = []
+    is_sensitive_public_list = []
     X_private_lists = [[] for _ in range(client_num)]
     y_private_lists = [[] for _ in range(client_num)]
 
@@ -414,9 +447,11 @@ def prepare_lfw_dataloaders(
         else:
             X_public_list.append(cv2.imread(path))
             y_public_list.append(name2id[name])
+            is_sensitive_public_list.append(1 - ismask)
 
     X_public = np.stack(X_public_list)
     y_public = np.array(y_public_list)
+    is_sensitive_public = np.array(is_sensitive_public_list)
     X_private_list = [np.stack(x) for x in X_private_lists]
     y_private_list = [np.array(y) for y in y_private_lists]
 
@@ -497,7 +532,224 @@ def prepare_lfw_dataloaders(
             for i in range(client_num)
         ]
 
-    return public_dataloader, local_dataloaders, local_identities
+    return (
+        public_dataloader,
+        local_dataloaders,
+        None,
+        local_identities,
+        is_sensitive_public,
+    )
+
+
+def prepare_facescrub_dataloaders(
+    data_folder="/content",
+    client_num=2,
+    channel=1,
+    batch_size=1,
+    seed=42,
+    num_workers=2,
+    height=64,
+    width=64,
+    num_classes=530,
+    crop=True,
+    target_celeblities_num=100,
+    blur_strength=10,
+):
+    np_resized_imgs = np.load(f"{data_folder}/resized_faces.npy")
+    np_resized_labels = np.load(f"{data_folder}/resized_labels.npy")
+
+    res = np.unique(np_resized_labels, return_counts=True)
+    name2id = {name: i for i, name in enumerate(res[0])}
+    id2name = {v: k for k, v in name2id.items()}
+
+    local_identities_names = np.array_split(
+        random.sample(res[0].tolist(), target_celeblities_num),
+        client_num,
+    )
+    local_identities = [
+        [name2id[name] for name in name_list] for name_list in local_identities_names
+    ]
+
+    name_id2client_id = {}
+    for client_id, name_id_list in enumerate(local_identities):
+        for idx in name_id_list:
+            name_id2client_id[idx] = client_id
+
+    X_public_list = []
+    y_public_list = []
+    is_sensitive_public_list = []
+    X_private_lists = [[] for _ in range(client_num)]
+    y_private_lists = [[] for _ in range(client_num)]
+
+    for i in range(res[0].shape[0]):
+        if i in name_id2client_id:
+            idx = np.where(np_resized_labels == id2name[i])[0]
+            sep_idxs = np.array_split(idx, 2)
+            temp_array = []
+            for temp_idx in range(np_resized_imgs[sep_idxs[0]].shape[0]):
+                temp_array.append(
+                    cv2.blur(
+                        np_resized_imgs[sep_idxs[0]][temp_idx],
+                        (blur_strength, blur_strength),
+                    )
+                )
+            X_public_list.append(np.stack(temp_array))
+            y_public_list += [i for _ in range(len(sep_idxs[0]))]
+            is_sensitive_public_list += [0 for _ in range(len(sep_idxs[0]))]
+            X_private_lists[name_id2client_id[i]].append(np_resized_imgs[sep_idxs[0]])
+            y_private_lists[name_id2client_id[i]] += [
+                i for _ in range(len(sep_idxs[0]))
+            ]
+        else:
+            idx = np.where(np_resized_labels == id2name[i])[0]
+            X_public_list.append(np_resized_imgs[idx])
+            y_public_list += [i for _ in range(len(idx))]
+            is_sensitive_public_list += [1 for _ in range(len(idx))]
+
+    X_public = np.concatenate(X_public_list)
+    y_public = np.array(y_public_list)
+    is_sensitive_public = np.array(is_sensitive_public_list)
+    X_private_list = [np.concatenate(x) for x in X_private_lists]
+    y_private_list = [np.array(y) for y in y_private_lists]
+
+    X_public_train, X_public_test, y_public_train, y_public_test = train_test_split(
+        X_public, y_public, test_size=0.1, random_state=42, stratify=y_public_list
+    )
+
+    X_private_train_list = []
+    X_private_test_list = []
+    y_private_train_list = []
+    y_private_test_list = []
+
+    for X_private, y_private in zip(X_private_list, y_private_list):
+        (
+            X_private_train,
+            X_private_test,
+            y_private_train,
+            y_private_test,
+        ) = train_test_split(
+            X_private, y_private, test_size=0.1, random_state=42, stratify=y_private
+        )
+        X_private_train_list.append(X_private_train)
+        X_private_test_list.append(X_private_test)
+        y_private_train_list.append(y_private_train)
+        y_private_test_list.append(y_private_test)
+
+    X_test = np.concatenate(X_private_test_list + [X_public_test], axis=0)
+    y_test = np.concatenate(y_private_test_list + [y_public_test], axis=0)
+
+    transforms_list = [transforms.ToTensor()]
+    if channel == 1:
+        transforms_list.append(transforms.Grayscale())
+    if crop:
+        transforms_list.append(transforms.CenterCrop((max(height, width))))
+    else:
+        transforms_list.append(transforms.Resize((height, width)))
+    if channel == 1:
+        transforms_list.append(transforms.Normalize((0.5,), (0.5,)))
+    else:
+        transforms_list.append(transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
+    transform = transforms.Compose(transforms_list)
+    return_idx = True
+
+    public_dataset_train = NumpyDataset(
+        x=X_public_train,
+        y=y_public_train,
+        transform=transform,
+        return_idx=return_idx,
+    )
+
+    private_dataset_train_list = [
+        NumpyDataset(
+            x=X_private_train_list[i],
+            y=y_private_train_list[i],
+            transform=transform,
+            return_idx=return_idx,
+        )
+        for i in range(client_num)
+    ]
+
+    test_dataset = NumpyDataset(
+        x=X_test,
+        y=y_test,
+        transform=transform,
+        return_idx=return_idx,
+    )
+
+    g = torch.Generator()
+    g.manual_seed(seed)
+
+    print("prepare public dataloader")
+    try:
+        public_train_dataloader = torch.utils.data.DataLoader(
+            public_dataset_train,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+            generator=g,
+        )
+    except:
+        public_train_dataloader = torch.utils.data.DataLoader(
+            public_dataset_train,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+        )
+
+    print("prepare local dataloader")
+    try:
+        local_train_dataloaders = [
+            torch.utils.data.DataLoader(
+                private_dataset_train_list[i],
+                batch_size=batch_size,
+                shuffle=True,
+                num_workers=num_workers,
+                worker_init_fn=worker_init_fn,
+                generator=g,
+            )
+            for i in range(client_num)
+        ]
+    except:
+        local_train_dataloaders = [
+            torch.utils.data.DataLoader(
+                private_dataset_train_list[i],
+                batch_size=batch_size,
+                shuffle=True,
+                num_workers=num_workers,
+                worker_init_fn=worker_init_fn,
+            )
+            for i in range(client_num)
+        ]
+
+    try:
+        test_dataloader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+            generator=g,
+        )
+    except:
+        test_dataloader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+        )
+
+    print("sensitive labels are", sorted(sum(local_identities, [])))
+
+    return (
+        public_train_dataloader,
+        local_train_dataloaders,
+        test_dataloader,
+        local_identities,
+        is_sensitive_public,
+    )
 
 
 def prepare_lag_dataloaders(
@@ -602,6 +854,7 @@ def prepare_lag_dataloaders(
     print(df[df["alloc"] == 0]["path"].tolist()[:10])
 
     X_public = np.stack([cv2.imread(p) for p in df[df["alloc"] == 0]["path"].tolist()])
+    is_sensitive_public = df[df["alloc"] == 0]["ay"].values
     y_public = np.array([name2id[n] for n in df[df["alloc"] == 0]["name"].tolist()])
     X_private_list = [
         np.stack([cv2.imread(p) for p in df[df["alloc"] == i + 1]["path"].tolist()])
@@ -689,7 +942,13 @@ def prepare_lag_dataloaders(
             for i in range(client_num)
         ]
 
-    return public_dataloader, local_dataloaders, local_identities
+    return (
+        public_dataloader,
+        local_dataloaders,
+        None,
+        local_identities,
+        is_sensitive_public,
+    )
 
 
 def prepare_dataloaders(dataset_name, *args, **kwargs):
@@ -713,5 +972,7 @@ def prepare_dataloaders(dataset_name, *args, **kwargs):
         return prepare_att_dataloaders(*args, **kwargs)
     elif dataset_name == "MNIST":
         return prepare_mnist_dataloaders(*args, **kwargs)
+    elif dataset_name == "FaceScrub":
+        return prepare_facescrub_dataloaders(*args, **kwargs)
     else:
         raise NotImplementedError(f"{dataset_name} is not supported")

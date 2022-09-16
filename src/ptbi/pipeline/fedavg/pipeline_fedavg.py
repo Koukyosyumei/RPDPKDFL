@@ -44,7 +44,7 @@ def attack_fedavg(
     device = torch.device("cuda:0") if torch.cuda.is_available() else "cpu"
 
     # --- Setup DataLoaders --- #
-    (_, local_dataloaders, local_identities,) = prepare_dataloaders(
+    (_, local_dataloaders, _, local_identities, _) = prepare_dataloaders(
         dataset_name=dataset,
         client_num=client_num,
         batch_size=batch_size,

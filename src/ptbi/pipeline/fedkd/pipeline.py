@@ -74,7 +74,13 @@ def attack_fedkd(
     print("device is ", device)
 
     # --- Setup DataLoaders --- #
-    (public_dataloader, local_dataloaders, local_identities,) = prepare_dataloaders(
+    (
+        public_train_dataloader,
+        local_train_dataloaders,
+        test_dataloader,
+        local_identities,
+        is_sensitive_flag,
+    ) = prepare_dataloaders(
         dataset_name=dataset,
         client_num=client_num,
         batch_size=batch_size,
@@ -123,7 +129,7 @@ def attack_fedkd(
     # --- Setup loss function --- #
     criterion = torch.nn.MSELoss()
 
-    if ablation_study in [0, 1, 3]:
+    if ablation_study in [0, 1, 3, 4]:
         inv_alpha = get_alpha(output_dim, inv_pj)
         pi = get_pi(output_dim, inv_alpha)
     elif ablation_study == 2:
@@ -138,10 +144,14 @@ def attack_fedkd(
     else:
         id2label = {la: la for la in sum(local_identities, [])}
 
+    if ablation_study in [3, 4]:
+        is_sensitive_flag = None
+
     if attack_type == "ptbi":
         if ablation_study != 3:
             inv_train = get_inv_train_fn_ptbi(
                 client_num,
+                is_sensitive_flag,
                 local_identities,
                 inv_transform,
                 return_idx,
@@ -219,8 +229,9 @@ def attack_fedkd(
     api = get_fedkd_api(
         fedkd_type,
         model_class,
-        public_dataloader,
-        local_dataloaders,
+        public_train_dataloader,
+        local_train_dataloaders,
+        test_dataloader,
         num_classes,
         client_num,
         config_dataset["channel"],
@@ -245,8 +256,8 @@ def attack_fedkd(
             inv_path_list,
             inv,
             inv_optimizer,
-            public_dataloader,
-            local_dataloaders,
+            public_train_dataloader,
+            local_train_dataloaders,
             dataset,
             output_dim,
             inv_pj,
@@ -260,6 +271,7 @@ def attack_fedkd(
     elif evaluation_type == "full":
         reconstruct_all_possible_targets(
             attack_type,
+            is_sensitive_flag,
             local_identities,
             inv_path_list,
             inv,
@@ -277,8 +289,8 @@ def attack_fedkd(
         result = evaluation_full(
             client_num,
             num_classes,
-            public_dataloader,
-            local_dataloaders,
+            public_train_dataloader,
+            local_train_dataloaders,
             local_identities,
             id2label,
             attack_type,

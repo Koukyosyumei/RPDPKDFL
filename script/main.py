@@ -42,6 +42,13 @@ def add_args(parser):
     )
 
     parser.add_argument(
+        "--tot_class_num", type=int, default=300, help="number of total classes"
+    )
+    parser.add_argument(
+        "--tar_class_num", type=int, default=30, help="number of target classes"
+    )
+
+    parser.add_argument(
         "-g", "--random_seed", type=int, default=42, help="seed of random generator"
     )
 
@@ -61,7 +68,7 @@ def add_args(parser):
         "-u",
         "--blur_strength",
         type=int,
-        default=10,
+        default=15,
         help="strength of blur",
     )
 
@@ -89,7 +96,8 @@ def add_args(parser):
         help="type of ablation study; 0:normal(Q=p'_{c_i, j}+p'_{s, j}+\alpha H(p'_s)), \
                                       1:without entropy (Q=p'_{c_i, j}+p'_{s, j})\
                                       2:without p'_{s, j} (Q=p'_{c_i, j}+\alpha H(p'_s))\
-                                      3:without local logit (Q=p'_{s, j}+\alpha H(p'_s))",
+                                      3:without local logit (Q=p'_{s, j}+\alpha H(p'_s))\
+                                      4:without sensitive flag",
     )
 
     args = parser.parse_args()
@@ -101,6 +109,7 @@ if __name__ == "__main__":
     parsed_args = add_args(parser)
 
     args = config_base
+    args["num_classes"] = parsed_args.tot_class_num
     args["dataset"] = parsed_args.dataset
     args["fedkd_type"] = parsed_args.fedkd_type
 
@@ -112,8 +121,10 @@ if __name__ == "__main__":
         args["num_classes"] = 40
     elif args["dataset"] == "MNIST":
         args["num_classes"] = 10
+    elif args["dataset"] == "FaceScrub":
+        args["num_classes"] = 530
 
-    if parsed_args.ablation_study == 0:
+    if parsed_args.ablation_study in [0, 4]:
         if parsed_args.fedkd_type == "DSFL":
             if parsed_args.alpha < 0:
                 args["inv_pj"] = 1.5 * (
@@ -159,9 +170,13 @@ if __name__ == "__main__":
     args["config_dataset"] = config_dataset[args["dataset"]]
     args["config_dataset"]["data_folder"] = parsed_args.path_to_datafolder
     args["config_fedkd"] = config_fedkd[args["fedkd_type"]]
+    args["config_fedkd"]["weight_decay"] = args["config_dataset"]["weight_decay"]
+    args["config_dataset"].pop("weight_decay")
 
-    if args["dataset"] in ["AT&T", "MNIST"]:
+    if args["dataset"] in ["AT&T", "MNIST", "FaceScrub"]:
         args["config_dataset"]["blur_strength"] = parsed_args.blur_strength
+
+    args["config_dataset"]["target_celeblities_num"] = parsed_args.tar_class_num
 
     if args["dataset"] in ["MNIST"]:
         args["model_type"] = "LM"
@@ -180,9 +195,16 @@ if __name__ == "__main__":
     args.pop("alpha")
     args.pop("random_seed")
 
+    print("Start experiment ...")
+    print("dataset is ", args["dataset"])
+    print("#classes is ", args["num_classes"])
+    print("#target classes is ", args["config_dataset"]["target_celeblities_num"])
+
     result = attack_fedkd(
         seed=parsed_args.random_seed, output_dir=run_dir, temp_dir=run_dir, **args
     )
+
+    print("Results:")
     print(result)
 
     with open(os.path.join(run_dir, "result.txt"), "w") as convert_file:

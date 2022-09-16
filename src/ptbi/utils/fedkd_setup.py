@@ -19,6 +19,7 @@ def setup_fedmd(
     model_class,
     public_dataloader,
     local_dataloaders,
+    test_dataloader,
     client_num=2,
     channel=1,
     lr=0.01,
@@ -31,6 +32,7 @@ def setup_fedmd(
     transfer_epoch_private=1,
     server_training_epoch=1,
     use_server_model=True,
+    weight_decay=0.01,
     input_dim=112 * 94,
     output_dim=20,
     round_decimal=None,
@@ -51,7 +53,7 @@ def setup_fedmd(
         for i in range(client_num)
     ]
     client_optimizers = [
-        optim.Adam(client.parameters(), lr=lr, weight_decay=0.0001)
+        optim.Adam(client.parameters(), lr=lr, weight_decay=weight_decay)
         for client in clients
     ]
 
@@ -61,7 +63,7 @@ def setup_fedmd(
             input_dim=input_dim, output_dim=output_dim, channel=channel
         ).to(device)
         server_optimizer = optim.Adam(
-            server_model.parameters(), lr=lr, weight_decay=0.0001
+            server_model.parameters(), lr=lr, weight_decay=weight_decay
         )
         server = FedMDServer(clients, server_model=server_model, device=device).to(
             device
@@ -76,6 +78,7 @@ def setup_fedmd(
         clients=clients,
         public_dataloader=public_dataloader,
         local_dataloaders=local_dataloaders,
+        validation_dataloader=test_dataloader,
         criterion=criterion,
         client_optimizers=client_optimizers,
         server_optimizer=server_optimizer,
@@ -96,6 +99,7 @@ def setup_fedgems(
     model_class,
     public_dataloader,
     local_dataloaders,
+    test_dataloader,
     num_classes=20,
     channel=1,
     client_num=2,
@@ -107,6 +111,7 @@ def setup_fedgems(
     epoch_server_on_publicdataset=10,
     device="cpu",
     criterion=nn.CrossEntropyLoss(),
+    weight_decay=0.01,
     input_dim=112 * 94,
     output_dim=20,
     round_decimal=None,
@@ -126,7 +131,7 @@ def setup_fedgems(
         for i in range(client_num)
     ]
     client_optimizers = [
-        optim.Adam(client.parameters(), lr=lr, weight_decay=0.0001)
+        optim.Adam(client.parameters(), lr=lr, weight_decay=weight_decay)
         for client in clients
     ]
 
@@ -148,7 +153,7 @@ def setup_fedgems(
         epsilon=epsilon,
         device=device,
     ).to(device)
-    server_optimizer = optim.Adam(server.parameters(), lr=lr, weight_decay=0.0001)
+    server_optimizer = optim.Adam(server.parameters(), lr=lr, weight_decay=weight_decay)
 
     # set up FedGEMS
     fedgems_api = FedGEMSAPI(
@@ -156,6 +161,7 @@ def setup_fedgems(
         clients=clients,
         public_dataloader=public_dataloader,
         local_dataloaders=local_dataloaders,
+        validation_dataloader=test_dataloader,
         server_optimizer=server_optimizer,
         client_optimizers=client_optimizers,
         criterion=criterion,
@@ -174,6 +180,7 @@ def setup_dsfl(
     model_class,
     public_dataloader,
     local_dataloaders,
+    test_dataloader,
     channel=1,
     client_num=2,
     lr=0.01,
@@ -185,6 +192,7 @@ def setup_dsfl(
     epoch_global_distillation=1,
     device="cpu",
     criterion=nn.CrossEntropyLoss(),
+    weight_decay=0.01,
     input_dim=112 * 94,
     output_dim=20,
     round_decimal=None,
@@ -224,7 +232,7 @@ def setup_dsfl(
         for i in range(client_num)
     ]
     client_optimizers = [
-        optim.Adam(client.parameters(), lr=lr, weight_decay=0.0001)
+        optim.Adam(client.parameters(), lr=lr, weight_decay=weight_decay)
         for client in clients
     ]
 
@@ -240,7 +248,7 @@ def setup_dsfl(
         era_temperature=era_temperature,
         device=device,
     ).to(device)
-    server_optimizer = optim.Adam(server.parameters(), lr=lr, weight_decay=0.0001)
+    server_optimizer = optim.Adam(server.parameters(), lr=lr, weight_decay=weight_decay)
 
     # set up FedGEMS
     fedgems_api = DSFLAPI(
@@ -253,6 +261,7 @@ def setup_dsfl(
         device,
         server_optimizer,
         client_optimizers,
+        validation_dataloader=test_dataloader,
         epoch_local_training=epoch_local_training,
         epoch_local_distillation=epoch_local_distillation,
         epoch_global_distillation=epoch_global_distillation,
@@ -265,8 +274,9 @@ def setup_dsfl(
 def get_fedkd_api(
     fedkd_type,
     model_class,
-    public_dataloader,
-    local_dataloaders,
+    public_train_dataloader,
+    local_train_dataloaders,
+    test_dataloader,
     num_classes,
     client_num,
     channel,
@@ -281,8 +291,9 @@ def get_fedkd_api(
     if fedkd_type == "FedGEMS":
         api = setup_fedgems(
             model_class,
-            public_dataloader,
-            local_dataloaders,
+            public_train_dataloader,
+            local_train_dataloaders,
+            test_dataloader,
             num_classes=num_classes,
             client_num=client_num,
             channel=channel,
@@ -298,8 +309,9 @@ def get_fedkd_api(
     elif fedkd_type == "FedMD":
         api = setup_fedmd(
             model_class,
-            public_dataloader,
-            local_dataloaders,
+            public_train_dataloader,
+            local_train_dataloaders,
+            test_dataloader,
             client_num=client_num,
             channel=channel,
             lr=lr,
@@ -314,8 +326,9 @@ def get_fedkd_api(
     elif fedkd_type == "DSFL":
         api = setup_dsfl(
             model_class,
-            public_dataloader,
-            local_dataloaders,
+            public_train_dataloader,
+            local_train_dataloaders,
+            test_dataloader,
             client_num=client_num,
             channel=channel,
             lr=lr,
