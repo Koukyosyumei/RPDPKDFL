@@ -209,6 +209,7 @@ def reconstruct_all_possible_targets(
 
 
 def reconstruct_pair_all_possible_targets(
+    ae,
     attack_type,
     is_sensitive_flag,
     local_identities,
@@ -251,10 +252,28 @@ def reconstruct_pair_all_possible_targets(
             dummy_x = torch.zeros(1, 3, 128, 64).to(device)
             x_nonsensitive = X_pub_nonsensitive_tensor[
                 torch.where(y_pub_nonsensitive_tensor == target_label)
-            ][[0]]
-            dummy_x = torch.concat(
-                [torch.zeros(1, 3, 64, 64), x_nonsensitive], dim=2
-            ).to(device)
+            ][[0]].to(device)
+            dummy_x_sensitive = ae(x_nonsensitive)
+
+            plt.imshow(
+                cv2.cvtColor(
+                    dummy_x_sensitive.clone().detach().numpy(),
+                    cv2.COLOR_BGR2RGB,
+                )
+            )
+            plt.savefig(
+                os.path.join(
+                    output_dir,
+                    f"ae_sensitive_{target_label}_{target_client_id}_{attack_type}.png",
+                )
+            )
+
+            dummy_x = torch.concat([dummy_x_sensitive, x_nonsensitive], dim=2).to(
+                device
+            )
+            # dummy_x = torch.concat(
+            #    [torch.zeros(1, 3, 64, 64), x_nonsensitive], dim=2
+            # ).to(device)
 
             dummy_x.requires_grad = True
             best_x = dummy_x.clone()
@@ -272,7 +291,7 @@ def reconstruct_pair_all_possible_targets(
                     best_score = y_pred[:, [target_label]].item()
 
                 grad = dummy_x.grad
-                dummy_x = dummy_x + 0.3 * grad
+                dummy_x = dummy_x + 0.1 * grad
                 dummy_x = torch.clip(dummy_x, 0, 1)
 
             np.save(

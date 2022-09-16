@@ -82,7 +82,7 @@ def add_args(parser):
 
     parser.add_argument(
         "-m",
-        "--path_to_modelfolder",
+        "--path_to_model",
         type=str,
         default="/content/",
         help="path to the trained model folder",
@@ -212,7 +212,7 @@ if __name__ == "__main__":
         seed=parsed_args.random_seed,
         output_dir=run_dir,
         temp_dir=run_dir,
-        model_dir=parsed_args.path_to_modelfolder,
+        model_path=parsed_args.path_to_model,
         **args,
     )
 

@@ -17,6 +17,7 @@ from ...attack.tbi_train import (
     get_inv_train_fn_tbi,
     get_paired_inv_train_fn_ptbi,
 )
+from ...model.invmodel import AE
 from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
@@ -55,7 +56,7 @@ def pair_attack_fedkd(
     config_attack_nes=None,
     output_dir="",
     temp_dir="./",
-    model_dir="./",
+    model_path="./",
 ):
     # --- Fix seed --- #
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -79,6 +80,9 @@ def pair_attack_fedkd(
     # --- Setup device --- #
     device = torch.device("cuda:0") if torch.cuda.is_available() else "cpu"
     print("device is ", device)
+
+    ae = AE().to(device)
+    ae.load_state_dict(torch.load(model_path))
 
     # --- Setup DataLoaders --- #
     (
@@ -259,6 +263,7 @@ def pair_attack_fedkd(
     y_pub_nonsensitive_tensor = y_pub_tensor[nonsensitive_idx]
 
     result = reconstruct_pair_all_possible_targets(
+        ae,
         attack_type,
         is_sensitive_flag,
         local_identities,
