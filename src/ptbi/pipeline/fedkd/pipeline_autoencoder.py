@@ -163,5 +163,6 @@ def ae_attack_fedkd(
         )
         plt.savefig(f"{epoch}.png")
 
+        torch.save(x1.detach().cpu(), os.path.join(output_dir, f"img_{epoch}.pth"))
         if epoch % 50 == 0:
             torch.save(ae.state_dict(), os.path.join(output_dir, f"ae_{epoch}.pth"))

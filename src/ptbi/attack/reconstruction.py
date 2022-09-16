@@ -244,12 +244,15 @@ def reconstruct_pair_all_possible_targets(
 
         print(target_ids)
 
-        for celeb_id in target_ids:
-            target_label = id2label[celeb_id]
+        for target_label in range(1000):
+            if target_label not in target_ids:
+                continue
+            # for celeb_id in target_ids:
+            # target_label = id2label[celeb_id]
 
             # dummy_x = torch.zeros(1, 3, 128, 64).to(device)
 
-            dummy_x = torch.zeros(1, 3, 128, 64).to(device)
+            # dummy_x_sensitive = torch.zeros(1, 3, 64, 64).to(device)
             x_nonsensitive = X_pub_nonsensitive_tensor[
                 torch.where(y_pub_nonsensitive_tensor == target_label)
             ][[0]].to(device)
@@ -285,19 +288,25 @@ def reconstruct_pair_all_possible_targets(
             best_score = -1 * float("inf")
             # best_epoch = 0
 
+            optimizer = torch.optim.LBFGS([dummy_x], lr=0.1)
+
+            obj = lambda dummy_x: -1 * inv(dummy_x)[:, [target_label]]
+
             for i in range(100):
-                dummy_x = dummy_x.detach()
-                dummy_x.requires_grad = True
-                y_pred = inv(dummy_x)
-                y_pred[:, [target_label]].backward()
+                optimizer.zero_grad()
+                # dummy_x = dummy_x.detach()
+                # dummy_x.requires_grad = True
+                loss = obj(dummy_x)
+                loss.backward()
+                optimizer.step(lambda: obj(dummy_x))
 
-                if y_pred[:, [target_label]].item() > best_score:
+                if (-1 * loss).item() > best_score:
                     best_x = dummy_x.clone()
-                    best_score = y_pred[:, [target_label]].item()
+                    best_score = (-1 * loss).item()
 
-                grad = dummy_x.grad
-                dummy_x = dummy_x + 0.1 * grad
-                dummy_x = torch.clip(dummy_x, 0, 1)
+                # grad = dummy_x.grad
+                # dummy_x = dummy_x + 10 * grad
+                # dummy_x = torch.clip(dummy_x, 0, 1)
 
             np.save(
                 os.path.join(output_dir, f"{target_label}_{target_client_id}"),
