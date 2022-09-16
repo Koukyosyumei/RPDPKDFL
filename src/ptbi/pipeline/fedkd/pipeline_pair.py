@@ -83,6 +83,7 @@ def pair_attack_fedkd(
 
     ae = AE().to(device)
     ae.load_state_dict(torch.load(model_path))
+    ae = ae.eval()
 
     # --- Setup DataLoaders --- #
     (
