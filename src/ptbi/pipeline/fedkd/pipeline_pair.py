@@ -236,16 +236,21 @@ def pair_attack_fedkd(
         pickle.dump(fedkd_result, f)
 
     result = reconstruct_pair_all_possible_targets(
-        client_num,
-        num_classes,
-        public_train_dataloader,
-        local_train_dataloaders,
-        local_identities,
-        id2label,
         attack_type,
+        is_sensitive_flag,
+        local_identities,
+        inv_path_list,
+        inv,
+        inv_optimizer,
+        output_dim,
+        inv_pj,
+        pi,
+        id2label,
+        client_num,
         output_dir,
-        beta=beta,
-        epoch=num_communication,
+        device,
+        ablation_study,
+        base_name="",
     )
     """
     # --- Attack --- #
