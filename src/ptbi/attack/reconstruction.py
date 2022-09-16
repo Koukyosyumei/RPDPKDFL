@@ -257,7 +257,12 @@ def reconstruct_pair_all_possible_targets(
 
             plt.imshow(
                 cv2.cvtColor(
-                    dummy_x_sensitive.clone().detach().cpu().numpy(),
+                    dummy_x_sensitive[0]
+                    .clone()
+                    .detach()
+                    .cpu()
+                    .numpy()
+                    .transpose(1, 2, 0),
                     cv2.COLOR_BGR2RGB,
                 )
             )
@@ -268,9 +273,9 @@ def reconstruct_pair_all_possible_targets(
                 )
             )
 
-            dummy_x = torch.concat([dummy_x_sensitive, x_nonsensitive], dim=2).to(
-                device
-            )
+            dummy_x = torch.concat(
+                [dummy_x_sensitive.detach().clone(), x_nonsensitive], dim=2
+            ).to(device)
             # dummy_x = torch.concat(
             #    [torch.zeros(1, 3, 64, 64), x_nonsensitive], dim=2
             # ).to(device)
