@@ -11,7 +11,8 @@ from ...model.invmodel import AE
 from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
-from ...utils.tbi_setup import setup_tbi_optimizers, setup_training_based_inversion
+from ...utils.tbi_setup import (setup_tbi_optimizers,
+                                setup_training_based_inversion)
 from ..evaluation.evaluation import evaluation_full
 
 

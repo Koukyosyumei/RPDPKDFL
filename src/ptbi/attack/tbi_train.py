@@ -2,7 +2,7 @@ import os
 
 import torch
 
-from ..utils.tbi_setup import setup_inv_dataloader
+from ..utils.tbi_setup import setup_our_inv_dataloader, setup_tbi_inv_dataloader
 from .reconstruction import reconstruct_all_possible_targets
 
 
@@ -85,7 +85,7 @@ def get_our_inv_train_func(
             # --- Prepare Public Dataset --- #
             # target_labels = local_identities[target_client_id]
             target_labels = sum(local_identities, [])
-            prediction_dataloader = setup_inv_dataloader(
+            prediction_dataloader = setup_our_inv_dataloader(
                 target_labels,
                 is_sensitive_flag,
                 api,
@@ -174,7 +174,7 @@ def get_tbi_inv_train_func(
             # --- Prepare Public Dataset --- #
             # target_labels = local_identities[target_client_id]
             target_labels = sum(local_identities, [])
-            prediction_dataloader = setup_inv_dataloader(
+            prediction_dataloader = setup_tbi_inv_dataloader(
                 target_labels,
                 None,
                 api,
