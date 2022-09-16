@@ -253,7 +253,7 @@ def reconstruct_pair_all_possible_targets(
                 torch.where(y_pub_nonsensitive_tensor == target_label)
             ][[0]]
             dummy_x = torch.concat(
-                [x_nonsensitive, torch.zeros(1, 3, 64, 64)], dim=2
+                [torch.zeros(1, 3, 64, 64), x_nonsensitive], dim=2
             ).to(device)
 
             dummy_x.requires_grad = True
@@ -277,19 +277,36 @@ def reconstruct_pair_all_possible_targets(
                 dummy_x = torch.clip(dummy_x, 0, 1)
 
             np.save(
-                os.path.join(output_dir, f"{target_label}_{target_client_id}"), dummy_x
+                os.path.join(output_dir, f"{target_label}_{target_client_id}"),
+                best_x.detach().cpu().numpy()[0],
             )
-            plt.imshow(best_x.detach().cpu().numpy()[0].transpose(1, 2, 0))
-            # plt.imshow(
-            #    cv2.cvtColor(
-            #        best_x.detach().cpu().numpy()[0].transpose(1, 2, 0) * 0.5 + 0.5,
-            #        cv2.COLOR_BGR2RGB,
-            #    )
-            # )
+            best_x_sensitive = (
+                best_x.detach().cpu().numpy()[0].transpose(1, 2, 0)[64:] * 0.5 + 0.5
+            )
+            plt.imshow(
+                cv2.cvtColor(
+                    (best_x_sensitive - best_x_sensitive.min())
+                    / (best_x_sensitive.max() - best_x_sensitive.min()),
+                    cv2.COLOR_BGR2RGB,
+                )
+            )
             plt.savefig(
                 os.path.join(
                     output_dir,
-                    f"{base_name}_{target_label}_{target_client_id}_{attack_type}.png",
+                    f"sensitive_{target_label}_{target_client_id}_{attack_type}.png",
+                )
+            )
+
+            plt.imshow(
+                cv2.cvtColor(
+                    best_x.detach().cpu().numpy()[0].transpose(1, 2, 0),
+                    cv2.COLOR_BGR2RGB,
+                )
+            )
+            plt.savefig(
+                os.path.join(
+                    output_dir,
+                    f"concatenated_{target_label}_{target_client_id}_{attack_type}.png",
                 )
             )
 
