@@ -7,6 +7,7 @@ import torch
 import tqdm
 from skimage.metrics import structural_similarity as ssim
 
+from ...utils.loss import SSIMLoss
 from ...utils.utils_data import extract_transformd_dataset_from_dataloader
 
 
@@ -95,6 +96,7 @@ def evaluation_full(
     attack_type,
     output_dir,
     epoch=5,
+    device="cuda:0",
 ):
     print("evaluating the attack performance...")
 
@@ -124,6 +126,8 @@ def evaluation_full(
         private_dataset_label_list.append(temp_label)
     private_dataset_transformed = torch.cat(private_dataset_transformed_list)
     private_dataset_label = torch.cat(private_dataset_label_list)
+
+    ssim = SSIMLoss()
 
     for celeb_id in tqdm.tqdm(target_ids):
         label = id2label[celeb_id]
@@ -160,47 +164,38 @@ def evaluation_full(
         temp_path = glob.glob(
             os.path.join(output_dir, str(epoch) + "_" + str(label) + "_*")
         )[0]
-        best_img = cv2.cvtColor(
-            np.load(temp_path).transpose(1, 2, 0) * 0.5 + 0.5, cv2.COLOR_BGR2RGB
-        )
-        # best_img = reconstructed_img
 
-        ssim_private_list = [
-            ssim(
-                cv2.cvtColor(
-                    private_dataset_transformed[private_dataset_label == i]
-                    .mean(dim=0)
-                    .detach()
-                    .cpu()
-                    .numpy()
-                    .transpose(1, 2, 0)
-                    * 0.5
-                    + 0.5,
-                    cv2.COLOR_BGR2RGB,
-                ),
-                best_img,
-                multichannel=True,
-            )
-            for i in range(num_classes)
-        ]
-        ssim_public_list = [
-            ssim(
-                cv2.cvtColor(
-                    public_dataset_transformed[public_dataset_label == i]
-                    .mean(dim=0)
-                    .detach()
-                    .cpu()
-                    .numpy()
-                    .transpose(1, 2, 0)
-                    * 0.5
-                    + 0.5,
-                    cv2.COLOR_BGR2RGB,
-                ),
-                best_img,
-                multichannel=True,
-            )
-            for i in range(num_classes)
-        ]
+        best_img_tensor = torch.Tensor(np.load(temp_path)).to(device)
+        best_img_tensor_batch = torch.stack(
+            [best_img_tensor.clone() for _ in range(num_classes)]
+        )
+        best_img_tensor_batch = best_img_tensor_batch * 0.5 + 0.5
+        print(best_img_tensor_batch.shape)
+
+        private_data = torch.stack(
+            [
+                private_dataset_transformed[private_dataset_label == i].mean(dim=0)
+                for i in range(num_classes)
+            ]
+        )
+        private_data = private_data * 0.5 + 0.5
+        print(private_data.shape)
+
+        public_data = torch.stack(
+            [
+                public_dataset_transformed[public_dataset_label == i].mean(dim=0)
+                for i in range(num_classes)
+            ]
+        )
+        public_data = public_data * 0.5 + 0.5
+        print(public_data.shape)
+
+        ssim_private_list = (
+            ssim(best_img_tensor_batch, private_data, False).detach().cpu().numpy()
+        )
+        ssim_public_list = (
+            ssim(best_img_tensor_batch, public_data, False).detach().cpu().numpy()
+        )
 
         best_label = np.nanargmax(ssim_private_list + ssim_public_list)
         ssim_private = ssim_private_list[label]
