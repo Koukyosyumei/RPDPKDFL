@@ -88,9 +88,6 @@ if __name__ == "__main__":
     elif args["dataset"] == "FaceScrub":
         args["num_classes"] = 530
 
-    args["ablation_study"] = parsed_args.ablation_study
-    args["inv_tempreature"] = parsed_args.softmax_tempreature
-
     args["config_dataset"] = config_dataset[args["dataset"]]
     args["config_dataset"]["data_folder"] = parsed_args.path_to_datafolder
     args["config_dataset"].pop("weight_decay")
