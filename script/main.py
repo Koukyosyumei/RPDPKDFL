@@ -23,21 +23,19 @@ def add_args(parser):
     )
 
     parser.add_argument(
-        "-d", "--dataset", type=str, default="LAG", help="type of dataset; LAG or LFW"
+        "--learning_rate", type=float, default=0.001, help="learning rate"
     )
-
-    parser.add_argument(
-        "-a",
-        "--attack_type",
-        type=str,
-        default="ptbi",
-        help="type of attack; ptbi or tbi",
-    )
-
-    parser.add_argument("-l", "--alpha", type=float, default=-1, help="alpha")
 
     parser.add_argument(
         "-c", "--client_num", type=int, default=10, help="number of clients"
+    )
+
+    parser.add_argument(
+        "--random_seed", type=int, default=42, help="seed of random generator"
+    )
+
+    parser.add_argument(
+        "-d", "--dataset", type=str, default="LAG", help="type of dataset; LAG or LFW"
     )
 
     parser.add_argument(
@@ -48,12 +46,22 @@ def add_args(parser):
     )
 
     parser.add_argument(
-        "-g", "--random_seed", type=int, default=42, help="seed of random generator"
+        "-u",
+        "--blur_strength",
+        type=int,
+        default=15,
+        help="strength of blur",
     )
 
     parser.add_argument(
-        "-r", "--learning_rate", type=float, default=0.001, help="learning rate"
+        "-a",
+        "--attack_type",
+        type=str,
+        default="ptbi",
+        help="type of attack; ptbi or tbi",
     )
+
+    parser.add_argument("--gamma", type=float, default=0.1, help="gamma")
 
     parser.add_argument(
         "-s",
@@ -61,14 +69,6 @@ def add_args(parser):
         type=float,
         default=1.0,
         help="tempreature $\tau$",
-    )
-
-    parser.add_argument(
-        "-u",
-        "--blur_strength",
-        type=int,
-        default=15,
-        help="strength of blur",
     )
 
     parser.add_argument(
@@ -155,11 +155,9 @@ if __name__ == "__main__":
     run_dir = os.path.join(parsed_args.output_folder, run_id)
     os.makedirs(run_dir)
 
-    args["alpha"] = parsed_args.alpha
     args["random_seed"] = parsed_args.random_seed
     with open(os.path.join(run_dir, "args.txt"), "w") as convert_file:
         convert_file.write(str(args))
-    args.pop("alpha")
     args.pop("random_seed")
 
     print("Start experiment ...")
