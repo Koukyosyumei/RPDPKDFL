@@ -17,18 +17,21 @@ def reconstruct_all_possible_targets(
 ):
     target_ids = sum(local_identities, [])
 
-    for celeb_id in target_ids:
-        target_label = id2label[celeb_id]
-        dummy_pred_local = torch.zeros(1, output_dim).to(device)
-        dummy_pred_local[:, target_label] = 1.0
-        x_rec = inv(dummy_pred_local.reshape(1, -1, 1, 1))
+    target_labels = [id2label[celeb_id] for celeb_id in target_ids]
+    target_labels_batch = np.array_split(target_labels, int(len(target_labels) / 64))
 
-        np.save(
-            os.path.join(
-                output_dir,
-                f"{base_name}_{target_label}_{attack_type}",
-            ),
-            x_rec[0].detach().cpu().numpy(),
-        )
+    for label_batch in target_labels_batch:
+        label_batch_tensor = torch.eye(output_dim)[label_batch]
+        xs_rec = inv(label_batch_tensor.reshape(len(label_batch), -1, 1, 1))
+        xs_rec_array = xs_rec.detach().cpu().numpy()
+
+        for i in range(len(label_batch)):
+            np.save(
+                os.path.join(
+                    output_dir,
+                    f"{base_name}_{i}_{attack_type}",
+                ),
+                xs_rec_array[i].detach().cpu().numpy(),
+            )
 
     return None
