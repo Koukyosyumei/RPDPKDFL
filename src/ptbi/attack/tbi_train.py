@@ -27,7 +27,7 @@ def train_our_inv_model(
     optimizer.zero_grad()
     x_rec_original = inv_model(y_pred_local.reshape(x.shape[0], -1, 1, 1))
     loss = criterion(x, x_rec_original) + gamma * criterion(
-        prior[y_label], x_rec_original
+        prior[y_label].to(device), x_rec_original
     )
     loss.backward()
     optimizer.step()
@@ -108,6 +108,7 @@ def get_our_inv_train_func(
                 prediction_dataloader,
                 prior,
                 device,
+                inv,
                 inv_optimizer,
                 criterion,
                 gamma=gamma,

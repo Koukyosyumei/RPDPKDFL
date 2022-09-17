@@ -1,3 +1,4 @@
+import math
 import os
 import pickle
 import random
@@ -135,24 +136,44 @@ def attack_fedkd(
         ae = ae.eval()
 
         nonsensitive_idxs = np.where(is_sensitive_flag == 0)[0]
-        x_pub_nonsensitive = public_train_dataloader.dataset.transform(
-            public_train_dataloader.dataset.x[nonsensitive_idxs]
+        x_pub_nonsensitive = torch.stack(
+            [
+                public_train_dataloader.dataset.transform(
+                    public_train_dataloader.dataset.x[nidx]
+                )
+                for nidx in nonsensitive_idxs
+            ]
         )
-        y_pub_nonsensitive = public_train_dataloader.dataset.y[nonsensitive_idxs]
+        y_pub_nonsensitive = torch.Tensor(
+            public_train_dataloader.dataset.y[nonsensitive_idxs]
+        )
+        print(x_pub_nonsensitive.shape)
+        print(y_pub_nonsensitive.shape)
 
         prior = torch.zeros(
             (
                 output_dim,
-                config_dataset["chanel"],
+                config_dataset["channel"],
                 config_dataset["height"],
-                config_dataset["with"],
+                config_dataset["width"],
             )
-        ).to(device)
+        )
 
         for lab in range(output_dim):
-            prior[lab] += ae(
-                x_pub_nonsensitive[torch.where(y_pub_nonsensitive == lab)].to(device)
-            ).mean(dim=0)
+            lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
+            lab_idxs_size = lab_idxs.shape[0]
+            if lab_idxs_size == 0:
+                continue
+            for batch_pos in np.array_split(
+                list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
+            ):
+                prior[lab] += (
+                    ae(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
+                    .detach()
+                    .cpu()
+                    .sum(dim=0)
+                    / lab_idxs_size
+                )
 
         inv_train = get_our_inv_train_func(
             client_num,
@@ -167,7 +188,6 @@ def attack_fedkd(
             inv_tempreature,
             inv_batch_size,
             inv_epoch,
-            inv_path_list,
             inv,
             inv_optimizer,
             prior,
