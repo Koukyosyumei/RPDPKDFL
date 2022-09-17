@@ -11,6 +11,7 @@ from ...model.invmodel import AE
 from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
+from ...utils.loss import SSIMLoss
 from ...utils.tbi_setup import setup_tbi_optimizers, setup_training_based_inversion
 from ..evaluation.evaluation import evaluation_full
 
@@ -20,6 +21,7 @@ def attack_fedkd(
     model_type="LM",
     invmodel_type="InvCNN",
     attack_type="ptbi",
+    loss_type="mse",
     dataset="AT&T",
     client_num=2,
     batch_size=4,
@@ -32,7 +34,6 @@ def attack_fedkd(
     inv_epoch=10,
     inv_lr=0.003,
     inv_tempreature=1.0,
-    beta=0.5,
     gamma=0.1,
     ablation_study=0,
     config_fedkd=None,
@@ -113,7 +114,14 @@ def attack_fedkd(
     inv_transform = setup_tbi_optimizers(dataset, config_dataset)
 
     # --- Setup loss function --- #
-    criterion = torch.nn.MSELoss()
+    if loss_type == "mse":
+        criterion = torch.nn.MSELoss()
+    elif loss_type == "ssim":
+        criterion = SSIMLoss()
+    else:
+        raise NotImplementedError(
+            f"{loss_type} is not supported. We currently support `mse` or `ssim`."
+        )
 
     if fedkd_type == "DSFL":
         id2label = {la: i for i, la in enumerate(np.unique(sum(local_identities, [])))}

@@ -104,6 +104,10 @@ def evaluation_full(
         f"{attack_type}_ssim_private": [],
         f"{attack_type}_ssim_public": [],
     }
+    mse_list = {
+        f"{attack_type}_mse_private": [],
+        f"{attack_type}_mse_public": [],
+    }
     result = {
         f"{attack_type}_success": 0,
         f"{attack_type}_too_close_to_public": 0,
@@ -187,6 +191,8 @@ def evaluation_full(
         ).to(device)
         public_data = public_data * 0.5 + 0.5
 
+        # evaluation on ssim
+
         ssim_private_list = np.zeros(num_classes)
         ssim_public_list = np.zeros(num_classes)
 
@@ -215,9 +221,23 @@ def evaluation_full(
         ssim_list[f"{attack_type}_ssim_private"].append(ssim_private)
         ssim_list[f"{attack_type}_ssim_public"].append(ssim_public)
 
+        # evaluation on mse
+
+        mse_list[f"{attack_type}_mse_private"].append(
+            torch.nn.functional.mse_loss(best_img_tensor, private_data[label]).item()
+        )
+        mse_list[f"{attack_type}_mse_public"].append(
+            torch.nn.functional.mse_loss(best_img_tensor, public_data[label]).item()
+        )
+
     for k in ssim_list.keys():
         if len(ssim_list[k]) > 0:
             result[k + "_mean"] = np.mean(ssim_list[k])
             result[k + "_std"] = np.std(ssim_list[k])
+
+    for k in mse_list.keys():
+        if len(mse_list[k]) > 0:
+            result[k + "_mean"] = np.mean(mse_list[k])
+            result[k + "_std"] = np.std(mse_list[k])
 
     return result

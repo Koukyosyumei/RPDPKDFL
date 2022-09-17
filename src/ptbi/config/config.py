@@ -93,6 +93,7 @@ config_base = {
     "num_classes": 1000,
     "inv_epoch": 3,
     "inv_lr": 0.00003,
+    "loss_type": "mse",
 }
 
 config_gradinvattack = {
