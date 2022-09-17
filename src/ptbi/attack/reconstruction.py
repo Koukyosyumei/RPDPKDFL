@@ -21,7 +21,7 @@ def reconstruct_all_possible_targets(
     target_labels_batch = np.array_split(target_labels, int(len(target_labels) / 64))
 
     for label_batch in target_labels_batch:
-        label_batch_tensor = torch.eye(output_dim)[label_batch]
+        label_batch_tensor = torch.eye(output_dim)[label_batch].to(device)
         xs_rec = inv(label_batch_tensor.reshape(len(label_batch), -1, 1, 1))
         xs_rec_array = xs_rec.detach().cpu().numpy()
 
