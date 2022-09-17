@@ -4,6 +4,7 @@ import os
 import cv2
 import numpy as np
 import torch
+import tqdm
 from skimage.metrics import structural_similarity as ssim
 
 from ...utils.utils_data import extract_transformd_dataset_from_dataloader
@@ -122,7 +123,7 @@ def evaluation_full(
     private_dataset_transformed = torch.cat(private_dataset_transformed_list)
     private_dataset_label = torch.cat(private_dataset_label_list)
 
-    for celeb_id in target_ids:
+    for celeb_id in tqdm.tqdm(target_ids):
         label = id2label[celeb_id]
 
         np.save(
