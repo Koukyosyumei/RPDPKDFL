@@ -93,7 +93,6 @@ def evaluation_full(
     id2label,
     attack_type,
     output_dir,
-    beta=0.5,
     epoch=5,
 ):
     ssim_list = {

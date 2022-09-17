@@ -217,7 +217,6 @@ def attack_fedkd(
         id2label,
         attack_type,
         output_dir,
-        beta=beta,
         epoch=num_communication,
     )
 

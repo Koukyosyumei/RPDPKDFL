@@ -25,11 +25,11 @@ def reconstruct_all_possible_targets(
         xs_rec = inv(label_batch_tensor.reshape(len(label_batch), -1, 1, 1))
         xs_rec_array = xs_rec.detach().cpu().numpy()
 
-        for i in range(len(label_batch)):
+        for i, label in enumerate(label_batch):
             np.save(
                 os.path.join(
                     output_dir,
-                    f"{base_name}_{i}_{attack_type}",
+                    f"{base_name}_{label}_{attack_type}",
                 ),
                 xs_rec_array[i],
             )
