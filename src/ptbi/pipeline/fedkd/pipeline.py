@@ -135,7 +135,7 @@ def attack_fedkd(
         ae = ae.eval()
 
         nonsensitive_idxs = np.where(is_sensitive_flag == 0)[0]
-        x_pub_nonsensitive = public_train_dataloader.transform(
+        x_pub_nonsensitive = public_train_dataloader.dataset.transform(
             public_train_dataloader.dataset.x[nonsensitive_idxs]
         )
         y_pub_nonsensitive = public_train_dataloader.dataset.y[nonsensitive_idxs]
