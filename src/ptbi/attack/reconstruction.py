@@ -31,7 +31,7 @@ def reconstruct_all_possible_targets(
                     output_dir,
                     f"{base_name}_{i}_{attack_type}",
                 ),
-                xs_rec_array[i].detach().cpu().numpy(),
+                xs_rec_array[i],
             )
 
     return None
