@@ -98,7 +98,7 @@ def evaluation_full(
     epoch=5,
     device="cuda:0",
 ):
-    print("evaluating the attack performance...")
+    print("evaluating ...")
 
     ssim_list = {
         f"{attack_type}_ssim_private": [],
@@ -187,8 +187,8 @@ def evaluation_full(
         ).to(device)
         public_data = public_data * 0.5 + 0.5
 
-        ssim_private_list = np.array(num_classes)
-        ssim_public_list = np.array(num_classes)
+        ssim_private_list = np.zeros(num_classes)
+        ssim_public_list = np.zeros(num_classes)
 
         for idxs in np.array_split(list(range(num_classes)), 2):
             ssim_private_list[idxs] = (

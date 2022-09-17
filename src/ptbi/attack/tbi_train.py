@@ -127,7 +127,7 @@ def get_our_inv_train_func(
         # torch.save(state, inv_path_list[target_client_id] + ".pth")
 
         if api.epoch % 2 == 1:
-            print("saving the reconstructed images...")
+            print("saving ...")
             reconstruct_all_possible_targets(
                 attack_type,
                 local_identities,
