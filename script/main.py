@@ -156,9 +156,11 @@ if __name__ == "__main__":
     os.makedirs(run_dir)
 
     args["random_seed"] = parsed_args.random_seed
+    args["gamma"] = parsed_args.gamma
     with open(os.path.join(run_dir, "args.txt"), "w") as convert_file:
         convert_file.write(str(args))
     args.pop("random_seed")
+    args.pop("gamma")
 
     print("Start experiment ...")
     print("dataset is ", args["dataset"])
