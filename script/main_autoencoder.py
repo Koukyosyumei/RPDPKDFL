@@ -4,7 +4,7 @@ import random
 import string
 from datetime import datetime
 
-from ptbi.config.config import config_base, config_dataset, config_fedkd
+from ptbi.config.config import config_base, config_dataset
 from ptbi.pipeline.fedkd.pipeline_autoencoder import ae_attack_fedkd
 
 
@@ -15,23 +15,15 @@ def randomname(n):
 
 def add_args(parser):
     parser.add_argument(
-        "-t",
-        "--fedkd_type",
-        type=str,
-        default="fedgems",
-        help="type of FedKD; FedMD, FedGEMS, or FedGEMS",
-    )
-
-    parser.add_argument(
         "--inv_learning_rate", type=float, default=0.00003, help="learning rate"
     )
 
     parser.add_argument(
-        "-c", "--client_num", type=int, default=10, help="number of clients"
+        "--random_seed", type=int, default=42, help="seed of random generator"
     )
 
     parser.add_argument(
-        "--random_seed", type=int, default=42, help="seed of random generator"
+        "-c", "--client_num", type=int, default=10, help="number of clients"
     )
 
     parser.add_argument(
@@ -84,9 +76,7 @@ if __name__ == "__main__":
     args = config_base
     args["num_classes"] = parsed_args.tot_class_num
     args["dataset"] = parsed_args.dataset
-    args["fedkd_type"] = parsed_args.fedkd_type
 
-    args["attack_type"] = parsed_args.attack_type
     args["client_num"] = parsed_args.client_num
     args["inv_lr"] = parsed_args.inv_learning_rate
     args["loss_type"] = parsed_args.invloss
@@ -116,7 +106,7 @@ if __name__ == "__main__":
 
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id += "_" + randomname(10)
-    run_id += f"_{args['dataset']}_{args['fedkd_type']}_{args['client_num']}"
+    run_id += f"_{args['dataset']}_autoencoder_{args['client_num']}"
     run_dir = os.path.join(parsed_args.output_folder, run_id)
     os.makedirs(run_dir)
 
