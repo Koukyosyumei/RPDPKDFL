@@ -96,6 +96,8 @@ def evaluation_full(
     output_dir,
     epoch=5,
 ):
+    print("evaluating the attack performance...")
+
     ssim_list = {
         f"{attack_type}_ssim_private": [],
         f"{attack_type}_ssim_public": [],
