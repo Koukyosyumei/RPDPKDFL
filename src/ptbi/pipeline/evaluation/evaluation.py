@@ -155,7 +155,7 @@ def evaluation_full(
                 cv2.COLOR_BGR2RGB,
             ),
         )
-        print(glob.glob(os.path.join(output_dir, str(epoch) + "_" + str(label) + "_*")))
+        print(os.path.join(output_dir, str(epoch) + "_" + str(label) + "_*"))
         temp_path = glob.glob(
             os.path.join(output_dir, str(epoch) + "_" + str(label) + "_*")
         )[0]
