@@ -5,7 +5,6 @@ import cv2
 import numpy as np
 import pandas as pd
 import torch
-import torchvision
 import torchvision.transforms as transforms
 from aijack.utils import NumpyDataset, worker_init_fn
 from sklearn.model_selection import train_test_split
@@ -158,14 +157,6 @@ def prepare_inv_lag_dataloaders(
     X_public = np.stack([cv2.imread(p) for p in df[df["alloc"] == 0]["path"].tolist()])
     is_sensitive_public = df[df["alloc"] == 0]["ay"].values
     y_public = np.array([name2id[n] for n in df[df["alloc"] == 0]["name"].tolist()])
-    X_private_list = [
-        np.stack([cv2.imread(p) for p in df[df["alloc"] == i + 1]["path"].tolist()])
-        for i in range(client_num)
-    ]
-    y_private_list = [
-        np.array([name2id[n] for n in df[df["alloc"] == i + 1]["name"].tolist()])
-        for i in range(client_num)
-    ]
 
     transforms_list = [transforms.ToTensor()]
     if channel == 1:
@@ -201,8 +192,6 @@ def prepare_inv_lag_dataloaders(
 
     X_public_input_inv = np.stack(X_public_input_inv)
     X_public_output_inv = np.stack(X_public_output_inv)
-
-    print(X_public_input_inv.shape, X_public_output_inv.shape)
 
     public_inv_dataset = NumpyAEDataset(
         x=X_public_input_inv,
@@ -342,8 +331,6 @@ def prepare_inv_lfw_dataloaders(
     X_public = np.stack(X_public_list)
     y_public = np.array(y_public_list)
     is_sensitive_public = np.array(is_sensitive_public_list)
-    X_private_list = [np.stack(x) for x in X_private_lists]
-    y_private_list = [np.array(y) for y in y_private_lists]
 
     transforms_list = [transforms.ToTensor()]
     if channel == 1:
@@ -380,7 +367,160 @@ def prepare_inv_lfw_dataloaders(
     X_public_input_inv = np.stack(X_public_input_inv)
     X_public_output_inv = np.stack(X_public_output_inv)
 
-    print(X_public_input_inv.shape, X_public_output_inv.shape)
+    public_inv_dataset = NumpyAEDataset(
+        x=X_public_input_inv,
+        y=X_public_output_inv,
+        transform=transform,
+        return_idx=return_idx,
+    )
+
+    g = torch.Generator()
+    g.manual_seed(seed)
+
+    print("prepare public dataloader")
+    try:
+        public_inv_dataloader = torch.utils.data.DataLoader(
+            public_inv_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+            generator=g,
+        )
+    except:
+        public_inv_dataloader = torch.utils.data.DataLoader(
+            public_inv_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            worker_init_fn=worker_init_fn,
+        )
+
+    return public_inv_dataloader
+
+
+def prepare_facescrub_dataloaders(
+    data_folder="/content",
+    client_num=2,
+    channel=1,
+    batch_size=1,
+    seed=42,
+    num_workers=2,
+    height=64,
+    width=64,
+    num_classes=530,
+    crop=True,
+    target_celeblities_num=100,
+    blur_strength=10,
+):
+    np_resized_imgs = np.load(f"{data_folder}/resized_faces.npy")
+    np_resized_labels = np.load(f"{data_folder}/resized_labels.npy")
+
+    res = np.unique(np_resized_labels, return_counts=True)
+    name2id = {name: i for i, name in enumerate(res[0])}
+    id2name = {v: k for k, v in name2id.items()}
+
+    local_identities_names = np.array_split(
+        random.sample(res[0].tolist(), target_celeblities_num),
+        client_num,
+    )
+    local_identities = [
+        [name2id[name] for name in name_list] for name_list in local_identities_names
+    ]
+
+    name_id2client_id = {}
+    for client_id, name_id_list in enumerate(local_identities):
+        for idx in name_id_list:
+            name_id2client_id[idx] = client_id
+
+    X_public_list = []
+    y_public_list = []
+    is_sensitive_public_list = []
+    X_private_lists = [[] for _ in range(client_num)]
+    y_private_lists = [[] for _ in range(client_num)]
+
+    for i in range(res[0].shape[0]):
+        if i in name_id2client_id:
+            idx = np.where(np_resized_labels == id2name[i])[0]
+            sep_idxs = np.array_split(idx, 2)
+            temp_array = []
+            for temp_idx in range(np_resized_imgs[sep_idxs[0]].shape[0]):
+                temp_array.append(
+                    cv2.blur(
+                        np_resized_imgs[sep_idxs[0]][temp_idx],
+                        (blur_strength, blur_strength),
+                    )
+                )
+            X_public_list.append(np.stack(temp_array))
+            y_public_list += [i for _ in range(len(sep_idxs[0]))]
+            is_sensitive_public_list += [0 for _ in range(len(sep_idxs[0]))]
+            X_private_lists[name_id2client_id[i]].append(np_resized_imgs[sep_idxs[0]])
+            y_private_lists[name_id2client_id[i]] += [
+                i for _ in range(len(sep_idxs[0]))
+            ]
+        else:
+            idx = np.where(np_resized_labels == id2name[i])[0]
+            X_public_list.append(np_resized_imgs[idx])
+            y_public_list += [i for _ in range(len(idx))]
+            is_sensitive_public_list += [1 for _ in range(len(idx))]
+
+    X_public = np.concatenate(X_public_list)
+    y_public = np.array(y_public_list)
+    is_sensitive_public = np.array(is_sensitive_public_list)
+
+    (
+        X_public_train,
+        _,
+        y_public_train,
+        _,
+        is_sensitive_public_train,
+        _,
+    ) = train_test_split(
+        X_public,
+        y_public,
+        is_sensitive_public,
+        test_size=0.1,
+        random_state=42,
+        stratify=y_public_list,
+    )
+
+    # X_test = np.concatenate(X_private_test_list + [X_public_test], axis=0)
+    # y_test = np.concatenate(y_private_test_list + [y_public_test], axis=0)
+
+    transforms_list = [transforms.ToTensor()]
+    if channel == 1:
+        transforms_list.append(transforms.Grayscale())
+    if crop:
+        transforms_list.append(transforms.CenterCrop((max(height, width))))
+    else:
+        transforms_list.append(transforms.Resize((height, width)))
+    if channel == 1:
+        transforms_list.append(transforms.Normalize((0.5,), (0.5,)))
+    else:
+        transforms_list.append(transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
+    transform = transforms.Compose(transforms_list)
+    return_idx = True
+
+    sensitive_idx = np.where(is_sensitive_public_train == 1)[0]
+    nonsensitive_idx = np.where(is_sensitive_public_train == 0)[0]
+    X_public_input_inv = []
+    X_public_output_inv = []
+    for y in list(np.unique(y_public_train)):
+        y_idx = np.where(y_public_train == y)[0]
+        y_sensitive_idx = list(set(list(y_idx)) & set(list(sensitive_idx)))
+        y_nonsensitive_idx = list(set(list(y_idx)) & set(list(nonsensitive_idx)))
+
+        pairs = sum(
+            [[(ys, yn) for yn in y_nonsensitive_idx] for ys in y_sensitive_idx], []
+        )
+        pairs = random.sample(pairs, min(50, len(pairs)))
+
+        for pair in pairs:
+            X_public_input_inv.append(X_public_train[pair[1]])
+            X_public_output_inv.append(X_public_train[pair[0]])
+
+    X_public_input_inv = np.stack(X_public_input_inv)
+    X_public_output_inv = np.stack(X_public_output_inv)
 
     public_inv_dataset = NumpyAEDataset(
         x=X_public_input_inv,
