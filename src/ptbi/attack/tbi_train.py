@@ -17,13 +17,18 @@ def train_tbi_inv_model(data, device, inv_model, optimizer, criterion):
     return loss, x, x_rec_original
 
 
-def train_our_inv_model(data, device, ae, inv_model, optimizer, criterion, gamma=0.1):
+def train_our_inv_model(
+    data, prior, device, inv_model, optimizer, criterion, gamma=0.1
+):
     x = data[0].to(device)
     y_pred_local = data[1].to(device)
+    y_label = data[2]
 
     optimizer.zero_grad()
     x_rec_original = inv_model(y_pred_local.reshape(x.shape[0], -1, 1, 1))
-    loss = criterion(x, x_rec_original) + gamma * criterion(ae(x), x_rec_original)
+    loss = criterion(x, x_rec_original) + gamma * criterion(
+        prior[y_label], x_rec_original
+    )
     loss.backward()
     optimizer.step()
 
@@ -31,13 +36,13 @@ def train_our_inv_model(data, device, ae, inv_model, optimizer, criterion, gamma
 
 
 def train_our_inv_model_on_logits_dataloader(
-    prediction_dataloader, device, ae, inv, inv_optimizer, criterion, gamma=0.1
+    prediction_dataloader, prior, device, inv, inv_optimizer, criterion, gamma=0.1
 ):
     inv_running_loss = 0
     running_size = 0
     for data in prediction_dataloader:
         loss, x, x_rec = train_our_inv_model(
-            data, device, ae, inv, inv_optimizer, criterion, gamma=gamma
+            data, prior, device, inv, inv_optimizer, criterion, gamma=gamma
         )
         inv_running_loss += loss.item()
         running_size += x.shape[0]
@@ -58,10 +63,9 @@ def get_our_inv_train_func(
     inv_tempreature,
     inv_batch_size,
     inv_epoch,
-    inv_path_list,
     inv,
     inv_optimizer,
-    ae,
+    prior,
     criterion,
     output_dim,
     attack_type,
@@ -102,9 +106,8 @@ def get_our_inv_train_func(
         for i in range(1, inv_epoch + 1):
             (inv_running_loss, _, _) = train_our_inv_model_on_logits_dataloader(
                 prediction_dataloader,
+                prior,
                 device,
-                ae,
-                inv,
                 inv_optimizer,
                 criterion,
                 gamma=gamma,

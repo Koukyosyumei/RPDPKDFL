@@ -127,7 +127,7 @@ if __name__ == "__main__":
         loss_type=args["loss_type"],
         config_dataset=args["config_dataset"],
         seed=parsed_args.random_seed,
-        output_dir=parsed_args.random_seed,
+        output_dir=run_dir,
     )
 
     print("Results:")

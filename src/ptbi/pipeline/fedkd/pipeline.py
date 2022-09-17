@@ -134,6 +134,26 @@ def attack_fedkd(
         ae.load_state_dict(torch.load(model_path))
         ae = ae.eval()
 
+        nonsensitive_idxs = np.where(is_sensitive_flag == 0)[0]
+        x_pub_nonsensitive = public_train_dataloader.transform(
+            public_train_dataloader.dataset.x[nonsensitive_idxs]
+        )
+        y_pub_nonsensitive = public_train_dataloader.dataset.y[nonsensitive_idxs]
+
+        prior = torch.zeros(
+            (
+                output_dim,
+                config_dataset["chanel"],
+                config_dataset["height"],
+                config_dataset["with"],
+            )
+        ).to(device)
+
+        for lab in range(output_dim):
+            prior[lab] += ae(
+                x_pub_nonsensitive[torch.where(y_pub_nonsensitive == lab)].to(device)
+            ).mean(dim=0)
+
         inv_train = get_our_inv_train_func(
             client_num,
             is_sensitive_flag,
@@ -150,7 +170,7 @@ def attack_fedkd(
             inv_path_list,
             inv,
             inv_optimizer,
-            ae,
+            prior,
             criterion,
             output_dim,
             attack_type,

@@ -168,21 +168,27 @@ def setup_our_inv_dataloader(
 
     # --- Receive logits --- #
     public_x_list = []
+    y_label_list = []
     y_pred_local_list = []
     for target_client_api in target_client_api_list:
         for data in inv_public_dataloader:
             x = data[1].to(device).detach()
+            y_label = data[2]
             y_pred_local = torch.softmax(
                 target_client_api(x) / inv_tempreature, dim=-1
             ).detach()
             public_x_list.append(x.cpu())
+            y_label_list.append(y_label.cpu())
             y_pred_local_list.append(y_pred_local.cpu())
 
     public_x_tensor = torch.cat(public_x_list)
+    y_label_tensor = torch.cat(y_label_list)
     y_pred_local_tensor = torch.cat(y_pred_local_list)
 
     prediction_dataloader = torch.utils.data.DataLoader(
-        torch.utils.data.TensorDataset(public_x_tensor, y_pred_local_tensor),
+        torch.utils.data.TensorDataset(
+            public_x_tensor, y_pred_local_tensor, y_label_tensor
+        ),
         batch_size=inv_batch_size,
         shuffle=True,
         num_workers=num_workers,

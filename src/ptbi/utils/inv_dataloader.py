@@ -571,5 +571,7 @@ def prepare_inv_dataloaders(dataset_name, *args, **kwargs):
         return prepare_inv_lag_dataloaders(*args, **kwargs)
     elif dataset_name == "LFW":
         return prepare_inv_lfw_dataloaders(*args, **kwargs)
+    elif dataset_name == "FaceScrub":
+        return prepare_facescrub_dataloaders(*args, **kwargs)
     else:
         raise NotImplementedError(f"{dataset_name} is not supported")
