@@ -2,8 +2,7 @@ import os
 
 import torch
 
-from ..utils.tbi_setup import (setup_our_inv_dataloader,
-                               setup_tbi_inv_dataloader)
+from ..utils.tbi_setup import setup_our_inv_dataloader, setup_tbi_inv_dataloader
 from .reconstruction import reconstruct_all_possible_targets
 
 
@@ -26,7 +25,7 @@ def train_our_inv_model(data, device, ae, inv_model, optimizer, criterion, gamma
 
     optimizer.zero_grad()
     x_rec_original = inv_model(y_pred_local.reshape(x.shape[0], -1, 1, 1))
-    loss = criterion(x, x_rec_original) + gamma * criterion(x, ae(x))
+    loss = criterion(x, x_rec_original) + gamma * criterion(ae(x), x_rec_original)
     loss.backward()
     optimizer.step()
 
