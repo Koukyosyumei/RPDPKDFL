@@ -26,7 +26,7 @@ class SSIMLoss(Module):
         if as_loss:
             return 1 - ssim_map.mean()
         else:
-            return ssim_map
+            return ssim_map.mean(dim=1).mean(dim=1).mean(dim=1)
 
     def _ssim(self, x: Tensor, y: Tensor):
 

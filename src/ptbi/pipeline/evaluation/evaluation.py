@@ -168,34 +168,41 @@ def evaluation_full(
         best_img_tensor = torch.Tensor(np.load(temp_path)).to(device)
         best_img_tensor_batch = torch.stack(
             [best_img_tensor.clone() for _ in range(num_classes)]
-        )
+        ).to(device)
         best_img_tensor_batch = best_img_tensor_batch * 0.5 + 0.5
-        print(best_img_tensor_batch.shape)
 
         private_data = torch.stack(
             [
                 private_dataset_transformed[private_dataset_label == i].mean(dim=0)
                 for i in range(num_classes)
             ]
-        )
+        ).to(device)
         private_data = private_data * 0.5 + 0.5
-        print(private_data.shape)
 
         public_data = torch.stack(
             [
                 public_dataset_transformed[public_dataset_label == i].mean(dim=0)
                 for i in range(num_classes)
             ]
-        )
+        ).to(device)
         public_data = public_data * 0.5 + 0.5
-        print(public_data.shape)
 
-        ssim_private_list = (
-            ssim(best_img_tensor_batch, private_data, False).detach().cpu().numpy()
-        )
-        ssim_public_list = (
-            ssim(best_img_tensor_batch, public_data, False).detach().cpu().numpy()
-        )
+        ssim_private_list = np.array(num_classes)
+        ssim_public_list = np.array(num_classes)
+
+        for idxs in np.array_split(list(range(num_classes)), 2):
+            ssim_private_list[idxs] = (
+                ssim(best_img_tensor_batch[idxs], private_data[idxs], False)
+                .detach()
+                .cpu()
+                .numpy()
+            )
+            ssim_public_list[idxs] = (
+                ssim(best_img_tensor_batch[idxs], public_data[idxs], False)
+                .detach()
+                .cpu()
+                .numpy()
+            )
 
         best_label = np.nanargmax(ssim_private_list + ssim_public_list)
         ssim_private = ssim_private_list[label]
