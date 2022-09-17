@@ -23,7 +23,7 @@ def add_args(parser):
     )
 
     parser.add_argument(
-        "--learning_rate", type=float, default=0.001, help="learning rate"
+        "--inv_learning_rate", type=float, default=0.00003, help="learning rate"
     )
 
     parser.add_argument(
@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
     args["attack_type"] = parsed_args.attack_type
     args["client_num"] = parsed_args.client_num
-    args["lr"] = parsed_args.learning_rate
+    args["inv_lr"] = parsed_args.inv_learning_rate
     args["loss_type"] = parsed_args.invloss
 
     if args["dataset"] == "AT&T":
