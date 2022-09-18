@@ -1,38 +1,15 @@
-import copy
 import os
-import pickle
 import random
 
 import cv2
 import numpy as np
 import torch
-import torchvision.models as models
 import torchvision.transforms as transforms
 from matplotlib import pyplot as plt
-from PIL import Image
 
-from ...attack.confidence import get_alpha, get_pi
-from ...attack.reconstruction import (
-    reconstruct_all_possible_targets,
-    reconstruct_private_data_and_quick_evaluate,
-)
-from ...attack.styletransfer import (
-    cnn_normalization_mean,
-    cnn_normalization_std,
-    run_style_transfer,
-)
-from ...attack.tbi_train import (
-    get_inv_train_fn_ablation_3,
-    get_inv_train_fn_ptbi,
-    get_inv_train_fn_tbi,
-)
 from ...model.invmodel import AE
-from ...model.model import get_model_class
-from ...utils.dataloader import prepare_dataloaders
-from ...utils.fedkd_setup import get_fedkd_api
 from ...utils.inv_dataloader import prepare_inv_dataloaders
-from ...utils.tbi_setup import setup_tbi_optimizers, setup_training_based_inversion
-from ..evaluation.evaluation import evaluation_full
+from ...utils.loss import SSIMLoss
 
 
 def unloader(img):
@@ -43,32 +20,16 @@ def unloader(img):
 
 
 def ae_attack_fedkd(
-    fedkd_type="FedGEMS",
-    model_type="LM",
-    invmodel_type="InvCNN",
-    attack_type="ptbi",
     dataset="AT&T",
     client_num=2,
     batch_size=4,
-    inv_batch_size=1,
-    lr=0.01,
     num_classes=20,
-    num_communication=5,
+    inv_lr=0.00003,
     seed=42,
     num_workers=2,
-    inv_epoch=10,
-    inv_lr=0.003,
-    inv_tempreature=1.0,
-    use_finetune=True,
-    inv_pj=0.5,
-    beta=0.5,
-    evaluation_type="quick",
-    ablation_study=0,
-    config_fedkd=None,
+    loss_type="mse",
     config_dataset=None,
-    config_attack_nes=None,
     output_dir="",
-    temp_dir="./",
 ):
     # --- Fix seed --- #
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -87,28 +48,11 @@ def ae_attack_fedkd(
     except:
         print("torch.backends.cudnn.benchmark is not available")
 
-    return_idx = True
-
     # --- Setup device --- #
     device = torch.device("cuda:0") if torch.cuda.is_available() else "cpu"
     print("device is ", device)
 
     # --- Setup DataLoaders --- #
-    (
-        public_train_dataloader,
-        local_train_dataloaders,
-        test_dataloader,
-        local_identities,
-        is_sensitive_flag,
-    ) = prepare_dataloaders(
-        dataset_name=dataset,
-        client_num=client_num,
-        batch_size=batch_size,
-        seed=seed,
-        num_workers=num_workers,
-        num_classes=num_classes,
-        **config_dataset,
-    )
 
     inv_dataloader = prepare_inv_dataloaders(
         dataset_name=dataset,
@@ -120,8 +64,18 @@ def ae_attack_fedkd(
         **config_dataset,
     )
 
+    # --- Setup loss function --- #
+    if loss_type == "mse":
+        criterion = torch.nn.MSELoss()
+    elif loss_type == "ssim":
+        criterion = SSIMLoss()
+    else:
+        raise NotImplementedError(
+            f"{loss_type} is not supported. We currently support `mse` or `ssim`."
+        )
+
     ae = AE().to(device)
-    inv_optimizer = torch.optim.Adam(ae.parameters(), lr=0.00003, weight_decay=0.0001)
+    inv_optimizer = torch.optim.Adam(ae.parameters(), lr=inv_lr, weight_decay=0.0001)
 
     for epoch in range(1, 101):
         running_loss = 0
@@ -131,7 +85,7 @@ def ae_attack_fedkd(
 
             inv_optimizer.zero_grad()
             x3 = ae(x1)
-            loss = torch.nn.MSELoss()(x3, x2)
+            loss = criterion(x3, x2)
             loss.backward()
             inv_optimizer.step()
 
