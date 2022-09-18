@@ -40,10 +40,10 @@ _config_lfw = {
 _config_facescrub = {
     "height": 64,
     "width": 64,
-    "channel": 1,
+    "channel": 3,
     "crop": False,
     "target_celeblities_num": 200,
-    "blur_strength": 15,
+    "blur_strength": 10,
     "weight_decay": 0.001,
 }
 
@@ -91,7 +91,7 @@ config_base = {
     "lr": 0.001,
     "num_workers": 1,
     "num_classes": 1000,
-    "inv_epoch": 3,
+    "inv_epoch": 5,
     "inv_lr": 0.00003,
     "loss_type": "mse",
 }
