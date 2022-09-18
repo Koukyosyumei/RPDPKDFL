@@ -602,9 +602,23 @@ def prepare_facescrub_dataloaders(
             ]
         else:
             idx = np.where(np_resized_labels == id2name[i])[0]
-            X_public_list.append(np_resized_imgs[idx])
-            y_public_list += [i for _ in range(len(idx))]
-            is_sensitive_public_list += [1 for _ in range(len(idx))]
+            sep_idxs = np.array_split(idx, 2)
+
+            X_public_list.append(np_resized_imgs[sep_idxs[0]])
+            y_public_list += [i for _ in range(len(sep_idxs[0]))]
+            is_sensitive_public_list += [1 for _ in range(len(sep_idxs[0]))]
+
+            temp_array = []
+            for temp_idx in range(np_resized_imgs[sep_idxs[1]].shape[0]):
+                temp_array.append(
+                    cv2.blur(
+                        np_resized_imgs[sep_idxs[1]][temp_idx],
+                        (blur_strength, blur_strength),
+                    )
+                )
+            X_public_list.append(np.stack(temp_array))
+            y_public_list += [i for _ in range(len(sep_idxs[1]))]
+            is_sensitive_public_list += [0 for _ in range(len(sep_idxs[1]))]
 
     X_public = np.concatenate(X_public_list)
     y_public = np.array(y_public_list)

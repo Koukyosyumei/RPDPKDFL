@@ -3,7 +3,8 @@ import os
 import numpy as np
 import torch
 
-from ..utils.tbi_setup import setup_our_inv_dataloader, setup_tbi_inv_dataloader
+from ..utils.tbi_setup import (setup_our_inv_dataloader,
+                               setup_tbi_inv_dataloader)
 from .reconstruction import reconstruct_all_possible_targets
 
 
@@ -137,6 +138,8 @@ def get_our_inv_train_func(
                 gamma=gamma,
             )
 
+            print(f"inv epoch={i}, inv loss ", inv_running_loss)
+
             if ablation_study != 1:
                 inv_prior_loss = train_our_inv_model_with_only_priors(
                     target_labels,
@@ -148,7 +151,7 @@ def get_our_inv_train_func(
                     gamma=gamma,
                 )
 
-            print(f"inv epoch={i}, inv loss ", inv_running_loss, inv_prior_loss)
+                print(f"inv epoch={i}, prior loss ", inv_prior_loss)
 
             with open(
                 os.path.join(output_dir, "inv_result.txt"),
