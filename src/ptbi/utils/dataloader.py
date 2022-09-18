@@ -626,8 +626,20 @@ def prepare_facescrub_dataloaders(
     X_private_list = [np.concatenate(x) for x in X_private_lists]
     y_private_list = [np.array(y) for y in y_private_lists]
 
-    X_public_train, X_public_test, y_public_train, y_public_test = train_test_split(
-        X_public, y_public, test_size=0.1, random_state=42, stratify=y_public_list
+    (
+        X_public_train,
+        X_public_test,
+        y_public_train,
+        y_public_test,
+        is_sensitive_public_train,
+        _,
+    ) = train_test_split(
+        X_public,
+        y_public,
+        is_sensitive_public,
+        test_size=0.1,
+        random_state=42,
+        stratify=y_public_list,
     )
 
     X_private_train_list = []
@@ -762,7 +774,7 @@ def prepare_facescrub_dataloaders(
         local_train_dataloaders,
         test_dataloader,
         local_identities,
-        is_sensitive_public,
+        is_sensitive_public_train,
     )
 
 
