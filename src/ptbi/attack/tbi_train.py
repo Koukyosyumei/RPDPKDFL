@@ -1,5 +1,8 @@
 import os
 
+import numpy as np
+import torch
+
 from ..utils.tbi_setup import setup_our_inv_dataloader, setup_tbi_inv_dataloader
 from .reconstruction import reconstruct_all_possible_targets
 
@@ -33,6 +36,26 @@ def train_our_inv_model(
     optimizer.step()
 
     return loss, x, x_rec_original
+
+
+def train_our_inv_model_with_only_priors(
+    target_labels, prior, device, inv_model, optimizer, criterion, gamma=0.1
+):
+    output_dim = prior.shape[0]
+    target_labels_batch = np.array_split(target_labels, int(len(target_labels) / 64))
+
+    running_loss = 0
+    for label_batch in target_labels_batch:
+        optimizer.zero_grad()
+        label_batch_tensor = torch.eye(output_dim)[label_batch].to(device)
+        xs_rec = inv_model(label_batch_tensor.reshape(len(label_batch), -1, 1, 1))
+        loss = gamma * criterion(prior[label_batch], xs_rec.cpu())
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item() / len(target_labels_batch)
+
+    return running_loss
 
 
 def train_our_inv_model_on_logits_dataloader(
@@ -114,7 +137,11 @@ def get_our_inv_train_func(
                 gamma=gamma,
             )
 
-            print(f"inv epoch={i}, inv loss ", inv_running_loss)
+            inv_prior_loss = train_our_inv_model_with_only_priors(
+                target_labels, prior, device, inv, inv_optimizer, criterion, gamma=gamma
+            )
+
+            print(f"inv epoch={i}, inv loss ", inv_running_loss, inv_prior_loss)
 
             with open(
                 os.path.join(output_dir, "inv_result.txt"),
