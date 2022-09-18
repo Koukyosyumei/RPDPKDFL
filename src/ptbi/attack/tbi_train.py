@@ -137,9 +137,16 @@ def get_our_inv_train_func(
                 gamma=gamma,
             )
 
-            inv_prior_loss = train_our_inv_model_with_only_priors(
-                target_labels, prior, device, inv, inv_optimizer, criterion, gamma=gamma
-            )
+            if ablation_study != 1:
+                inv_prior_loss = train_our_inv_model_with_only_priors(
+                    target_labels,
+                    prior,
+                    device,
+                    inv,
+                    inv_optimizer,
+                    criterion,
+                    gamma=gamma,
+                )
 
             print(f"inv epoch={i}, inv loss ", inv_running_loss, inv_prior_loss)
 
