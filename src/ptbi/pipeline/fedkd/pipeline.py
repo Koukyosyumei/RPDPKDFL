@@ -35,6 +35,7 @@ def attack_fedkd(
     inv_epoch=10,
     inv_lr=0.003,
     inv_tempreature=1.0,
+    alpha=3.0,
     gamma=0.1,
     ablation_study=0,
     config_fedkd=None,
@@ -197,6 +198,7 @@ def attack_fedkd(
             id2label,
             output_dir,
             ablation_study,
+            alpha,
             gamma=gamma,
         )
     elif attack_type == "tbi":
