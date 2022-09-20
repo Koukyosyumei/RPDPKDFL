@@ -147,8 +147,6 @@ def attack_fedkd(
         y_pub_nonsensitive = torch.Tensor(
             public_train_dataloader.dataset.y[nonsensitive_idxs]
         )
-        print(x_pub_nonsensitive.shape)
-        print(y_pub_nonsensitive.shape)
 
         prior = torch.zeros(
             (
@@ -174,6 +172,8 @@ def attack_fedkd(
                     .sum(dim=0)
                     / lab_idxs_size
                 )
+
+        torch.save(prior, os.path.join(output_dir, "prior.pth"))
 
         inv_train = get_our_inv_train_func(
             client_num,
