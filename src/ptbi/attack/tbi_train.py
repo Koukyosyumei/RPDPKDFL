@@ -216,7 +216,7 @@ def get_our_inv_train_func(
             elif ablation_study == 2:
                 pi = get_pi(output_dim, alpha)
                 pj = get_pj(output_dim, alpha)
-                train_our_inv_model_with_only_priors_paird_logits(
+                inv_prior_loss = train_our_inv_model_with_only_priors_paird_logits(
                     target_labels,
                     prior,
                     device,
@@ -227,6 +227,8 @@ def get_our_inv_train_func(
                     pj,
                     gamma=gamma,
                 )
+
+                print(f"inv epoch={i}, prior loss ", inv_prior_loss)
 
             with open(
                 os.path.join(output_dir, "inv_result.txt"),

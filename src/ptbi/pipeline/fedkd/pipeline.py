@@ -6,7 +6,11 @@ import random
 import numpy as np
 import torch
 
-from ...attack.reconstruction import reconstruct_all_possible_targets
+from ...attack.confidence import get_pi, get_pj
+from ...attack.reconstruction import (
+    reconstruct_all_possible_targets,
+    reconstruct_all_possible_targets_with_pair_logits,
+)
 from ...attack.tbi_train import get_our_inv_train_func, get_tbi_inv_train_func
 from ...model.invmodel import AE
 from ...model.model import get_model_class
@@ -247,17 +251,33 @@ def attack_fedkd(
         pickle.dump(fedkd_result, f)
 
     # --- Attack --- #
-    reconstruct_all_possible_targets(
-        attack_type,
-        local_identities,
-        inv,
-        output_dim,
-        id2label,
-        client_num,
-        output_dir,
-        device,
-        base_name=str(num_communication),
-    )
+    if ablation_study != 2:
+        reconstruct_all_possible_targets(
+            attack_type,
+            local_identities,
+            inv,
+            output_dim,
+            id2label,
+            client_num,
+            output_dir,
+            device,
+            base_name=str(num_communication),
+        )
+    else:
+        pi = get_pi(output_dim, alpha)
+        pj = get_pj(output_dim, alpha)
+        reconstruct_all_possible_targets_with_pair_logits(
+            attack_type,
+            local_identities,
+            inv,
+            output_dim,
+            id2label,
+            output_dir,
+            device,
+            pi,
+            pj,
+            base_name=str(num_communication),
+        )
     result = evaluation_full(
         client_num,
         num_classes,
