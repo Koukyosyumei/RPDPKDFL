@@ -96,7 +96,7 @@ def confidence_gap_fedkd(
             y_entropy = (-1 * y_probs * torch.log(y_probs)).sum(dim=1)
             entropy_list.append(y_entropy)
         print(entropy_list[0].shape)
-        return torch.stack(entropy_list)
+        return torch.cat(entropy_list)
 
     def create_fn_calculate_entropy(output_dir):
         def calculate_entropy(api):
