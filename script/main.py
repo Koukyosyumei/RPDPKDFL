@@ -179,7 +179,7 @@ if __name__ == "__main__":
         convert_file.write(str(args))
     args.pop("random_seed")
     args.pop("gamma")
-    args.pop["only_sensitive"]
+    args.pop("only_sensitive")
 
     print("Start experiment ...")
     print("dataset is ", args["dataset"])
