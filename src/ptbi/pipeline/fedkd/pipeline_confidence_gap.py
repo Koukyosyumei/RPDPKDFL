@@ -120,15 +120,21 @@ def confidence_gap_fedkd(
                 )
                 torch.save(
                     client_public_entropy,
-                    os.path.join(output_dir, f"{api.epoch}_client_public.pth"),
+                    os.path.join(
+                        output_dir, f"{api.epoch}_{client_idx}_client_public.pth"
+                    ),
                 )
                 torch.save(
                     client_local_entropy,
-                    os.path.join(output_dir, f"{api.epoch}_client_local.pth"),
+                    os.path.join(
+                        output_dir, f"{api.epoch}_{client_idx}_client_local.pth"
+                    ),
                 )
                 torch.save(
                     server_local_entropy,
-                    os.path.join(output_dir, f"{api.epoch}_server_local.pth"),
+                    os.path.join(
+                        output_dir, f"{api.epoch}_{{client_idx}}_server_local.pth"
+                    ),
                 )
 
         return calculate_entropy
