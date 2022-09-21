@@ -15,6 +15,7 @@ def confidence_gap_fedkd(
     model_type="LM",
     invmodel_type="InvCNN",
     attack_type="ptbi",
+    loss_type="mse",
     dataset="AT&T",
     client_num=2,
     batch_size=4,
@@ -27,16 +28,15 @@ def confidence_gap_fedkd(
     inv_epoch=10,
     inv_lr=0.003,
     inv_tempreature=1.0,
-    use_finetune=True,
-    inv_pj=0.5,
-    beta=0.5,
-    evaluation_type="quick",
+    alpha=3.0,
+    gamma=0.1,
     ablation_study=0,
     config_fedkd=None,
     config_dataset=None,
-    config_attack_nes=None,
     output_dir="",
     temp_dir="./",
+    model_path="./",
+    only_sensitive=True,
 ):
     # --- Fix seed --- #
     os.environ["PYTHONHASHSEED"] = str(seed)
