@@ -77,10 +77,9 @@ optional arguments:
                         path to the output folder
   -b ABLATION_STUDY, --ablation_study ABLATION_STUDY
                         type of ablation study;
-                            0:normal (Q=p'_{c_i, j}+p'_{s, j}+lpha H(p'_s))
-                            1:without entropy (Q=p'_{c_i, j}+p'_{s, j})
-                            2:without p'_{s, j} (Q=p'_{c_i, j}+lpha H(p'_s))
-                            3:without local logit (Q=p'_{s, j}+lpha H(p'_s))
+                     0: only local logits with prior-based inference adjusting
+                     1: only local logits witout inference adjusting
+                     2: paird logits with prior-based  inference adjusting
 ```
 
 #### Example

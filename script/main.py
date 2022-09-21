@@ -78,6 +78,13 @@ def add_args(parser):
     )
 
     parser.add_argument(
+        "--data_for_inversion",
+        type=int,
+        default=1,
+        help="0: both, 1: only sensitive",
+    )
+
+    parser.add_argument(
         "-p",
         "--path_to_datafolder",
         type=str,
@@ -163,12 +170,16 @@ if __name__ == "__main__":
     run_dir = os.path.join(parsed_args.output_folder, run_id)
     os.makedirs(run_dir)
 
+    only_sensitive = parsed_args.data_for_inversion == 1
+
     args["random_seed"] = parsed_args.random_seed
     args["gamma"] = parsed_args.gamma
+    args["only_sensitive"] = parsed_args.data_for_inversion
     with open(os.path.join(run_dir, "args.txt"), "w") as convert_file:
         convert_file.write(str(args))
     args.pop("random_seed")
     args.pop("gamma")
+    args.pop["only_sensitive"]
 
     print("Start experiment ...")
     print("dataset is ", args["dataset"])
@@ -180,6 +191,7 @@ if __name__ == "__main__":
     result = attack_fedkd(
         seed=parsed_args.random_seed,
         gamma=parsed_args.gamma,
+        only_snsitive=only_sensitive,
         output_dir=run_dir,
         temp_dir=run_dir,
         model_path=parsed_args.path_to_model,

@@ -145,16 +145,24 @@ def setup_our_inv_dataloader(
     device,
     inv_tempreature,
     inv_batch_size,
+    only_sensitive=True,
 ):
 
-    sensitive_flag = np.where(is_sensitive_flag == 1)[0]
-
-    inv_trainset = NumpyDataset(
-        x=api.public_dataloader.dataset.x[sensitive_flag],
-        y=api.public_dataloader.dataset.y[sensitive_flag],
-        transform=inv_transform,
-        return_idx=return_idx,
-    )
+    if only_sensitive:
+        sensitive_flag = np.where(is_sensitive_flag == 1)[0]
+        inv_trainset = NumpyDataset(
+            x=api.public_dataloader.dataset.x[sensitive_flag],
+            y=api.public_dataloader.dataset.y[sensitive_flag],
+            transform=inv_transform,
+            return_idx=return_idx,
+        )
+    else:
+        inv_trainset = NumpyDataset(
+            x=api.public_dataloader.dataset.x,
+            y=api.public_dataloader.dataset.y,
+            transform=inv_transform,
+            return_idx=return_idx,
+        )
 
     g = torch.Generator()
     g.manual_seed(seed)

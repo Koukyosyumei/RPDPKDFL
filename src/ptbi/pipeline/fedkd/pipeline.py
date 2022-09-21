@@ -9,15 +9,15 @@ import torch
 from ...attack.confidence import get_pi, get_pj
 from ...attack.reconstruction import (
     reconstruct_all_possible_targets,
-    reconstruct_all_possible_targets_with_pair_logits,
-)
+    reconstruct_all_possible_targets_with_pair_logits)
 from ...attack.tbi_train import get_our_inv_train_func, get_tbi_inv_train_func
 from ...model.invmodel import AE
 from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
 from ...utils.loss import SSIMLoss
-from ...utils.tbi_setup import setup_tbi_optimizers, setup_training_based_inversion
+from ...utils.tbi_setup import (setup_tbi_optimizers,
+                                setup_training_based_inversion)
 from ..evaluation.evaluation import evaluation_full
 
 
@@ -47,6 +47,7 @@ def attack_fedkd(
     output_dir="",
     temp_dir="./",
     model_path="./",
+    only_sensitive,
 ):
     # --- Fix seed --- #
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -204,6 +205,7 @@ def attack_fedkd(
             ablation_study,
             alpha,
             gamma=gamma,
+            only_sensitive=only_sensitive,
         )
     elif attack_type == "tbi":
         inv_train = get_tbi_inv_train_func(

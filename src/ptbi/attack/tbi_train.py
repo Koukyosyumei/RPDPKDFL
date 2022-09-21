@@ -157,6 +157,7 @@ def get_our_inv_train_func(
     ablation_study,
     alpha,
     gamma=0.1,
+    only_sensitive=True,
 ):
     def inv_train(api):
         target_client_apis = [
@@ -181,6 +182,7 @@ def get_our_inv_train_func(
             device,
             inv_tempreature,
             inv_batch_size,
+            only_sensitive,
         )
 
         # checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
