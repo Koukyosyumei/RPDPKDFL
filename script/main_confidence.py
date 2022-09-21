@@ -24,21 +24,19 @@ def add_args(parser):
     )
 
     parser.add_argument(
-        "-d", "--dataset", type=str, default="LAG", help="type of dataset; LAG or LFW"
+        "--inv_learning_rate", type=float, default=0.00003, help="learning rate"
     )
-
-    parser.add_argument(
-        "-a",
-        "--attack_type",
-        type=str,
-        default="ptbi",
-        help="type of attack; ptbi or tbi",
-    )
-
-    parser.add_argument("-l", "--alpha", type=float, default=-1, help="alpha")
 
     parser.add_argument(
         "-c", "--client_num", type=int, default=10, help="number of clients"
+    )
+
+    parser.add_argument(
+        "--random_seed", type=int, default=42, help="seed of random generator"
+    )
+
+    parser.add_argument(
+        "-d", "--dataset", type=str, default="LAG", help="type of dataset; LAG or LFW"
     )
 
     parser.add_argument(
@@ -49,11 +47,26 @@ def add_args(parser):
     )
 
     parser.add_argument(
-        "-g", "--random_seed", type=int, default=42, help="seed of random generator"
+        "-u",
+        "--blur_strength",
+        type=int,
+        default=15,
+        help="strength of blur",
     )
 
     parser.add_argument(
-        "-r", "--learning_rate", type=float, default=0.001, help="learning rate"
+        "-a",
+        "--attack_type",
+        type=str,
+        default="ptbi",
+        help="type of attack; ptbi or tbi",
+    )
+
+    parser.add_argument("--alpha", type=float, default=3.0, help="alpha")
+    parser.add_argument("--gamma", type=float, default=0.1, help="gamma")
+
+    parser.add_argument(
+        "--invloss", type=str, default="mse", help="loss function for inversion"
     )
 
     parser.add_argument(
@@ -65,11 +78,10 @@ def add_args(parser):
     )
 
     parser.add_argument(
-        "-u",
-        "--blur_strength",
+        "--data_for_inversion",
         type=int,
-        default=10,
-        help="strength of blur",
+        default=1,
+        help="0: both, 1: only sensitive",
     )
 
     parser.add_argument(
@@ -89,6 +101,14 @@ def add_args(parser):
     )
 
     parser.add_argument(
+        "-m",
+        "--path_to_model",
+        type=str,
+        default="/content/",
+        help="path to the trained model folder",
+    )
+
+    parser.add_argument(
         "-b",
         "--ablation_study",
         type=int,
@@ -96,7 +116,8 @@ def add_args(parser):
         help="type of ablation study; 0:normal(Q=p'_{c_i, j}+p'_{s, j}+\alpha H(p'_s)), \
                                       1:without entropy (Q=p'_{c_i, j}+p'_{s, j})\
                                       2:without p'_{s, j} (Q=p'_{c_i, j}+\alpha H(p'_s))\
-                                      3:without local logit (Q=p'_{s, j}+\alpha H(p'_s))",
+                                      3:without local logit (Q=p'_{s, j}+\alpha H(p'_s))\
+                                      4:without sensitive flag",
     )
 
     args = parser.parse_args()
@@ -114,7 +135,9 @@ if __name__ == "__main__":
 
     args["attack_type"] = parsed_args.attack_type
     args["client_num"] = parsed_args.client_num
-    args["lr"] = parsed_args.learning_rate
+    args["inv_lr"] = parsed_args.inv_learning_rate
+    args["loss_type"] = parsed_args.invloss
+    args["alpha"] = parsed_args.alpha
 
     if args["dataset"] == "AT&T":
         args["num_classes"] = 40
@@ -123,52 +146,14 @@ if __name__ == "__main__":
     elif args["dataset"] == "FaceScrub":
         args["num_classes"] = 530
 
-    if parsed_args.ablation_study == 0:
-        if parsed_args.fedkd_type == "DSFL":
-            if parsed_args.alpha < 0:
-                args["inv_pj"] = 1.5 * (
-                    1 / config_dataset[args["dataset"]]["target_celeblities_num"]
-                )
-            else:
-                args["inv_pj"] = get_pj(
-                    config_dataset[args["dataset"]]["target_celeblities_num"],
-                    parsed_args.alpha,
-                )
-        else:
-            if parsed_args.alpha < 0:
-                args["inv_pj"] = 1.5 * (1 / args["num_classes"])
-            else:
-                args["inv_pj"] = get_pj(args["num_classes"], parsed_args.alpha)
-    elif parsed_args.ablation_study == 1:
-        args["inv_pj"] = 1  # without entropy term
-    elif parsed_args.ablation_study == 2:
-        print("inv_pj = 1/output_dim")
-    elif parsed_args.ablation_study == 3:
-        print("use only the global logit")
-        if parsed_args.fedkd_type == "DSFL":
-            if parsed_args.alpha < 0:
-                args["inv_pj"] = 1.5 * (
-                    1 / config_dataset[args["dataset"]]["target_celeblities_num"]
-                )
-            else:
-                args["inv_pj"] = get_pj(
-                    config_dataset[args["dataset"]]["target_celeblities_num"],
-                    parsed_args.alpha,
-                )
-        else:
-            if parsed_args.alpha < 0:
-                args["inv_pj"] = 1.5 * (1 / args["num_classes"])
-            else:
-                args["inv_pj"] = get_pj(args["num_classes"], parsed_args.alpha)
-    else:
-        raise ValueError("parsed_args.ablation_study should be 0, 1, 2 or 3.")
-
     args["ablation_study"] = parsed_args.ablation_study
     args["inv_tempreature"] = parsed_args.softmax_tempreature
 
     args["config_dataset"] = config_dataset[args["dataset"]]
     args["config_dataset"]["data_folder"] = parsed_args.path_to_datafolder
     args["config_fedkd"] = config_fedkd[args["fedkd_type"]]
+    args["config_fedkd"]["weight_decay"] = args["config_dataset"]["weight_decay"]
+    args["config_dataset"].pop("weight_decay")
 
     if args["dataset"] in ["AT&T", "MNIST", "FaceScrub"]:
         args["config_dataset"]["blur_strength"] = parsed_args.blur_strength
@@ -181,21 +166,27 @@ if __name__ == "__main__":
 
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id += "_" + randomname(10)
-    run_id += f"_{args['dataset']}_{args['fedkd_type']}_{args['evaluation_type']}_{args['client_num']}"
+    run_id += f"_{args['dataset']}_{args['fedkd_type']}_{args['client_num']}"
     run_dir = os.path.join(parsed_args.output_folder, run_id)
     os.makedirs(run_dir)
 
-    args["alpha"] = parsed_args.alpha
+    only_sensitive = parsed_args.data_for_inversion == 1
+
     args["random_seed"] = parsed_args.random_seed
+    args["gamma"] = parsed_args.gamma
+    args["only_sensitive"] = parsed_args.data_for_inversion
     with open(os.path.join(run_dir, "args.txt"), "w") as convert_file:
         convert_file.write(str(args))
-    args.pop("alpha")
     args.pop("random_seed")
+    args.pop("gamma")
+    args.pop("only_sensitive")
 
     print("Start experiment ...")
     print("dataset is ", args["dataset"])
     print("#classes is ", args["num_classes"])
     print("#target classes is ", args["config_dataset"]["target_celeblities_num"])
+    # print("pi is ", get_pi(args["num_classes"], args["alpha"]))
+    # print("pj is ", get_pj(args["num_classes"], args["alpha"]))
 
     confidence_gap_fedkd(
         seed=parsed_args.random_seed, output_dir=run_dir, temp_dir=run_dir, **args
