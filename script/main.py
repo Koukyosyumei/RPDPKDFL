@@ -191,10 +191,10 @@ if __name__ == "__main__":
     result = attack_fedkd(
         seed=parsed_args.random_seed,
         gamma=parsed_args.gamma,
-        only_snsitive=only_sensitive,
         output_dir=run_dir,
         temp_dir=run_dir,
         model_path=parsed_args.path_to_model,
+        only_sensitive=only_sensitive,
         **args,
     )
 
