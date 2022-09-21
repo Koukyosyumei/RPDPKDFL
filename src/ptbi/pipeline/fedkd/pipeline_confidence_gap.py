@@ -86,8 +86,7 @@ def confidence_gap_fedkd(
     )
 
     def calculate_entropy_from_dataloader(model, dataloader, device):
-        entropy_sum = 0
-        data_size = 0
+        entropy_list = []
         for data in dataloader:
             _, x, _ = data
             x = x.to(device)
@@ -95,33 +94,45 @@ def confidence_gap_fedkd(
             y_preds = y_preds.cpu()
             y_probs = y_preds.softmax(dim=1)
             y_entropy = (-1 * y_probs * torch.log(y_probs)).sum(dim=1)
-            data_size += x.shape[0]
-            entropy_sum = y_entropy.sum()
-        entropy = entropy_sum / data_size
-        return entropy
+            entropy_list.append(y_entropy)
+        print(entropy_list[0].shape)
+        return torch.stack(entropy_list)
 
-    def calculate_entropy(api):
-        server_public_entropy = calculate_entropy_from_dataloader(
-            api.server, api.public_dataloader, device
-        )
-        print(f"public entropy of server: {server_public_entropy}")
+    def create_fn_calculate_entropy(output_dir):
+        def calculate_entropy(api):
+            server_public_entropy = calculate_entropy_from_dataloader(
+                api.server, api.public_dataloader, device
+            )
+            torch.save(
+                server_public_entropy,
+                os.path.join(output_dir, f"{api.epoch}_server_public.pth"),
+            )
 
-        for client_idx in range(api.client_num):
-            client = api.clients[client_idx]
-            client_public_entropy = calculate_entropy_from_dataloader(
-                client, api.public_dataloader, device
-            )
-            client_local_entropy = calculate_entropy_from_dataloader(
-                client, api.local_dataloaders[client_idx], device
-            )
-            server_local_entropy = calculate_entropy_from_dataloader(
-                api.server, api.local_dataloaders[client_idx], device
-            )
-            print(f"public entropy of client {client_idx}: {client_public_entropy}")
-            print(f"local entropy of client {client_idx}: {client_local_entropy}")
-            print(
-                f"local entropy of server for client {client_idx}: {server_local_entropy}"
-            )
+            for client_idx in range(api.client_num):
+                client = api.clients[client_idx]
+                client_public_entropy = calculate_entropy_from_dataloader(
+                    client, api.public_dataloader, device
+                )
+                client_local_entropy = calculate_entropy_from_dataloader(
+                    client, api.local_dataloaders[client_idx], device
+                )
+                server_local_entropy = calculate_entropy_from_dataloader(
+                    api.server, api.local_dataloaders[client_idx], device
+                )
+                torch.save(
+                    client_public_entropy,
+                    os.path.join(output_dir, f"{api.epoch}_client_public.pth"),
+                )
+                torch.save(
+                    client_local_entropy,
+                    os.path.join(output_dir, f"{api.epoch}_client_local.pth"),
+                )
+                torch.save(
+                    server_local_entropy,
+                    os.path.join(output_dir, f"{api.epoch}_server_local.pth"),
+                )
+
+        return calculate_entropy
 
     # --- Run FedKD --- #
     api = get_fedkd_api(
@@ -138,7 +149,7 @@ def confidence_gap_fedkd(
         input_dim,
         device,
         config_fedkd,
-        custom_action=calculate_entropy,
+        custom_action=create_fn_calculate_entropy(output_dir),
         target_celeblities_num=config_dataset["target_celeblities_num"],
     )
 
