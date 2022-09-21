@@ -91,7 +91,7 @@ def confidence_gap_fedkd(
             _, x, _ = data
             x = x.to(device)
             y_preds = model(x)
-            y_preds = y_preds.cpu()
+            y_preds = y_preds.detach().cpu()
             y_probs = y_preds.softmax(dim=1)
             y_entropy = (-1 * y_probs * torch.log(y_probs)).sum(dim=1)
             entropy_list.append(y_entropy)
@@ -99,41 +99,37 @@ def confidence_gap_fedkd(
 
     def create_fn_calculate_entropy(output_dir):
         def calculate_entropy(api):
-            server_public_entropy = calculate_entropy_from_dataloader(
-                api.server, api.public_dataloader, device
-            )
             torch.save(
-                server_public_entropy,
+                calculate_entropy_from_dataloader(
+                    api.server, api.public_dataloader, device
+                ),
                 os.path.join(output_dir, f"{api.epoch}_server_public.pth"),
             )
 
             for client_idx in range(api.client_num):
                 client = api.clients[client_idx]
-                client_public_entropy = calculate_entropy_from_dataloader(
-                    client, api.public_dataloader, device
-                )
-                client_local_entropy = calculate_entropy_from_dataloader(
-                    client, api.local_dataloaders[client_idx], device
-                )
-                server_local_entropy = calculate_entropy_from_dataloader(
-                    api.server, api.local_dataloaders[client_idx], device
-                )
                 torch.save(
-                    client_public_entropy,
+                    calculate_entropy_from_dataloader(
+                        client, api.public_dataloader, device
+                    ),
                     os.path.join(
                         output_dir, f"{api.epoch}_{client_idx}_client_public.pth"
                     ),
                 )
                 torch.save(
-                    client_local_entropy,
+                    calculate_entropy_from_dataloader(
+                        client, api.local_dataloaders[client_idx], device
+                    ),
                     os.path.join(
                         output_dir, f"{api.epoch}_{client_idx}_client_local.pth"
                     ),
                 )
                 torch.save(
-                    server_local_entropy,
+                    calculate_entropy_from_dataloader(
+                        api.server, api.local_dataloaders[client_idx], device
+                    ),
                     os.path.join(
-                        output_dir, f"{api.epoch}_{{client_idx}}_server_local.pth"
+                        output_dir, f"{api.epoch}_{client_idx}_server_local.pth"
                     ),
                 )
 
