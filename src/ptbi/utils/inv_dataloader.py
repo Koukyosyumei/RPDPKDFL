@@ -137,8 +137,6 @@ def prepare_inv_lag_dataloaders(
     local_identities = np.array_split(local_identities, client_num)
     local_identities = [id_list.tolist() for id_list in local_identities]
 
-    print("target identities is ", local_identities)
-
     alloc = [-1 for _ in range(df.shape[0])]
     for j, (ay, name) in enumerate(zip(df["ay"].tolist(), df["name"].tolist())):
         if ay == 1:
@@ -149,8 +147,6 @@ def prepare_inv_lag_dataloaders(
         if alloc[j] == -1:
             alloc[j] = 0
     df["alloc"] = alloc
-
-    print(df[df["alloc"] == 0]["path"].tolist()[:10])
 
     X_public = np.stack([cv2.imread(p) for p in df[df["alloc"] == 0]["path"].tolist()])
     is_sensitive_public = df[df["alloc"] == 0]["ay"].values
