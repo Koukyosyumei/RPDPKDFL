@@ -168,6 +168,8 @@ def prepare_inv_lag_dataloaders(
     nonsensitive_idx = np.where(is_sensitive_public == 0)[0]
     X_public_input_inv = []
     X_public_output_inv = []
+
+    skipped = 0
     for y in list(np.unique(y_public)):
         y_idx = np.where(y_public == y)[0]
         y_sensitive_idx = list(set(list(y_idx)) & set(list(sensitive_idx)))
@@ -178,9 +180,14 @@ def prepare_inv_lag_dataloaders(
         )
         pairs = random.sample(pairs, min(50, len(pairs)))
 
+        if len(pairs == 0):
+            skipped += 1
+
         for pair in pairs:
             X_public_input_inv.append(X_public[pair[1]])
             X_public_output_inv.append(X_public[pair[0]])
+
+    print("#skipped", skipped)
 
     X_public_input_inv = np.stack(X_public_input_inv)
     X_public_output_inv = np.stack(X_public_output_inv)
