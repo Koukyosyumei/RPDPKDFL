@@ -15,6 +15,7 @@ def reconstruct_all_possible_targets(
     device,
     base_name="",
 ):
+    inv.eval()
     target_ids = sum(local_identities, [])
 
     target_labels = [id2label[celeb_id] for celeb_id in target_ids]
@@ -49,6 +50,7 @@ def reconstruct_all_possible_targets_with_pair_logits(
     pj,
     base_name="",
 ):
+    inv.eval()
     target_ids = sum(local_identities, [])
 
     target_labels = [id2label[celeb_id] for celeb_id in target_ids]

@@ -118,6 +118,7 @@ def train_our_inv_model_on_logits_dataloader(
 ):
     inv_running_loss = 0
     running_size = 0
+    inv.train()
     for data in prediction_dataloader:
         if ablation_study != 2:
             loss, x, x_rec = train_our_inv_model(
