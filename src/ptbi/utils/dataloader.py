@@ -858,9 +858,7 @@ def prepare_lag_dataloaders(
     name2id = {name: i for i, name in enumerate(unique_name_list)}
     unique_name_min_img_num = np.array(unique_name_min_img_num)
 
-    local_identities = random.sample(
-        list(range(len(unique_name_list))), target_celeblities_num
-    )
+    local_identities = random.sample(list(unique_name_list), target_celeblities_num)
     local_identities = np.array_split(local_identities, client_num)
     local_identities = [id_list.tolist() for id_list in local_identities]
 
