@@ -330,6 +330,14 @@ def prepare_inv_lfw_dataloaders(
     X_public = np.stack(X_public_list)
     y_public = np.array(y_public_list)
     is_sensitive_public = np.array(is_sensitive_public_list)
+    X_private_list = [np.stack(x) for x in X_private_lists]
+    y_private_list = [np.array(y) for y in y_private_lists]
+
+    print("#nonsensitive labels: ", len(np.unique(y_public)))
+    print(
+        "#sensitive labels: ",
+        len(np.unique(sum([t.tolist() for t in y_private_list], []))),
+    )
 
     transforms_list = [transforms.ToTensor()]
     if channel == 1:
@@ -351,22 +359,24 @@ def prepare_inv_lfw_dataloaders(
     X_public_output_inv = []
 
     skipped = 0
+    sensitive_labels = np.unique(sum([t.tolist() for t in y_private_list], [])).tolist()
     for y in list(np.unique(y_public)):
-        y_idx = np.where(y_public == y)[0]
-        y_sensitive_idx = list(set(list(y_idx)) & set(list(sensitive_idx)))
-        y_nonsensitive_idx = list(set(list(y_idx)) & set(list(nonsensitive_idx)))
+        if y not in sensitive_labels:
+            y_idx = np.where(y_public == y)[0]
+            y_sensitive_idx = list(set(list(y_idx)) & set(list(sensitive_idx)))
+            y_nonsensitive_idx = list(set(list(y_idx)) & set(list(nonsensitive_idx)))
 
-        pairs = sum(
-            [[(ys, yn) for yn in y_nonsensitive_idx] for ys in y_sensitive_idx], []
-        )
-        pairs = random.sample(pairs, min(50, len(pairs)))
+            pairs = sum(
+                [[(ys, yn) for yn in y_nonsensitive_idx] for ys in y_sensitive_idx], []
+            )
+            pairs = random.sample(pairs, min(50, len(pairs)))
 
-        if len(pairs) == 0:
-            skipped += 1
+            if len(pairs) == 0:
+                skipped += 1
 
-        for pair in pairs:
-            X_public_input_inv.append(X_public[pair[1]])
-            X_public_output_inv.append(X_public[pair[0]])
+            for pair in pairs:
+                X_public_input_inv.append(X_public[pair[1]])
+                X_public_output_inv.append(X_public[pair[0]])
 
     print("#skipped", skipped)
 
