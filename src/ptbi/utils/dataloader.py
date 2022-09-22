@@ -862,6 +862,9 @@ def prepare_lag_dataloaders(
     local_identities = np.array_split(local_identities, client_num)
     local_identities = [id_list.tolist() for id_list in local_identities]
 
+    print(local_identities)
+    print(df["name"].tolist())
+
     alloc = [-1 for _ in range(df.shape[0])]
     for j, (ay, name) in enumerate(zip(df["ay"].tolist(), df["name"].tolist())):
         if ay == 1:
@@ -884,6 +887,9 @@ def prepare_lag_dataloaders(
         np.array([name2id[n] for n in df[df["alloc"] == i + 1]["name"].tolist()])
         for i in range(client_num)
     ]
+
+    print(y_public)
+    print(y_private_list)
 
     print("#nonsensitive labels: ", len(np.unique(y_public)[0]))
     print(
