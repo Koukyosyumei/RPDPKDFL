@@ -885,10 +885,10 @@ def prepare_lag_dataloaders(
         for i in range(client_num)
     ]
 
-    print("#nonsensitive labels: ", np.unique(y_public)[0].shape)
+    print("#nonsensitive labels: ", len(np.unique(y_public)[0]))
     print(
         "#sensitive labels: ",
-        np.unique(sum([t.tolist() for t in y_private_list], []))[0].shape,
+        len(np.unique(sum([t.tolist() for t in y_private_list], []))[0]),
     )
 
     transforms_list = [transforms.ToTensor()]
