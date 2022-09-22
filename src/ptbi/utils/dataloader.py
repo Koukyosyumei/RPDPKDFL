@@ -870,7 +870,7 @@ def prepare_lag_dataloaders(
     for j, (ay, name) in enumerate(zip(df["ay"].tolist(), df["name"].tolist())):
         if ay == 1:
             for i in range(client_num):
-                if name2id[name] in local_identities[i]:
+                if name in local_identities[i]:
                     alloc[j] = i + 1
                     break
         if alloc[j] == -1:
