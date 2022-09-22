@@ -455,6 +455,12 @@ def prepare_lfw_dataloaders(
     X_private_list = [np.stack(x) for x in X_private_lists]
     y_private_list = [np.array(y) for y in y_private_lists]
 
+    print("#nonsensitive labels: ", len(np.unique(y_public)))
+    print(
+        "#sensitive labels: ",
+        len(np.unique(sum([t.tolist() for t in y_private_list], []))),
+    )
+
     transforms_list = [transforms.ToTensor()]
     if channel == 1:
         transforms_list.append(transforms.Grayscale())
@@ -664,6 +670,12 @@ def prepare_facescrub_dataloaders(
     X_test = np.concatenate(X_private_test_list + [X_public_test], axis=0)
     y_test = np.concatenate(y_private_test_list + [y_public_test], axis=0)
 
+    print("#nonsensitive labels: ", len(np.unique(y_public)))
+    print(
+        "#sensitive labels: ",
+        len(np.unique(sum([t.tolist() for t in y_private_list], []))),
+    )
+
     transforms_list = [transforms.ToTensor()]
     if channel == 1:
         transforms_list.append(transforms.Grayscale())
@@ -844,8 +856,6 @@ def prepare_lag_dataloaders(
     df["top"] = df["name"].apply(lambda x: x in top_identities)
     df = df[df["top"]]
 
-    print(df.head())
-
     unique_name_list = []
     unique_name_min_img_num = []
 
@@ -861,9 +871,6 @@ def prepare_lag_dataloaders(
     local_identities = random.sample(list(unique_name_list), target_celeblities_num)
     local_identities = np.array_split(local_identities, client_num)
     local_identities = [id_list.tolist() for id_list in local_identities]
-
-    print(local_identities)
-    print(df["name"].tolist())
 
     alloc = [-1 for _ in range(df.shape[0])]
     for j, (ay, name) in enumerate(zip(df["ay"].tolist(), df["name"].tolist())):
@@ -887,9 +894,6 @@ def prepare_lag_dataloaders(
         np.array([name2id[n] for n in df[df["alloc"] == i + 1]["name"].tolist()])
         for i in range(client_num)
     ]
-
-    # print(y_public)
-    # print(y_private_list)
 
     print("#nonsensitive labels: ", len(np.unique(y_public)))
     print(
