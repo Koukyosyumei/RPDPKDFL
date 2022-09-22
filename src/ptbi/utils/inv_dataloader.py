@@ -180,7 +180,7 @@ def prepare_inv_lag_dataloaders(
         )
         pairs = random.sample(pairs, min(50, len(pairs)))
 
-        if len(pairs == 0):
+        if len(pairs) == 0:
             skipped += 1
 
         for pair in pairs:
