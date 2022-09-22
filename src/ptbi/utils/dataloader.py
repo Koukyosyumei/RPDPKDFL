@@ -885,15 +885,20 @@ def prepare_lag_dataloaders(
     name2id = {name: i for i, name in enumerate(unique_name_list)}
     unique_name_min_img_num = np.array(unique_name_min_img_num)
 
-    local_identities = random.sample(list(unique_name_list), target_celeblities_num)
-    local_identities = np.array_split(local_identities, client_num)
-    local_identities = [id_list.tolist() for id_list in local_identities]
+    local_identities_names = random.sample(
+        list(unique_name_list), target_celeblities_num
+    )
+    local_identities_names = np.array_split(local_identities_names, client_num)
+    local_identities_names = [id_list.tolist() for id_list in local_identities_names]
+    local_identities = [
+        [name2id[name] for name in name_list] for name_list in local_identities_names
+    ]
 
     alloc = [-1 for _ in range(df.shape[0])]
     for j, (ay, name) in enumerate(zip(df["ay"].tolist(), df["name"].tolist())):
         if ay == 1:
             for i in range(client_num):
-                if name in local_identities[i]:
+                if name in local_identities_names[i]:
                     alloc[j] = i + 1
                     break
         if alloc[j] == -1:
