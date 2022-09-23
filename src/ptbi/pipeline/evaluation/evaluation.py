@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 import torch
 import tqdm
-from skimage.metrics import structural_similarity as ssim
+from skimage.metrics import structural_similarity
 
 from ...utils.loss import SSIMLoss
 from ...utils.utils_data import (
@@ -313,16 +313,23 @@ def evaluation_full_multi_models(
         for i in range(len(reconstructed_imgs)):
             for j in range(len(reconstructed_imgs)):
                 if i != j:
-                    ssim_matrix[i][j] = ssim(
+                    ssim_matrix[i][j] = structural_similarity(
                         reconstructed_imgs[i],
                         reconstructed_imgs[j],
                         multichannel=True,
-                        data_range=1,
+                        data_range=2,
                     )
 
         best_img = reconstructed_imgs[
             np.argmin(ssim_matrix.sum(axis=0) / (client_num - 1) + beta * tv_array)
         ]
+        np.save(
+            os.path.join(output_dir, "best_" + str(label)),
+            cv2.cvtColor(
+                best_img.transpose(1, 2, 0) * 0.5 + 0.5,
+                cv2.COLOR_BGR2RGB,
+            ),
+        )
         best_img_tensor = torch.Tensor(best_img).to(device)
 
         np.save(
