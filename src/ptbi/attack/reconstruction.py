@@ -59,7 +59,7 @@ def reconstruct_all_possible_targets_with_pair_logits(
     for label_batch in target_labels_batch:
 
         dummy_pred_server = torch.ones(label_batch.shape[0], output_dim).to(device) * pi
-        dummy_pred_server[:, label_batch] *= pj
+        dummy_pred_server[:, label_batch] = pj
         dummy_pred_local = torch.eye(output_dim)[label_batch].to(device)
         dummy_preds = torch.cat([dummy_pred_server, dummy_pred_local], dim=1).to(device)
 
