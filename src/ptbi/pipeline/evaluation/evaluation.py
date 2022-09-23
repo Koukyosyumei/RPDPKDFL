@@ -314,10 +314,10 @@ def evaluation_full_multi_models(
             for j in range(len(reconstructed_imgs)):
                 if i != j:
                     ssim_matrix[i][j] = structural_similarity(
-                        reconstructed_imgs[i],
-                        reconstructed_imgs[j],
+                        reconstructed_imgs[i].transpose(1, 2, 0) * 0.5 + 0.5,
+                        reconstructed_imgs[j].transpose(1, 2, 0) * 0.5 + 0.5,
                         multichannel=True,
-                        data_range=2,
+                        data_range=1,
                     )
 
         best_img = reconstructed_imgs[
