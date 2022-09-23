@@ -210,7 +210,9 @@ def evaluation_full(
                 .numpy()
             )
 
-        best_label = np.nanargmax(ssim_private_list + ssim_public_list)
+        best_label = np.nanargmax(
+            ssim_private_list.tolist() + ssim_public_list.tolist()
+        )
         ssim_private = ssim_private_list[label]
         ssim_public = ssim_public_list[label]
 
