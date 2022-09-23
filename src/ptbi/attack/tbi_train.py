@@ -4,7 +4,11 @@ import numpy as np
 import torch
 from ptbi.utils.utils_data import total_variance
 
-from ..utils.tbi_setup import setup_our_inv_dataloader, setup_tbi_inv_dataloader
+from ..utils.tbi_setup import (
+    setup_our_inv_dataloader,
+    setup_our_inv_dataloader_from_single_client,
+    setup_tbi_inv_dataloader,
+)
 from .confidence import get_pi, get_pj
 from .reconstruction import (
     reconstruct_all_possible_targets,
@@ -283,6 +287,152 @@ def get_our_inv_train_func(
                     pj,
                     base_name=api.epoch,
                 )
+
+    return inv_train
+
+
+def get_our_inv_train_func_with_multi_models(
+    client_num,
+    is_sensitive_flag,
+    local_identities,
+    inv_transform,
+    return_idx,
+    seed,
+    batch_size,
+    num_workers,
+    device,
+    inv_path_list,
+    inv_tempreature,
+    inv_batch_size,
+    inv_epoch,
+    inv,
+    inv_optimizer,
+    prior,
+    criterion,
+    output_dim,
+    attack_type,
+    id2label,
+    output_dir,
+    ablation_study,
+    alpha,
+    gamma=0.1,
+    only_sensitive=True,
+):
+    def inv_train(api):
+
+        target_labels = sum(local_identities, [])
+
+        for target_client_id in range(client_num):
+
+            def target_client_api(x_):
+                return api.clients[target_client_id](x_).detach()
+
+            prediction_dataloader = setup_our_inv_dataloader_from_single_client(
+                target_labels,
+                is_sensitive_flag,
+                api,
+                target_client_api,
+                inv_transform,
+                return_idx,
+                seed,
+                batch_size,
+                num_workers,
+                device,
+                inv_tempreature,
+                inv_batch_size,
+                only_sensitive,
+            )
+
+            checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
+            inv.load_state_dict(checkpoint["model"])
+            inv_optimizer.load_state_dict(checkpoint["optimizer"])
+
+            for i in range(1, inv_epoch + 1):
+                (inv_running_loss, _, _) = train_our_inv_model_on_logits_dataloader(
+                    prediction_dataloader,
+                    prior,
+                    device,
+                    inv,
+                    inv_optimizer,
+                    criterion,
+                    ablation_study,
+                    gamma=gamma,
+                )
+
+                print(f"inv epoch={i}, inv loss ", inv_running_loss)
+
+                if ablation_study == 0:
+                    inv_prior_loss = train_our_inv_model_with_only_priors(
+                        target_labels,
+                        prior,
+                        device,
+                        inv,
+                        inv_optimizer,
+                        criterion,
+                        gamma=gamma,
+                    )
+
+                    print(f"inv epoch={i}, prior loss ", inv_prior_loss)
+                elif ablation_study == 2:
+                    pi = get_pi(output_dim, alpha)
+                    pj = get_pj(output_dim, alpha)
+                    inv_prior_loss = train_our_inv_model_with_only_priors_paird_logits(
+                        target_labels,
+                        prior,
+                        device,
+                        inv,
+                        inv_optimizer,
+                        criterion,
+                        pi,
+                        pj,
+                        gamma=gamma,
+                    )
+
+                    print(f"inv epoch={i}, prior loss ", inv_prior_loss)
+
+            with open(
+                os.path.join(output_dir, "inv_result.txt"),
+                "a",
+                encoding="utf-8",
+                newline="\n",
+            ) as f:
+                f.write(f"{i}, {inv_running_loss}\n")
+
+            state = {
+                "model": inv.state_dict(),
+                "optimizer": inv_optimizer.state_dict(),
+            }
+            torch.save(state, inv_path_list[target_client_id] + ".pth")
+
+            if api.epoch % 2 == 1:
+                print("saving ...")
+                if ablation_study != 2:
+                    reconstruct_all_possible_targets(
+                        attack_type,
+                        local_identities,
+                        inv,
+                        output_dim,
+                        id2label,
+                        client_num,
+                        output_dir,
+                        device,
+                        base_name=api.epoch + f"_{target_client_id}",
+                    )
+                else:
+                    pi = get_pi(output_dim, alpha)
+                    pj = get_pj(output_dim, alpha)
+                    reconstruct_all_possible_targets_with_pair_logits(
+                        attack_type,
+                        local_identities,
+                        inv,
+                        output_dim,
+                        id2label,
+                        output_dir,
+                        device,
+                        pi,
+                        pj,
+                        base_name=api.epoch + f"_{target_client_id}",
+                    )
 
     return inv_train
 
