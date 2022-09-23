@@ -185,7 +185,7 @@ def get_our_inv_train_func(
             target_labels,
             is_sensitive_flag,
             api,
-            target_client_apis,
+            [target_client_apis[0]],
             inv_transform,
             return_idx,
             seed,
