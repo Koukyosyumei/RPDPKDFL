@@ -205,7 +205,7 @@ def setup_our_inv_dataloader(
             public_x_tensor, y_pred_server_tensor, y_pred_local_tensor, y_label_tensor
         ),
         batch_size=inv_batch_size,
-        shuffle=True,
+        shuffle=False,
         num_workers=num_workers,
         worker_init_fn=worker_init_fn,
         generator=g,
