@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import torch
+from ptbi.utils.utils_data import total_variance
 
 from ..utils.tbi_setup import setup_our_inv_dataloader, setup_tbi_inv_dataloader
 from .confidence import get_pi, get_pj
@@ -43,7 +44,14 @@ def train_our_inv_model(
 
 
 def train_our_inv_model_with_pair_logits(
-    data, prior, device, inv_model, optimizer, criterion, gamma=0.1
+    data,
+    prior,
+    device,
+    inv_model,
+    optimizer,
+    criterion,
+    gamma=0.1,
+    beta=0.001,
 ):
     x = data[0].to(device)
     y_pred_server = data[1].to(device)
@@ -54,8 +62,10 @@ def train_our_inv_model_with_pair_logits(
 
     optimizer.zero_grad()
     x_rec_original = inv_model(y_preds_server_and_local.reshape(x.shape[0], -1, 1, 1))
-    loss = criterion(x, x_rec_original) + gamma * criterion(
-        prior[y_label].to(device), x_rec_original
+    loss = (
+        criterion(x, x_rec_original)
+        + gamma * criterion(prior[y_label].to(device), x_rec_original)
+        + beta * total_variance(x_rec_original)
     )
     loss.backward()
     optimizer.step()
