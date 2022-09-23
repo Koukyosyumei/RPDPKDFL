@@ -21,10 +21,11 @@ def setup_training_based_inversion(
     temp_dir,
     ablation_study,
 ):
+    inv_input_dim = num_classes * 2 if ablation_study == 2 else num_classes
     temp_path_list = []
     for i in range(client_num):
         inv = get_invmodel_class(invmodel_type)(
-            input_dim=num_classes,
+            input_dim=inv_input_dim,
             output_shape=(
                 config_dataset["channel"],
                 config_dataset["height"],
@@ -144,16 +145,24 @@ def setup_our_inv_dataloader(
     device,
     inv_tempreature,
     inv_batch_size,
+    only_sensitive=True,
 ):
 
-    sensitive_flag = np.where(is_sensitive_flag == 1)[0]
-
-    inv_trainset = NumpyDataset(
-        x=api.public_dataloader.dataset.x[sensitive_flag],
-        y=api.public_dataloader.dataset.y[sensitive_flag],
-        transform=inv_transform,
-        return_idx=return_idx,
-    )
+    if only_sensitive:
+        sensitive_flag = np.where(is_sensitive_flag == 1)[0]
+        inv_trainset = NumpyDataset(
+            x=api.public_dataloader.dataset.x[sensitive_flag],
+            y=api.public_dataloader.dataset.y[sensitive_flag],
+            transform=inv_transform,
+            return_idx=return_idx,
+        )
+    else:
+        inv_trainset = NumpyDataset(
+            x=api.public_dataloader.dataset.x,
+            y=api.public_dataloader.dataset.y,
+            transform=inv_transform,
+            return_idx=return_idx,
+        )
 
     g = torch.Generator()
     g.manual_seed(seed)
@@ -169,25 +178,31 @@ def setup_our_inv_dataloader(
     # --- Receive logits --- #
     public_x_list = []
     y_label_list = []
+    y_pred_server_list = []
     y_pred_local_list = []
     for target_client_api in target_client_api_list:
         for data in inv_public_dataloader:
             x = data[1].to(device).detach()
             y_label = data[2]
+            y_pred_server = torch.softmax(
+                api.server(x) / inv_tempreature, dim=-1
+            ).detach()
             y_pred_local = torch.softmax(
                 target_client_api(x) / inv_tempreature, dim=-1
             ).detach()
             public_x_list.append(x.cpu())
             y_label_list.append(y_label.cpu())
+            y_pred_server_list.append(y_pred_server.cpu())
             y_pred_local_list.append(y_pred_local.cpu())
 
     public_x_tensor = torch.cat(public_x_list)
     y_label_tensor = torch.cat(y_label_list)
+    y_pred_server_tensor = torch.cat(y_pred_server_list)
     y_pred_local_tensor = torch.cat(y_pred_local_list)
 
     prediction_dataloader = torch.utils.data.DataLoader(
         torch.utils.data.TensorDataset(
-            public_x_tensor, y_pred_local_tensor, y_label_tensor
+            public_x_tensor, y_pred_server_tensor, y_pred_local_tensor, y_label_tensor
         ),
         batch_size=inv_batch_size,
         shuffle=True,

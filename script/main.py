@@ -4,6 +4,7 @@ import random
 import string
 from datetime import datetime
 
+from ptbi.attack.confidence import get_pi, get_pj
 from ptbi.config.config import config_base, config_dataset, config_fedkd
 from ptbi.pipeline.fedkd.pipeline import attack_fedkd
 
@@ -61,6 +62,7 @@ def add_args(parser):
         help="type of attack; ptbi or tbi",
     )
 
+    parser.add_argument("--alpha", type=float, default=3.0, help="alpha")
     parser.add_argument("--gamma", type=float, default=0.1, help="gamma")
 
     parser.add_argument(
@@ -73,6 +75,13 @@ def add_args(parser):
         type=float,
         default=1.0,
         help="tempreature $\tau$",
+    )
+
+    parser.add_argument(
+        "--data_for_inversion",
+        type=int,
+        default=1,
+        help="0: both, 1: only sensitive",
     )
 
     parser.add_argument(
@@ -128,6 +137,7 @@ if __name__ == "__main__":
     args["client_num"] = parsed_args.client_num
     args["inv_lr"] = parsed_args.inv_learning_rate
     args["loss_type"] = parsed_args.invloss
+    args["alpha"] = parsed_args.alpha
 
     if args["dataset"] == "AT&T":
         args["num_classes"] = 40
@@ -160,17 +170,23 @@ if __name__ == "__main__":
     run_dir = os.path.join(parsed_args.output_folder, run_id)
     os.makedirs(run_dir)
 
+    only_sensitive = parsed_args.data_for_inversion == 1
+
     args["random_seed"] = parsed_args.random_seed
     args["gamma"] = parsed_args.gamma
+    args["only_sensitive"] = parsed_args.data_for_inversion
     with open(os.path.join(run_dir, "args.txt"), "w") as convert_file:
         convert_file.write(str(args))
     args.pop("random_seed")
     args.pop("gamma")
+    args.pop("only_sensitive")
 
     print("Start experiment ...")
     print("dataset is ", args["dataset"])
     print("#classes is ", args["num_classes"])
     print("#target classes is ", args["config_dataset"]["target_celeblities_num"])
+    print("pi is ", get_pi(args["num_classes"], args["alpha"]))
+    print("pj is ", get_pj(args["num_classes"], args["alpha"]))
 
     result = attack_fedkd(
         seed=parsed_args.random_seed,
@@ -178,6 +194,7 @@ if __name__ == "__main__":
         output_dir=run_dir,
         temp_dir=run_dir,
         model_path=parsed_args.path_to_model,
+        only_sensitive=only_sensitive,
         **args,
     )
 

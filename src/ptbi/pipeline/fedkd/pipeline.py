@@ -6,7 +6,11 @@ import random
 import numpy as np
 import torch
 
-from ...attack.reconstruction import reconstruct_all_possible_targets
+from ...attack.confidence import get_pi, get_pj
+from ...attack.reconstruction import (
+    reconstruct_all_possible_targets,
+    reconstruct_all_possible_targets_with_pair_logits,
+)
 from ...attack.tbi_train import get_our_inv_train_func, get_tbi_inv_train_func
 from ...model.invmodel import AE
 from ...model.model import get_model_class
@@ -35,6 +39,7 @@ def attack_fedkd(
     inv_epoch=10,
     inv_lr=0.003,
     inv_tempreature=1.0,
+    alpha=3.0,
     gamma=0.1,
     ablation_study=0,
     config_fedkd=None,
@@ -42,6 +47,7 @@ def attack_fedkd(
     output_dir="",
     temp_dir="./",
     model_path="./",
+    only_sensitive=True,
 ):
     # --- Fix seed --- #
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -147,8 +153,6 @@ def attack_fedkd(
         y_pub_nonsensitive = torch.Tensor(
             public_train_dataloader.dataset.y[nonsensitive_idxs]
         )
-        print(x_pub_nonsensitive.shape)
-        print(y_pub_nonsensitive.shape)
 
         prior = torch.zeros(
             (
@@ -175,6 +179,8 @@ def attack_fedkd(
                     / lab_idxs_size
                 )
 
+        torch.save(prior, os.path.join(output_dir, "prior.pth"))
+
         inv_train = get_our_inv_train_func(
             client_num,
             is_sensitive_flag,
@@ -197,7 +203,9 @@ def attack_fedkd(
             id2label,
             output_dir,
             ablation_study,
+            alpha,
             gamma=gamma,
+            only_sensitive=only_sensitive,
         )
     elif attack_type == "tbi":
         inv_train = get_tbi_inv_train_func(
@@ -245,17 +253,33 @@ def attack_fedkd(
         pickle.dump(fedkd_result, f)
 
     # --- Attack --- #
-    reconstruct_all_possible_targets(
-        attack_type,
-        local_identities,
-        inv,
-        output_dim,
-        id2label,
-        client_num,
-        output_dir,
-        device,
-        base_name=str(num_communication),
-    )
+    if ablation_study != 2:
+        reconstruct_all_possible_targets(
+            attack_type,
+            local_identities,
+            inv,
+            output_dim,
+            id2label,
+            client_num,
+            output_dir,
+            device,
+            base_name=str(num_communication),
+        )
+    else:
+        pi = get_pi(output_dim, alpha)
+        pj = get_pj(output_dim, alpha)
+        reconstruct_all_possible_targets_with_pair_logits(
+            attack_type,
+            local_identities,
+            inv,
+            output_dim,
+            id2label,
+            output_dir,
+            device,
+            pi,
+            pj,
+            base_name=str(num_communication),
+        )
     result = evaluation_full(
         client_num,
         num_classes,

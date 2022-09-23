@@ -119,8 +119,6 @@ def prepare_inv_lag_dataloaders(
     df["top"] = df["name"].apply(lambda x: x in top_identities)
     df = df[df["top"]]
 
-    print(df.head())
-
     unique_name_list = []
     unique_name_min_img_num = []
 
@@ -133,26 +131,20 @@ def prepare_inv_lag_dataloaders(
     name2id = {name: i for i, name in enumerate(unique_name_list)}
     unique_name_min_img_num = np.array(unique_name_min_img_num)
 
-    local_identities = random.sample(
-        list(range(len(unique_name_list))), target_celeblities_num
-    )
+    local_identities = random.sample(list(unique_name_list), target_celeblities_num)
     local_identities = np.array_split(local_identities, client_num)
     local_identities = [id_list.tolist() for id_list in local_identities]
-
-    print("target identities is ", local_identities)
 
     alloc = [-1 for _ in range(df.shape[0])]
     for j, (ay, name) in enumerate(zip(df["ay"].tolist(), df["name"].tolist())):
         if ay == 1:
             for i in range(client_num):
-                if name2id[name] in local_identities[i]:
+                if name in local_identities[i]:
                     alloc[j] = i + 1
                     break
         if alloc[j] == -1:
             alloc[j] = 0
     df["alloc"] = alloc
-
-    print(df[df["alloc"] == 0]["path"].tolist()[:10])
 
     X_public = np.stack([cv2.imread(p) for p in df[df["alloc"] == 0]["path"].tolist()])
     is_sensitive_public = df[df["alloc"] == 0]["ay"].values
@@ -176,6 +168,8 @@ def prepare_inv_lag_dataloaders(
     nonsensitive_idx = np.where(is_sensitive_public == 0)[0]
     X_public_input_inv = []
     X_public_output_inv = []
+
+    skipped = 0
     for y in list(np.unique(y_public)):
         y_idx = np.where(y_public == y)[0]
         y_sensitive_idx = list(set(list(y_idx)) & set(list(sensitive_idx)))
@@ -186,9 +180,14 @@ def prepare_inv_lag_dataloaders(
         )
         pairs = random.sample(pairs, min(50, len(pairs)))
 
+        if len(pairs) == 0:
+            skipped += 1
+
         for pair in pairs:
             X_public_input_inv.append(X_public[pair[1]])
             X_public_output_inv.append(X_public[pair[0]])
+
+    print("#skipped", skipped)
 
     X_public_input_inv = np.stack(X_public_input_inv)
     X_public_output_inv = np.stack(X_public_output_inv)
@@ -263,43 +262,48 @@ def prepare_inv_lfw_dataloaders(
     mask_path_list.sort()
 
     path_list = []
+    nomask_path_list = []
     name_list = []
-    ismask_list = []
+    # ismask_list = []
     for mask_path in mask_path_list:
         name = mask_path.split("/")[-2]
         file_name = mask_path.split("/")[-1]
         nomask_path = f"{data_folder}/lfw-align-128/{name}/{file_name}"
         name_list.append(name)
-        if random.random() > 0.5:
-            path_list.append(mask_path)
-            ismask_list.append(1)
-        else:
-            path_list.append(nomask_path)
-            ismask_list.append(0)
+        path_list.append(mask_path)
+        nomask_path_list.append(nomask_path)
+        # if random.random() > 0.5:
+        #    path_list.append(mask_path)
+        #    ismask_list.append(1)
+        # else:
+        #    path_list.append(nomask_path)
+        #    ismask_list.append(0)
 
-    df = pd.DataFrame(columns=["name", "path", "ismask"])
+    df = pd.DataFrame(columns=["name", "path", "nomask_path", "ismask"])
     df["name"] = name_list
     df["path"] = path_list
-    df["ismask"] = ismask_list
+    df["nomask_path"] = nomask_path_list
+    # df["ismask"] = ismask_list
 
     top_identities = (
         df.groupby("name")
         .count()
-        .sort_values("ismask", ascending=False)
+        .sort_values("path", ascending=False)
         .index[:num_classes]
+        .to_list()
     )
     df["top"] = df["name"].apply(lambda x: x in top_identities)
     df = df[df["top"]]
 
-    name_with_both_types_of_images = []
-    for name in df["name"].unique():
-        if df[df["name"] == name].groupby("ismask").count().shape[0] > 1:
-            name_with_both_types_of_images.append(name)
+    # name_with_both_types_of_images = []
+    # for name in df["name"].unique():
+    #    if df[df["name"] == name].groupby("ismask").count().shape[0] > 1:
+    #        name_with_both_types_of_images.append(name)
 
-    name2id = {name: i for i, name in enumerate(df["name"].unique())}
+    name2id = {name: i for i, name in enumerate(top_identities)}
 
     local_identities_names = np.array_split(
-        random.sample(name_with_both_types_of_images, target_celeblities_num),
+        random.sample(top_identities, target_celeblities_num),
         client_num,
     )
     local_identities = [
@@ -317,20 +321,40 @@ def prepare_inv_lfw_dataloaders(
     X_private_lists = [[] for _ in range(client_num)]
     y_private_lists = [[] for _ in range(client_num)]
 
-    for name, path, ismask in zip(
-        df["name"].to_list(), df["path"].to_list(), df["ismask"].to_list()
-    ):
-        if name2id[name] in name_id2client_id and ismask == 0:
-            X_private_lists[name_id2client_id[name2id[name]]].append(cv2.imread(path))
-            y_private_lists[name_id2client_id[name2id[name]]].append(name2id[name])
-        else:
-            X_public_list.append(cv2.imread(path))
-            y_public_list.append(name2id[name])
-            is_sensitive_public_list.append(1 - ismask)
+    for u_name in top_identities:
+        idxs = np.array_split(list(range(df[df["name"] == u_name].shape[0])), 2)
+        path_list = df[df["name"] == u_name]["path"].values
+        nomask_path_list = df[df["name"] == u_name]["nomask_path"].values
+
+        for idx in idxs:
+            for path in path_list[idx]:
+                X_public_list.append(cv2.imread(path))
+                y_public_list.append(name2id[u_name])
+                is_sensitive_public_list.append(0)
+            for path in nomask_path_list[idx]:
+                if name2id[u_name] in name_id2client_id:
+                    X_private_lists[name_id2client_id[name2id[u_name]]].append(
+                        cv2.imread(path)
+                    )
+                    y_private_lists[name_id2client_id[name2id[u_name]]].append(
+                        name2id[u_name]
+                    )
+                else:
+                    X_public_list.append(cv2.imread(path))
+                    y_public_list.append(name2id[u_name])
+                    is_sensitive_public_list.append(1)
 
     X_public = np.stack(X_public_list)
     y_public = np.array(y_public_list)
     is_sensitive_public = np.array(is_sensitive_public_list)
+    # X_private_list = [np.stack(x) for x in X_private_lists]
+    y_private_list = [np.array(y) for y in y_private_lists]
+
+    print("#nonsensitive labels: ", len(np.unique(y_public)))
+    print(
+        "#sensitive labels: ",
+        len(np.unique(sum([t.tolist() for t in y_private_list], []))),
+    )
 
     transforms_list = [transforms.ToTensor()]
     if channel == 1:
@@ -350,19 +374,28 @@ def prepare_inv_lfw_dataloaders(
     nonsensitive_idx = np.where(is_sensitive_public == 0)[0]
     X_public_input_inv = []
     X_public_output_inv = []
+
+    skipped = 0
+    sensitive_labels = np.unique(sum([t.tolist() for t in y_private_list], [])).tolist()
     for y in list(np.unique(y_public)):
-        y_idx = np.where(y_public == y)[0]
-        y_sensitive_idx = list(set(list(y_idx)) & set(list(sensitive_idx)))
-        y_nonsensitive_idx = list(set(list(y_idx)) & set(list(nonsensitive_idx)))
+        if y not in sensitive_labels:
+            y_idx = np.where(y_public == y)[0]
+            y_sensitive_idx = list(set(list(y_idx)) & set(list(sensitive_idx)))
+            y_nonsensitive_idx = list(set(list(y_idx)) & set(list(nonsensitive_idx)))
 
-        pairs = sum(
-            [[(ys, yn) for yn in y_nonsensitive_idx] for ys in y_sensitive_idx], []
-        )
-        pairs = random.sample(pairs, min(50, len(pairs)))
+            pairs = sum(
+                [[(ys, yn) for yn in y_nonsensitive_idx] for ys in y_sensitive_idx], []
+            )
+            pairs = random.sample(pairs, min(50, len(pairs)))
 
-        for pair in pairs:
-            X_public_input_inv.append(X_public[pair[1]])
-            X_public_output_inv.append(X_public[pair[0]])
+            if len(pairs) == 0:
+                skipped += 1
+
+            for pair in pairs:
+                X_public_input_inv.append(X_public[pair[1]])
+                X_public_output_inv.append(X_public[pair[0]])
+
+    print("#skipped", skipped)
 
     X_public_input_inv = np.stack(X_public_input_inv)
     X_public_output_inv = np.stack(X_public_output_inv)
@@ -460,9 +493,23 @@ def prepare_facescrub_dataloaders(
             ]
         else:
             idx = np.where(np_resized_labels == id2name[i])[0]
-            X_public_list.append(np_resized_imgs[idx])
-            y_public_list += [i for _ in range(len(idx))]
-            is_sensitive_public_list += [1 for _ in range(len(idx))]
+            sep_idxs = np.array_split(idx, 2)
+
+            X_public_list.append(np_resized_imgs[sep_idxs[0]])
+            y_public_list += [i for _ in range(len(sep_idxs[0]))]
+            is_sensitive_public_list += [1 for _ in range(len(sep_idxs[0]))]
+
+            temp_array = []
+            for temp_idx in range(np_resized_imgs[sep_idxs[1]].shape[0]):
+                temp_array.append(
+                    cv2.blur(
+                        np_resized_imgs[sep_idxs[1]][temp_idx],
+                        (blur_strength, blur_strength),
+                    )
+                )
+            X_public_list.append(np.stack(temp_array))
+            y_public_list += [i for _ in range(len(sep_idxs[1]))]
+            is_sensitive_public_list += [0 for _ in range(len(sep_idxs[1]))]
 
     X_public = np.concatenate(X_public_list)
     y_public = np.array(y_public_list)
@@ -505,6 +552,8 @@ def prepare_facescrub_dataloaders(
     nonsensitive_idx = np.where(is_sensitive_public_train == 0)[0]
     X_public_input_inv = []
     X_public_output_inv = []
+
+    skipped = 0
     for y in list(np.unique(y_public_train)):
         y_idx = np.where(y_public_train == y)[0]
         y_sensitive_idx = list(set(list(y_idx)) & set(list(sensitive_idx)))
@@ -515,9 +564,14 @@ def prepare_facescrub_dataloaders(
         )
         pairs = random.sample(pairs, min(50, len(pairs)))
 
+        if len(pairs) == 0:
+            skipped += 1
+
         for pair in pairs:
             X_public_input_inv.append(X_public_train[pair[1]])
             X_public_output_inv.append(X_public_train[pair[0]])
+
+    print("#skipped", skipped)
 
     X_public_input_inv = np.stack(X_public_input_inv)
     X_public_output_inv = np.stack(X_public_output_inv)

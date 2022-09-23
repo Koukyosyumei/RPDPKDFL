@@ -1,7 +1,15 @@
 import os
 
+import numpy as np
+import torch
+from ptbi.utils.utils_data import total_variance
+
 from ..utils.tbi_setup import setup_our_inv_dataloader, setup_tbi_inv_dataloader
-from .reconstruction import reconstruct_all_possible_targets
+from .confidence import get_pi, get_pj
+from .reconstruction import (
+    reconstruct_all_possible_targets,
+    reconstruct_all_possible_targets_with_pair_logits,
+)
 
 
 def train_tbi_inv_model(data, device, inv_model, optimizer, criterion):
@@ -21,8 +29,8 @@ def train_our_inv_model(
     data, prior, device, inv_model, optimizer, criterion, gamma=0.1
 ):
     x = data[0].to(device)
-    y_pred_local = data[1].to(device)
-    y_label = data[2]
+    y_pred_local = data[2].to(device)
+    y_label = data[3]
 
     optimizer.zero_grad()
     x_rec_original = inv_model(y_pred_local.reshape(x.shape[0], -1, 1, 1))
@@ -35,15 +43,98 @@ def train_our_inv_model(
     return loss, x, x_rec_original
 
 
+def train_our_inv_model_with_pair_logits(
+    data,
+    prior,
+    device,
+    inv_model,
+    optimizer,
+    criterion,
+    gamma=0.1,
+):
+    x = data[0].to(device)
+    y_pred_server = data[1].to(device)
+    y_pred_local = data[2].to(device)
+    y_label = data[3]
+
+    y_preds_server_and_local = torch.cat([y_pred_server, y_pred_local], dim=1)
+
+    optimizer.zero_grad()
+    x_rec_original = inv_model(y_preds_server_and_local.reshape(x.shape[0], -1, 1, 1))
+    loss = criterion(x, x_rec_original) + gamma * criterion(
+        prior[y_label].to(device), x_rec_original
+    )
+    loss.backward()
+    optimizer.step()
+
+    return loss, x, x_rec_original
+
+
+def train_our_inv_model_with_only_priors(
+    target_labels, prior, device, inv_model, optimizer, criterion, gamma=0.1
+):
+    output_dim = prior.shape[0]
+    target_labels_batch = np.array_split(target_labels, int(len(target_labels) / 64))
+
+    running_loss = 0
+    for label_batch in target_labels_batch:
+        optimizer.zero_grad()
+        label_batch_tensor = torch.eye(output_dim)[label_batch].to(device)
+        xs_rec = inv_model(label_batch_tensor.reshape(len(label_batch), -1, 1, 1))
+        loss = gamma * criterion(prior[label_batch], xs_rec.cpu())
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item() / len(target_labels_batch)
+
+    return running_loss
+
+
+def train_our_inv_model_with_only_priors_paird_logits(
+    target_labels, prior, device, inv_model, optimizer, criterion, pi, pj, gamma=0.1
+):
+    output_dim = prior.shape[0]
+    target_labels_batch = np.array_split(target_labels, int(len(target_labels) / 64))
+
+    running_loss = 0
+    for label_batch in target_labels_batch:
+        optimizer.zero_grad()
+        dummy_pred_server = torch.ones(label_batch.shape[0], output_dim).to(device) * pi
+        dummy_pred_server[:, label_batch] *= pj
+        dummy_pred_local = torch.eye(output_dim)[label_batch].to(device)
+        dummy_preds = torch.cat([dummy_pred_server, dummy_pred_local], dim=1).to(device)
+        xs_rec = inv_model(dummy_preds.reshape(len(label_batch), -1, 1, 1))
+        loss = gamma * criterion(prior[label_batch], xs_rec.cpu())
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item() / len(target_labels_batch)
+
+    return running_loss
+
+
 def train_our_inv_model_on_logits_dataloader(
-    prediction_dataloader, prior, device, inv, inv_optimizer, criterion, gamma=0.1
+    prediction_dataloader,
+    prior,
+    device,
+    inv,
+    inv_optimizer,
+    criterion,
+    ablation_study,
+    gamma=0.1,
 ):
     inv_running_loss = 0
     running_size = 0
+    inv.train()
     for data in prediction_dataloader:
-        loss, x, x_rec = train_our_inv_model(
-            data, prior, device, inv, inv_optimizer, criterion, gamma=gamma
-        )
+        if ablation_study != 2:
+            loss, x, x_rec = train_our_inv_model(
+                data, prior, device, inv, inv_optimizer, criterion, gamma=gamma
+            )
+        else:
+            loss, x, x_rec = train_our_inv_model_with_pair_logits(
+                data, prior, device, inv, inv_optimizer, criterion, gamma=gamma
+            )
         inv_running_loss += loss.item()
         running_size += x.shape[0]
 
@@ -72,7 +163,9 @@ def get_our_inv_train_func(
     id2label,
     output_dir,
     ablation_study,
+    alpha,
     gamma=0.1,
+    only_sensitive=True,
 ):
     def inv_train(api):
         target_client_apis = [
@@ -97,6 +190,7 @@ def get_our_inv_train_func(
             device,
             inv_tempreature,
             inv_batch_size,
+            only_sensitive,
         )
 
         # checkpoint = torch.load(inv_path_list[target_client_id] + ".pth")
@@ -111,10 +205,40 @@ def get_our_inv_train_func(
                 inv,
                 inv_optimizer,
                 criterion,
+                ablation_study,
                 gamma=gamma,
             )
 
             print(f"inv epoch={i}, inv loss ", inv_running_loss)
+
+            if ablation_study == 0:
+                inv_prior_loss = train_our_inv_model_with_only_priors(
+                    target_labels,
+                    prior,
+                    device,
+                    inv,
+                    inv_optimizer,
+                    criterion,
+                    gamma=gamma,
+                )
+
+                print(f"inv epoch={i}, prior loss ", inv_prior_loss)
+            elif ablation_study == 2:
+                pi = get_pi(output_dim, alpha)
+                pj = get_pj(output_dim, alpha)
+                inv_prior_loss = train_our_inv_model_with_only_priors_paird_logits(
+                    target_labels,
+                    prior,
+                    device,
+                    inv,
+                    inv_optimizer,
+                    criterion,
+                    pi,
+                    pj,
+                    gamma=gamma,
+                )
+
+                print(f"inv epoch={i}, prior loss ", inv_prior_loss)
 
             with open(
                 os.path.join(output_dir, "inv_result.txt"),
@@ -132,17 +256,33 @@ def get_our_inv_train_func(
 
         if api.epoch % 2 == 1:
             print("saving ...")
-            reconstruct_all_possible_targets(
-                attack_type,
-                local_identities,
-                inv,
-                output_dim,
-                id2label,
-                client_num,
-                output_dir,
-                device,
-                base_name=api.epoch,
-            )
+            if ablation_study != 2:
+                reconstruct_all_possible_targets(
+                    attack_type,
+                    local_identities,
+                    inv,
+                    output_dim,
+                    id2label,
+                    client_num,
+                    output_dir,
+                    device,
+                    base_name=api.epoch,
+                )
+            else:
+                pi = get_pi(output_dim, alpha)
+                pj = get_pj(output_dim, alpha)
+                reconstruct_all_possible_targets_with_pair_logits(
+                    attack_type,
+                    local_identities,
+                    inv,
+                    output_dim,
+                    id2label,
+                    output_dir,
+                    device,
+                    pi,
+                    pj,
+                    base_name=api.epoch,
+                )
 
     return inv_train
 
