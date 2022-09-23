@@ -416,7 +416,7 @@ def get_our_inv_train_func_with_multi_models(
                         client_num,
                         output_dir,
                         device,
-                        base_name=api.epoch + f"_{target_client_id}",
+                        base_name=f"{api.epoch}_{target_client_id}",
                     )
                 else:
                     pi = get_pi(output_dim, alpha)
@@ -431,7 +431,7 @@ def get_our_inv_train_func_with_multi_models(
                         device,
                         pi,
                         pj,
-                        base_name=api.epoch + f"_{target_client_id}",
+                        base_name=f"{api.epoch}_{target_client_id}",
                     )
 
     return inv_train
