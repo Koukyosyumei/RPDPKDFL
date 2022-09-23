@@ -51,7 +51,7 @@ def train_our_inv_model_with_pair_logits(
     optimizer,
     criterion,
     gamma=0.1,
-    beta=0.001,
+    beta=0.01,
 ):
     x = data[0].to(device)
     y_pred_server = data[1].to(device)
