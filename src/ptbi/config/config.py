@@ -91,7 +91,7 @@ config_base = {
     "lr": 0.001,
     "num_workers": 1,
     "num_classes": 1000,
-    "inv_epoch": 5,
+    "inv_epoch": 3,
     "inv_lr": 0.00003,
     "loss_type": "mse",
 }
