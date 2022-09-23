@@ -299,12 +299,14 @@ def evaluation_full_multi_models(
     for celeb_id in tqdm.tqdm(target_ids):
         label = id2label[celeb_id]
 
-        reconstructed_imgs = [
-            np.load(p)
-            for p in glob.glob(
-                os.path.join(output_dir, str(epoch) + "_*_" + str(label) + "*")
-            )
-        ]
+        reconstructed_imgs = np.stack(
+            [
+                np.load(p)
+                for p in glob.glob(
+                    os.path.join(output_dir, str(epoch) + "_*_" + str(label) + "*")
+                )
+            ]
+        )
 
         ssim_matrix = np.zeros((len(reconstructed_imgs), len(reconstructed_imgs)))
         tv_array = total_variance_numpy_batch(reconstructed_imgs)
