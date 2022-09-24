@@ -11,14 +11,18 @@ from ...attack.reconstruction import (
     reconstruct_all_possible_targets,
     reconstruct_all_possible_targets_with_pair_logits,
 )
-from ...attack.tbi_train import get_our_inv_train_func, get_tbi_inv_train_func
+from ...attack.tbi_train import (
+    get_our_inv_train_func,
+    get_our_inv_train_func_with_multi_models,
+    get_tbi_inv_train_func,
+)
 from ...model.invmodel import AE
 from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
 from ...utils.loss import SSIMLoss
 from ...utils.tbi_setup import setup_tbi_optimizers, setup_training_based_inversion
-from ..evaluation.evaluation import evaluation_full
+from ..evaluation.evaluation import evaluation_full, evaluation_full_multi_models
 
 
 def attack_fedkd(
@@ -48,6 +52,7 @@ def attack_fedkd(
     temp_dir="./",
     model_path="./",
     only_sensitive=True,
+    use_multi_models=False,
 ):
     # --- Fix seed --- #
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -181,32 +186,62 @@ def attack_fedkd(
 
         torch.save(prior, os.path.join(output_dir, "prior.pth"))
 
-        inv_train = get_our_inv_train_func(
-            client_num,
-            is_sensitive_flag,
-            local_identities,
-            inv_transform,
-            return_idx,
-            seed,
-            batch_size,
-            num_workers,
-            device,
-            inv_tempreature,
-            inv_batch_size,
-            inv_epoch,
-            inv,
-            inv_optimizer,
-            prior,
-            criterion,
-            output_dim,
-            attack_type,
-            id2label,
-            output_dir,
-            ablation_study,
-            alpha,
-            gamma=gamma,
-            only_sensitive=only_sensitive,
-        )
+        if not use_multi_models:
+            inv_train = get_our_inv_train_func(
+                client_num,
+                is_sensitive_flag,
+                local_identities,
+                inv_transform,
+                return_idx,
+                seed,
+                batch_size,
+                num_workers,
+                device,
+                inv_tempreature,
+                inv_batch_size,
+                inv_epoch,
+                inv,
+                inv_optimizer,
+                prior,
+                criterion,
+                output_dim,
+                attack_type,
+                id2label,
+                output_dir,
+                ablation_study,
+                alpha,
+                gamma=gamma,
+                only_sensitive=only_sensitive,
+            )
+        else:
+            inv_train = get_our_inv_train_func_with_multi_models(
+                client_num,
+                is_sensitive_flag,
+                local_identities,
+                inv_transform,
+                return_idx,
+                seed,
+                batch_size,
+                num_workers,
+                device,
+                inv_path_list,
+                inv_tempreature,
+                inv_batch_size,
+                inv_epoch,
+                inv,
+                inv_optimizer,
+                prior,
+                criterion,
+                output_dim,
+                attack_type,
+                id2label,
+                output_dir,
+                ablation_study,
+                alpha,
+                gamma=gamma,
+                only_sensitive=only_sensitive,
+            )
+
     elif attack_type == "tbi":
         inv_train = get_tbi_inv_train_func(
             client_num,
@@ -253,6 +288,7 @@ def attack_fedkd(
         pickle.dump(fedkd_result, f)
 
     # --- Attack --- #
+    """
     if ablation_study != 2:
         reconstruct_all_possible_targets(
             attack_type,
@@ -280,16 +316,31 @@ def attack_fedkd(
             pj,
             base_name=str(num_communication),
         )
-    result = evaluation_full(
-        client_num,
-        num_classes,
-        public_train_dataloader,
-        local_train_dataloaders,
-        local_identities,
-        id2label,
-        attack_type,
-        output_dir,
-        epoch=num_communication,
-    )
+    """
+
+    if not use_multi_models:
+        result = evaluation_full(
+            client_num,
+            num_classes,
+            public_train_dataloader,
+            local_train_dataloaders,
+            local_identities,
+            id2label,
+            attack_type,
+            output_dir,
+            epoch=num_communication,
+        )
+    else:
+        result = evaluation_full_multi_models(
+            client_num,
+            num_classes,
+            public_train_dataloader,
+            local_train_dataloaders,
+            local_identities,
+            id2label,
+            attack_type,
+            output_dir,
+            epoch=num_communication,
+        )
 
     return result

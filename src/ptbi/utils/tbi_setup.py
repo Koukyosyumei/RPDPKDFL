@@ -205,6 +205,85 @@ def setup_our_inv_dataloader(
             public_x_tensor, y_pred_server_tensor, y_pred_local_tensor, y_label_tensor
         ),
         batch_size=inv_batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        worker_init_fn=worker_init_fn,
+        generator=g,
+    )
+
+    return prediction_dataloader
+
+
+def setup_our_inv_dataloader_from_single_client(
+    target_labels,
+    is_sensitive_flag,
+    api,
+    target_client_api,
+    inv_transform,
+    return_idx,
+    seed,
+    batch_size,
+    num_workers,
+    device,
+    inv_tempreature,
+    inv_batch_size,
+    only_sensitive=True,
+):
+
+    if only_sensitive:
+        sensitive_flag = np.where(is_sensitive_flag == 1)[0]
+        inv_trainset = NumpyDataset(
+            x=api.public_dataloader.dataset.x[sensitive_flag],
+            y=api.public_dataloader.dataset.y[sensitive_flag],
+            transform=inv_transform,
+            return_idx=return_idx,
+        )
+    else:
+        inv_trainset = NumpyDataset(
+            x=api.public_dataloader.dataset.x,
+            y=api.public_dataloader.dataset.y,
+            transform=inv_transform,
+            return_idx=return_idx,
+        )
+
+    g = torch.Generator()
+    g.manual_seed(seed)
+    inv_public_dataloader = torch.utils.data.DataLoader(
+        inv_trainset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        worker_init_fn=worker_init_fn,
+        generator=g,
+    )
+
+    # --- Receive logits --- #
+    public_x_list = []
+    y_label_list = []
+    y_pred_server_list = []
+    y_pred_local_list = []
+    for data in inv_public_dataloader:
+        x = data[1].to(device).detach()
+        y_label = data[2]
+        y_pred_server = torch.softmax(api.server(x) / inv_tempreature, dim=-1).detach()
+        y_pred_local = torch.softmax(
+            target_client_api(x) / inv_tempreature, dim=-1
+        ).detach()
+        public_x_list.append(x.cpu())
+        y_label_list.append(y_label.cpu())
+        y_pred_server_list.append(y_pred_server.cpu())
+        y_pred_local_list.append(y_pred_local.cpu())
+
+    public_x_tensor = torch.cat(public_x_list)
+    y_label_tensor = torch.cat(y_label_list)
+    y_pred_server_tensor = torch.cat(y_pred_server_list)
+    y_pred_local_tensor = torch.cat(y_pred_local_list)
+
+    prediction_dataloader = torch.utils.data.DataLoader(
+        torch.utils.data.TensorDataset(
+            public_x_tensor, y_pred_server_tensor, y_pred_local_tensor, y_label_tensor
+        ),
+        batch_size=inv_batch_size,
         shuffle=True,
         num_workers=num_workers,
         worker_init_fn=worker_init_fn,

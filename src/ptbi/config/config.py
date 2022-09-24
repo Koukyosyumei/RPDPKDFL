@@ -1,23 +1,3 @@
-_config_att = {
-    "height": 64,
-    "width": 64,
-    "crop": False,
-    "channel": 1,
-    "data_folder": "/content/RPDPKDFL/data",
-    "target_celeblities_num": 20,
-    "blur_strength": 10,
-}
-
-_config_mnist = {
-    "height": 28,
-    "width": 28,
-    "crop": False,
-    "channel": 1,
-    "data_folder": "/content/RPDPKDFL/data",
-    "target_celeblities_num": 5,
-    "blur_strength": 10,
-}
-
 _config_lag = {
     "height": 64,
     "width": 64,
@@ -37,6 +17,15 @@ _config_lfw = {
     "weight_decay": 0.0001,
 }
 
+_config_celeba = {
+    "height": 64,
+    "width": 64,
+    "channel": 3,
+    "crop": False,
+    "target_celeblities_num": 200,
+    "weight_decay": 0.003,
+}
+
 _config_facescrub = {
     "height": 64,
     "width": 64,
@@ -48,10 +37,9 @@ _config_facescrub = {
 }
 
 config_dataset = {
-    "AT&T": _config_att,
     "LAG": _config_lag,
     "LFW": _config_lfw,
-    "MNIST": _config_mnist,
+    "CelebA": _config_celeba,
     "FaceScrub": _config_facescrub,
 }
 

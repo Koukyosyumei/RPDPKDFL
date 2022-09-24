@@ -49,6 +49,22 @@ def total_variance(x):
     return dx + dy
 
 
+def total_variance_numpy_batch(x):
+    dx = (
+        (np.abs(x[:, :, :, :-1] - x[:, :, :, 1:]))
+        .mean(axis=1)
+        .mean(axis=1)
+        .mean(axis=1)
+    )
+    dy = (
+        (np.abs(x[:, :, :-1, :] - x[:, :, 1:, :]))
+        .mean(axis=1)
+        .mean(axis=1)
+        .mean(axis=1)
+    )
+    return dx + dy
+
+
 def total_variance_numpy(x):
     dx = np.mean(np.abs(x[:, :, :-1] - x[:, :, 1:]))
     dy = np.mean(np.abs(x[:, :-1, :] - x[:, 1:, :]))

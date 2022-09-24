@@ -120,6 +120,8 @@ def add_args(parser):
                                       4:without sensitive flag",
     )
 
+    parser.add_argument("--use_multi_models", type=int, default=0)
+
     args = parser.parse_args()
     return args
 
@@ -175,11 +177,13 @@ if __name__ == "__main__":
     args["random_seed"] = parsed_args.random_seed
     args["gamma"] = parsed_args.gamma
     args["only_sensitive"] = parsed_args.data_for_inversion
+    args["use_multi_models"] = parsed_args.use_multi_models
     with open(os.path.join(run_dir, "args.txt"), "w") as convert_file:
         convert_file.write(str(args))
     args.pop("random_seed")
     args.pop("gamma")
     args.pop("only_sensitive")
+    args.pop("use_multi_models")
 
     print("Start experiment ...")
     print("dataset is ", args["dataset"])
@@ -195,6 +199,7 @@ if __name__ == "__main__":
         temp_dir=run_dir,
         model_path=parsed_args.path_to_model,
         only_sensitive=only_sensitive,
+        use_multi_models=(parsed_args.use_multi_models == 1),
         **args,
     )
 
