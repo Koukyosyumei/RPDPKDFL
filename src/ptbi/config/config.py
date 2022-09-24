@@ -87,7 +87,7 @@ config_base = {
     "invmodel_type": "InvCNN",
     "num_communication": 5,
     "batch_size": 64,
-    "inv_batch_size": 8,
+    "inv_batch_size": 32,
     "lr": 0.001,
     "num_workers": 1,
     "num_classes": 1000,
