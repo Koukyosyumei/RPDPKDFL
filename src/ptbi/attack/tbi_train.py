@@ -2,7 +2,6 @@ import os
 
 import numpy as np
 import torch
-from ptbi.utils.utils_data import total_variance
 
 from ..utils.tbi_setup import (
     setup_our_inv_dataloader,

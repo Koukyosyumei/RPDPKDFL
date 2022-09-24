@@ -1,23 +1,3 @@
-_config_att = {
-    "height": 64,
-    "width": 64,
-    "crop": False,
-    "channel": 1,
-    "data_folder": "/content/RPDPKDFL/data",
-    "target_celeblities_num": 20,
-    "blur_strength": 10,
-}
-
-_config_mnist = {
-    "height": 28,
-    "width": 28,
-    "crop": False,
-    "channel": 1,
-    "data_folder": "/content/RPDPKDFL/data",
-    "target_celeblities_num": 5,
-    "blur_strength": 10,
-}
-
 _config_lag = {
     "height": 64,
     "width": 64,
