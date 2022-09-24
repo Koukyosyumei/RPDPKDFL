@@ -23,7 +23,7 @@ _config_celeba = {
     "channel": 3,
     "crop": False,
     "target_celeblities_num": 200,
-    "weight_decay": 0.001,
+    "weight_decay": 0.003,
 }
 
 _config_facescrub = {
