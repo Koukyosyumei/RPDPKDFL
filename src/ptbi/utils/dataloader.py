@@ -1,4 +1,5 @@
 import glob
+import math
 import os
 import random
 
@@ -675,6 +676,30 @@ def prepare_lag_dataloaders(
     )
 
 
+def extract_face(img, eye_left_x, eye_left_y, eye_right_x, eye_right_y, rate=0.65):
+    """Implementation of `Contributions to facial feature extraction for Face recognition
+    5: Face cropping based on eyes coordinates scheme.`"""
+    W = img.shape[0]
+    H = img.shape[1]
+    xc = W / 2
+    yc = H / 2
+    x1, y1 = eye_left_x, eye_left_y
+    x2, y2 = eye_right_x, eye_right_y
+    phi = math.atan2(y2 - y1, x2 - x1)
+    M = np.array([[math.cos(phi), -math.sin(phi)], [math.sin(phi), math.cos(phi)]])
+
+    r1 = np.array([[xc, yc]]) + np.array([x1 - xc, y1 - yc]).T @ M
+    r2 = np.array([[xc, yc]]) + np.array([x2 - xc, y2 - yc]).T @ M
+    x1r, y1r = r1[0, 0], r1[0, 1]
+    x2r, y2r = r2[0, 0], r2[0, 1]
+
+    dist = np.sqrt((x1r - x2r) ** 2 + (y1r - y2r) ** 2)
+    xul, yul = x1r - rate * dist, y1r - rate * dist
+    xlr, ylr = x2r + rate * dist, y2r + (1 + rate) * dist
+
+    return img[max(0, int(yul)) : max(0, int(ylr)), max(0, int(xul)) : max(0, int(xlr))]
+
+
 def prepare_celeba_dataloaders(
     data_folder="/content",
     client_num=2,
@@ -705,6 +730,7 @@ def prepare_celeba_dataloaders(
 
     df = pd.read_csv("materials/list_attr_celeba.csv")
     df["identity"] = df["image_id"].apply(lambda x: path2label[x])
+    df_land = pd.read_csv("materials/list_landmarks_align_celeba.csv")
 
     target_celeblities = (
         df.groupby("identity")
@@ -735,14 +761,23 @@ def prepare_celeba_dataloaders(
 
     for name in target_celeblities:
         if name2id[name] in name_id2client_id:
-            image_ids = df[df["identity"] == name]["image_id"].values()
+            image_ids = df[df["identity"] == name]["image_id"].values
             sep_idxs = np.array_split(image_ids, 2)
             temp_array = []
             for temp_idx in sep_idxs[0]:
+                img = cv2.imread(os.path.join(data_folder, temp_idx))
+                image_land = df_land[df["image_id"] == temp_idx]
+                img = extract_face(
+                    img,
+                    image_land["lefteye_x"],
+                    image_land["lefteye_y"],
+                    image_land["righteye_x"],
+                    image_land["righteye_y"],
+                )
                 temp_array.append(
                     cv2.blur(
                         cv2.resize(
-                            cv2.imread(os.path.join(data_folder, temp_idx)),
+                            img,
                             dsize=(width, height),
                         ),
                         (blur_strength, blur_strength),
@@ -754,26 +789,46 @@ def prepare_celeba_dataloaders(
 
             temp_array = []
             for temp_idx in sep_idxs[1]:
+                img = cv2.imread(os.path.join(data_folder, temp_idx))
+                image_land = df_land[df["image_id"] == temp_idx]
+                img = extract_face(
+                    img,
+                    image_land["lefteye_x"],
+                    image_land["lefteye_y"],
+                    image_land["righteye_x"],
+                    image_land["righteye_y"],
+                )
                 temp_array.append(
                     cv2.resize(
-                        cv2.imread(os.path.join(data_folder, temp_idx)),
+                        img,
                         dsize=(width, height),
                     )
                 )
-            X_private_lists[name_id2client_id[i]].append(np.stack(temp_array))
-            y_private_lists[name_id2client_id[i]] += [
+            X_private_lists[name_id2client_id[name2id[name]]].append(
+                np.stack(temp_array)
+            )
+            y_private_lists[name_id2client_id[name2id[name]]] += [
                 name2id[name] for _ in range(len(sep_idxs[1]))
             ]
 
         else:
-            image_ids = df[df["identity"] == name]["image_id"].values()
+            image_ids = df[df["identity"] == name]["image_id"].values
             sep_idxs = np.array_split(image_ids, 2)
             temp_array = []
             for temp_idx in sep_idxs[0]:
+                img = cv2.imread(os.path.join(data_folder, temp_idx))
+                image_land = df_land[df["image_id"] == temp_idx]
+                img = extract_face(
+                    img,
+                    image_land["lefteye_x"],
+                    image_land["lefteye_y"],
+                    image_land["righteye_x"],
+                    image_land["righteye_y"],
+                )
                 temp_array.append(
                     cv2.blur(
                         cv2.resize(
-                            cv2.imread(os.path.join(data_folder, temp_idx)),
+                            img,
                             dsize=(width, height),
                         ),
                         (blur_strength, blur_strength),
@@ -785,9 +840,18 @@ def prepare_celeba_dataloaders(
 
             temp_array = []
             for temp_idx in sep_idxs[1]:
+                img = cv2.imread(os.path.join(data_folder, temp_idx))
+                image_land = df_land[df["image_id"] == temp_idx]
+                img = extract_face(
+                    img,
+                    image_land["lefteye_x"],
+                    image_land["lefteye_y"],
+                    image_land["righteye_x"],
+                    image_land["righteye_y"],
+                )
                 temp_array.append(
                     cv2.resize(
-                        cv2.imread(os.path.join(data_folder, temp_idx)),
+                        img,
                         dsize=(width, height),
                     )
                 )
