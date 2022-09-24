@@ -21,7 +21,10 @@ def setup_training_based_inversion(
     temp_dir,
     ablation_study,
 ):
-    inv_input_dim = num_classes * 2 if ablation_study == 2 else num_classes
+    if attack_type == "ptbi":
+        inv_input_dim = num_classes * 2 if ablation_study == 2 else num_classes
+    else:
+        inv_input_dim = num_classes
     temp_path_list = []
     for i in range(client_num):
         inv = get_invmodel_class(invmodel_type)(

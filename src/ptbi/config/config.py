@@ -33,7 +33,7 @@ _config_facescrub = {
     "crop": False,
     "target_celeblities_num": 200,
     "blur_strength": 10,
-    "weight_decay": 0.001,
+    "weight_decay": 0.003,
 }
 
 config_dataset = {
