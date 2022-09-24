@@ -104,7 +104,7 @@ def train_our_inv_model_with_only_priors_paird_logits(
     for label_batch in target_labels_batch:
         optimizer.zero_grad()
         dummy_pred_server = torch.ones(label_batch.shape[0], output_dim).to(device) * pi
-        dummy_pred_server[:, label_batch] *= pj
+        dummy_pred_server[:, label_batch] = pj
         dummy_pred_local = torch.eye(output_dim)[label_batch].to(device)
         dummy_preds = torch.cat([dummy_pred_server, dummy_pred_local], dim=1).to(device)
         xs_rec = inv_model(dummy_preds.reshape(len(label_batch), -1, 1, 1))
