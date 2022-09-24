@@ -255,11 +255,13 @@ def attack_fedkd(
             inv_tempreature,
             inv_batch_size,
             inv_epoch,
-            inv_path_list,
             inv,
             inv_optimizer,
             criterion,
             output_dir,
+            attack_type,
+            output_dim,
+            id2label,
         )
     else:
         raise NotImplementedError(f"{attack_type} is not supported")
