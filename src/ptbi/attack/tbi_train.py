@@ -448,11 +448,13 @@ def get_tbi_inv_train_func(
     inv_tempreature,
     inv_batch_size,
     inv_epoch,
-    inv_path_list,
     inv,
     inv_optimizer,
     criterion,
     output_dir,
+    attack_type,
+    output_dim,
+    id2label,
 ):
     def inv_train(api):
 
@@ -507,6 +509,20 @@ def get_tbi_inv_train_func(
                 newline="\n",
             ) as f:
                 f.write(f"{i}, {tbi_running_loss}\n")
+
+        if api.epoch % 2 == 1:
+            print("saving ...")
+            reconstruct_all_possible_targets(
+                attack_type,
+                local_identities,
+                inv,
+                output_dim,
+                id2label,
+                client_num,
+                output_dir,
+                device,
+                base_name=api.epoch,
+            )
 
         # state = {"model": inv.state_dict(), "optimizer": inv_optimizer.state_dict()}
         # torch.save(state, inv_path_list[target_client_id] + ".pth")
