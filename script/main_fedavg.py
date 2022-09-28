@@ -16,6 +16,10 @@ def add_args(parser):
     )
 
     parser.add_argument(
+        "--tar_class_num", type=int, default=30, help="number of target classes"
+    )
+
+    parser.add_argument(
         "-p",
         "--path_to_datafolder",
         type=str,
@@ -50,7 +54,9 @@ if __name__ == "__main__":
     args["batch_size"] = config_base["batch_size"]
     args["lr"] = config_base["lr"]
     args["num_workers"] = config_base["num_workers"]
-    args["num_classes"] = config_base["num_classes"]
+    args["num_classes"] = parsed_args.tar_class_num  # config_base["num_classes"]
+
+    print(f"#num classes: {args['num_classes']}")
 
     args["config_dataset"] = config_dataset[args["dataset"]]
     args["config_dataset"]["data_folder"] = parsed_args.path_to_datafolder
