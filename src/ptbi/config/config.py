@@ -86,7 +86,7 @@ config_base = {
 
 config_gradinvattack = {
     "distancename": "cossim",
-    "num_iteration": 100,
+    "num_iteration": 150,
     "optimize_label": False,
     "tv_reg_coef": 0.01,
     "gradinvattack_kwargs": {"lr": 0.3},
