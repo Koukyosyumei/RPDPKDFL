@@ -250,4 +250,8 @@ def attack_fedavg(
         f"{output_dir}/private_dataset_label.pth",
     )
 
-    return {"suc_num": suc_num}
+    return {
+        "suc_num": suc_num,
+        "ssim_mean": np.mean(best_ssim_list),
+        "ssim_std": np.std(best_ssim_list),
+    }
