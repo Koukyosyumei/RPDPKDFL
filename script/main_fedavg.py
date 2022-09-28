@@ -2,7 +2,8 @@ import argparse
 import os
 from datetime import datetime
 
-from ptbi.config.config import config_base, config_dataset, config_gradinvattack
+from ptbi.config.config import (config_base, config_dataset,
+                                config_gradinvattack)
 from ptbi.pipeline.fedavg.pipeline_fedavg import attack_fedavg
 
 
@@ -61,6 +62,9 @@ if __name__ == "__main__":
     args["config_dataset"] = config_dataset[args["dataset"]]
     args["config_dataset"]["data_folder"] = parsed_args.path_to_datafolder
     args["config_gradinvattack"] = config_gradinvattack
+    
+    args["config_fedkd"]["weight_decay"] = args["config_dataset"]["weight_decay"]
+    args["config_dataset"].pop("weight_decay")
 
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id += f"_{args['dataset']}_FedAVG_{args['client_num']}"
