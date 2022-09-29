@@ -77,7 +77,7 @@ def ae_attack_fedkd(
     ae = AE().to(device)
     inv_optimizer = torch.optim.Adam(ae.parameters(), lr=inv_lr, weight_decay=0.0001)
 
-    for epoch in range(1, 101):
+    for epoch in range(1, 51):
         running_loss = 0
         for data in inv_dataloader:
             x1 = data[1].to(device)
