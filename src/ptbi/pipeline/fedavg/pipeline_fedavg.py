@@ -104,6 +104,7 @@ def attack_fedavg(
     manager = GradientInversionAttackManager(
         (config_dataset["channel"], config_dataset["height"], config_dataset["width"]),
         device=device,
+        clamp_range=(-1, 1),
         **config_gradinvattack,
     )
     FedAvgServer_GradInvAttack = manager.attach(FedAvgServer)
@@ -177,7 +178,7 @@ def attack_fedavg(
         fake_labels = torch.Tensor(local_identity).to(torch.int64).to(device)
 
         for x_rec, label in zip(reconstructed_xs[j], reconstructed_ys[j]):
-            temp_rec_img = x_rec.detach().cpu().numpy().transpose(1, 2, 0) * 0.5 + 0.5
+            temp_rec_img = x_rec.detach().cpu().numpy().transpose(1, 2, 0)
             temp_ssim_list = [
                 ssim(
                     temp_rec_img,
@@ -190,9 +191,7 @@ def attack_fedavg(
                     .detach()
                     .cpu()
                     .numpy()
-                    .transpose(1, 2, 0)
-                    * 0.5
-                    + 0.5,
+                    .transpose(1, 2, 0),
                     multichannel=True,
                 )
                 for temp_label in torch.unique(private_dataset_label)
