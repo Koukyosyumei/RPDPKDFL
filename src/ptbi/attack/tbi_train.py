@@ -322,7 +322,9 @@ def get_our_inv_train_func_with_multi_models(
 ):
     def inv_train(api):
 
-        target_labels = sum(local_identities, [])
+        target_labels = sum(
+            [[id2label[la] for la in temp_list] for temp_list in local_identities], []
+        )
 
         for target_client_id in range(client_num):
 
