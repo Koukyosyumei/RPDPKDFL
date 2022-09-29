@@ -179,7 +179,10 @@ def get_our_inv_train_func(
         # --- Prepare Public Dataset --- #
         # target_labels = local_identities[target_client_id]
 
-        target_labels = sum(local_identities, [])
+        target_labels = sum(
+            [[id2label[la] for la in temp_list] for temp_list in local_identities], []
+        )
+
         prediction_dataloader = setup_our_inv_dataloader(
             target_labels,
             is_sensitive_flag,
