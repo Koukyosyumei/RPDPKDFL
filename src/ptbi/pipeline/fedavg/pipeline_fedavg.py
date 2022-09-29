@@ -192,6 +192,7 @@ def attack_fedavg(
                     .cpu()
                     .numpy()
                     .transpose(1, 2, 0),
+                    data_range=2.0,
                     multichannel=True,
                 )
                 for temp_label in torch.unique(private_dataset_label)
