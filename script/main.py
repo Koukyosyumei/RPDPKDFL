@@ -141,13 +141,6 @@ if __name__ == "__main__":
     args["loss_type"] = parsed_args.invloss
     args["alpha"] = parsed_args.alpha
 
-    if args["dataset"] == "AT&T":
-        args["num_classes"] = 40
-    elif args["dataset"] == "MNIST":
-        args["num_classes"] = 10
-    elif args["dataset"] == "FaceScrub":
-        args["num_classes"] = 530
-
     args["ablation_study"] = parsed_args.ablation_study
     args["inv_tempreature"] = parsed_args.softmax_tempreature
 
