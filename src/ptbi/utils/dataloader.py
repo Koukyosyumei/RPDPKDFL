@@ -248,7 +248,7 @@ def prepare_facescrub_dataloaders(
     np_resized_imgs = np.load(f"{data_folder}/resized_faces.npy")
     np_resized_labels = np.load(f"{data_folder}/resized_labels.npy")
 
-    res = np.unique(np_resized_labels, return_counts=True)
+    res = list(np.unique(np_resized_labels, return_counts=True))
 
     if num_classes != 530:
         res[0] = res[0][np.argsort(-res[1])[:num_classes]]
