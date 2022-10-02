@@ -228,7 +228,7 @@ def evaluation_full_multi_models(
             [
                 np.load(p)
                 for p in glob.glob(
-                    os.path.join(output_dir, str(epoch) + "_*_" + str(label) + "*")
+                    os.path.join(output_dir, str(epoch) + "_*_" + str(label) + "_*")
                 )
             ]
         )
