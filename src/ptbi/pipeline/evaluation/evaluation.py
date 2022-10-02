@@ -127,7 +127,7 @@ def evaluation_full(
         ssim_private_list = np.zeros(num_classes)
         ssim_public_list = np.zeros(num_classes)
 
-        for idxs in np.array_split(list(range(num_classes)), 20):
+        for idxs in np.array_split(list(range(num_classes)), 5):
             ssim_private_list[idxs] = (
                 ssim(best_img_tensor_batch[idxs], private_data[idxs], False)
                 .detach()
@@ -321,7 +321,7 @@ def evaluation_full_multi_models(
         ssim_private_list = np.zeros(num_classes)
         ssim_public_list = np.zeros(num_classes)
 
-        for idxs in np.array_split(list(range(num_classes)), 20):
+        for idxs in np.array_split(list(range(num_classes)), 5):
             ssim_private_list[idxs] = (
                 ssim(best_img_tensor_batch[idxs], private_data[idxs], False)
                 .detach()
