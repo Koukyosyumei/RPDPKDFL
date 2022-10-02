@@ -225,6 +225,8 @@ def evaluation_full_multi_models(
 
     ssim = SSIMLoss()
 
+    label2id = {v: k for k, v in id2label.items()}
+
     for celeb_id in tqdm.tqdm(target_ids):
         label = id2label[celeb_id]
 
@@ -338,12 +340,13 @@ def evaluation_full_multi_models(
         best_label = np.nanargmax(
             ssim_private_list.tolist() + ssim_public_list.tolist()
         )
-        ssim_private = ssim_private_list[label]
-        ssim_public = ssim_public_list[label]
+        # print(label, best_label, label2id[label])
+        ssim_private = ssim_private_list[label2id[label]]
+        ssim_public = ssim_public_list[label2id[label]]
 
-        result[f"{attack_type}_success"] += label == best_label
+        result[f"{attack_type}_success"] += label2id[label] == best_label
         result[f"{attack_type}_too_close_to_public"] += (
-            label + num_classes == best_label
+            label2id[label] + num_classes == best_label
         )
         ssim_list[f"{attack_type}_ssim_private"].append(ssim_private)
         ssim_list[f"{attack_type}_ssim_public"].append(ssim_public)
@@ -351,10 +354,14 @@ def evaluation_full_multi_models(
         # evaluation on mse
 
         mse_list[f"{attack_type}_mse_private"].append(
-            torch.nn.functional.mse_loss(best_img_tensor, private_data[label]).item()
+            torch.nn.functional.mse_loss(
+                best_img_tensor, private_data[label2id[label]]
+            ).item()
         )
         mse_list[f"{attack_type}_mse_public"].append(
-            torch.nn.functional.mse_loss(best_img_tensor, public_data[label]).item()
+            torch.nn.functional.mse_loss(
+                best_img_tensor, public_data[label2id[label]]
+            ).item()
         )
 
     for k in ssim_list.keys():
