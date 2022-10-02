@@ -154,32 +154,35 @@ def attack_fedkd(
             public_train_dataloader.dataset.y[nonsensitive_idxs]
         )
 
-        prior = torch.zeros(
-            (
-                output_dim,
-                config_dataset["channel"],
-                config_dataset["height"],
-                config_dataset["width"],
-            )
-        )
-
-        for lab in range(output_dim):
-            lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
-            lab_idxs_size = lab_idxs.shape[0]
-            if lab_idxs_size == 0:
-                continue
-            for batch_pos in np.array_split(
-                list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
-            ):
-                prior[lab] += (
-                    ae(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
-                    .detach()
-                    .cpu()
-                    .sum(dim=0)
-                    / lab_idxs_size
+        if gamma != 0.0:
+            prior = torch.zeros(
+                (
+                    output_dim,
+                    config_dataset["channel"],
+                    config_dataset["height"],
+                    config_dataset["width"],
                 )
+            )
 
-        torch.save(prior, os.path.join(output_dir, "prior.pth"))
+            for lab in range(output_dim):
+                lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
+                lab_idxs_size = lab_idxs.shape[0]
+                if lab_idxs_size == 0:
+                    continue
+                for batch_pos in np.array_split(
+                    list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
+                ):
+                    prior[lab] += (
+                        ae(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
+                        .detach()
+                        .cpu()
+                        .sum(dim=0)
+                        / lab_idxs_size
+                    )
+
+            torch.save(prior, os.path.join(output_dir, "prior.pth"))
+        else:
+            prior = None
 
         if not use_multi_models:
             inv_train = get_our_inv_train_func(
