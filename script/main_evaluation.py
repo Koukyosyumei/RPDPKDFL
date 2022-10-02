@@ -34,16 +34,11 @@ if __name__ == "__main__":
     )
 
     random_seed = args["random_seed"]
-    gamma = args["gamma"]
-    only_sensitive = args["only_sensitive"]
-    use_multi_models = args["use_multi_models"]
+    args.pop("random_seed")
 
     result = evaluation_fedkd(
         seed=random_seed,
-        gamma=gamma,
         output_dir=parsed_args.run_dir,
-        only_sensitive=only_sensitive,
-        use_multi_models=use_multi_models,
         **args,
     )
 

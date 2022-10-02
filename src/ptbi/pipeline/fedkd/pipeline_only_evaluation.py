@@ -95,6 +95,7 @@ def evaluation_fedkd(
             attack_type,
             output_dir,
             epoch=num_communication,
+            save_gt=False,
         )
     else:
         result = evaluation_full_multi_models(
@@ -107,6 +108,7 @@ def evaluation_fedkd(
             attack_type,
             output_dir,
             epoch=num_communication,
+            save_gt=False,
         )
 
     return result
