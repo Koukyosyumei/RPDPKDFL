@@ -95,6 +95,7 @@ def evaluation_fedkd(
             attack_type,
             output_dir,
             epoch=num_communication,
+            device=device,
             save_gt=False,
         )
     else:
@@ -108,6 +109,7 @@ def evaluation_fedkd(
             attack_type,
             output_dir,
             epoch=num_communication,
+            device=device,
             save_gt=False,
         )
 
