@@ -181,6 +181,15 @@ def attack_fedkd(
                             / lab_idxs_size
                         )
             else:
+                sensitive_idxs = np.where(is_sensitive_flag == 1)[0]
+                x_pub_sensitive = torch.stack(
+                    [
+                        public_train_dataloader.dataset.transform(
+                            public_train_dataloader.dataset.x[sidx]
+                        )
+                        for sidx in sensitive_idxs
+                    ]
+                )
                 prior = torch.zeros(
                     (
                         output_dim,
@@ -190,7 +199,7 @@ def attack_fedkd(
                     )
                 )
                 for lab in range(output_dim):
-                    prior[lab] = x_pub_nonsensitive.mean(dim=0)
+                    prior[lab] = x_pub_sensitive.mean(dim=0)
 
             torch.save(prior, os.path.join(output_dir, "prior.pth"))
         else:
