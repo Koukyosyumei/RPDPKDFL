@@ -97,6 +97,7 @@ def evaluation_fedkd(
             epoch=num_communication,
             device=device,
             save_gt=False,
+            label_transform=True,
         )
     else:
         result = evaluation_full_multi_models(
@@ -111,6 +112,7 @@ def evaluation_fedkd(
             epoch=num_communication,
             device=device,
             save_gt=False,
+            label_transform=True,
         )
 
     return result

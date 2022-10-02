@@ -189,6 +189,7 @@ def evaluation_full_multi_models(
     device="cuda:0",
     beta=0.1,
     save_gt=True,
+    label_transform=False,
 ):
     print("evaluating ...")
 
@@ -225,7 +226,10 @@ def evaluation_full_multi_models(
 
     ssim = SSIMLoss()
 
-    label2id = {v: k for k, v in id2label.items()}
+    if label_transform:
+        label2id = {v: k for k, v in id2label.items()}
+    else:
+        label2id = list(range(num_classes))
 
     for celeb_id in tqdm.tqdm(target_ids):
         label = id2label[celeb_id]
