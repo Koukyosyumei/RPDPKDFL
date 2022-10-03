@@ -3,12 +3,16 @@ import os
 import numpy as np
 import torch
 
-from ..utils.tbi_setup import (setup_our_inv_dataloader,
-                               setup_our_inv_dataloader_from_single_client,
-                               setup_tbi_inv_dataloader)
+from ..utils.tbi_setup import (
+    setup_our_inv_dataloader,
+    setup_our_inv_dataloader_from_single_client,
+    setup_tbi_inv_dataloader,
+)
 from .confidence import get_pi, get_pj
-from .reconstruction import (reconstruct_all_possible_targets,
-                             reconstruct_all_possible_targets_with_pair_logits)
+from .reconstruction import (
+    reconstruct_all_possible_targets,
+    reconstruct_all_possible_targets_with_pair_logits,
+)
 
 
 def train_tbi_inv_model(data, device, inv_model, optimizer, criterion):
@@ -83,7 +87,9 @@ def train_our_inv_model_with_only_priors(
 
     if gamma != 0:
         output_dim = prior.shape[0]
-        target_labels_batch = np.array_split(target_labels, int(len(target_labels) / 64))
+        target_labels_batch = np.array_split(
+            target_labels, int(len(target_labels) / 64)
+        )
         for label_batch in target_labels_batch:
             optimizer.zero_grad()
             label_batch_tensor = torch.eye(output_dim)[label_batch].to(device)
@@ -405,13 +411,13 @@ def get_our_inv_train_func_with_multi_models(
 
                     print(f"inv epoch={i}, prior loss ", inv_prior_loss)
 
-            with open(
-                os.path.join(output_dir, "inv_result.txt"),
-                "a",
-                encoding="utf-8",
-                newline="\n",
-            ) as f:
-                f.write(f"{i}, {inv_running_loss}\n")
+                with open(
+                    os.path.join(output_dir, "inv_result.txt"),
+                    "a",
+                    encoding="utf-8",
+                    newline="\n",
+                ) as f:
+                    f.write(f"{i}, {inv_running_loss}\n")
 
             state = {
                 "model": inv.state_dict(),
