@@ -137,10 +137,6 @@ def attack_fedkd(
 
     if attack_type == "ptbi":
 
-        ae = AE().to(device)
-        ae.load_state_dict(torch.load(model_path))
-        ae = ae.eval()
-
         nonsensitive_idxs = np.where(is_sensitive_flag == 0)[0]
         x_pub_nonsensitive = torch.stack(
             [
@@ -156,6 +152,11 @@ def attack_fedkd(
 
         if gamma != 0.0:
             if fedkd_type != "DSFL":
+
+                ae = AE().to(device)
+                ae.load_state_dict(torch.load(model_path))
+                ae = ae.eval()
+
                 prior = torch.zeros(
                     (
                         output_dim,
