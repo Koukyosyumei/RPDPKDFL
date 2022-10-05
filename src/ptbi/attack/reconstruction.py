@@ -1,3 +1,4 @@
+import math
 import os
 
 import numpy as np
@@ -19,7 +20,9 @@ def reconstruct_all_possible_targets(
     target_ids = sum(local_identities, [])
 
     target_labels = [id2label[celeb_id] for celeb_id in target_ids]
-    target_labels_batch = np.array_split(target_labels, int(len(target_labels) / 64))
+    target_labels_batch = np.array_split(
+        target_labels, math.ceil(len(target_labels) / 64)
+    )
 
     for label_batch in target_labels_batch:
         label_batch_tensor = torch.eye(output_dim)[label_batch].to(device)
@@ -54,7 +57,9 @@ def reconstruct_all_possible_targets_with_pair_logits(
     target_ids = sum(local_identities, [])
 
     target_labels = [id2label[celeb_id] for celeb_id in target_ids]
-    target_labels_batch = np.array_split(target_labels, int(len(target_labels) / 64))
+    target_labels_batch = np.array_split(
+        target_labels, math.ceil(len(target_labels) / 64)
+    )
 
     for label_batch in target_labels_batch:
 
