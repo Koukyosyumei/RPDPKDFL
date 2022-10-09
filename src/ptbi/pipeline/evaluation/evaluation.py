@@ -25,6 +25,7 @@ def evaluation_full(
     output_dir,
     epoch=5,
     device="cuda:0",
+    save_gt=True,
 ):
     print("evaluating ...")
 
@@ -64,35 +65,37 @@ def evaluation_full(
     for celeb_id in tqdm.tqdm(target_ids):
         label = id2label[celeb_id]
 
-        np.save(
-            os.path.join(output_dir, "private_" + str(label)),
-            cv2.cvtColor(
-                private_dataset_transformed[private_dataset_label == label]
-                .mean(dim=0)
-                .detach()
-                .cpu()
-                .numpy()
-                .transpose(1, 2, 0)
-                * 0.5
-                + 0.5,
-                cv2.COLOR_BGR2RGB,
-            ),
-        )
+        if save_gt:
+            np.save(
+                os.path.join(output_dir, "private_" + str(label)),
+                cv2.cvtColor(
+                    private_dataset_transformed[private_dataset_label == label]
+                    .mean(dim=0)
+                    .detach()
+                    .cpu()
+                    .numpy()
+                    .transpose(1, 2, 0)
+                    * 0.5
+                    + 0.5,
+                    cv2.COLOR_BGR2RGB,
+                ),
+            )
 
-        np.save(
-            os.path.join(output_dir, "public_" + str(label)),
-            cv2.cvtColor(
-                public_dataset_transformed[public_dataset_label == label]
-                .mean(dim=0)
-                .detach()
-                .cpu()
-                .numpy()
-                .transpose(1, 2, 0)
-                * 0.5
-                + 0.5,
-                cv2.COLOR_BGR2RGB,
-            ),
-        )
+            np.save(
+                os.path.join(output_dir, "public_" + str(label)),
+                cv2.cvtColor(
+                    public_dataset_transformed[public_dataset_label == label]
+                    .mean(dim=0)
+                    .detach()
+                    .cpu()
+                    .numpy()
+                    .transpose(1, 2, 0)
+                    * 0.5
+                    + 0.5,
+                    cv2.COLOR_BGR2RGB,
+                ),
+            )
+
         temp_path = glob.glob(
             os.path.join(output_dir, str(epoch) + "_" + str(label) + "_*")
         )[0]
@@ -124,7 +127,7 @@ def evaluation_full(
         ssim_private_list = np.zeros(num_classes)
         ssim_public_list = np.zeros(num_classes)
 
-        for idxs in np.array_split(list(range(num_classes)), 2):
+        for idxs in np.array_split(list(range(num_classes)), 5):
             ssim_private_list[idxs] = (
                 ssim(best_img_tensor_batch[idxs], private_data[idxs], False)
                 .detach()
@@ -185,6 +188,8 @@ def evaluation_full_multi_models(
     epoch=5,
     device="cuda:0",
     beta=0.1,
+    save_gt=True,
+    label_transform=False,
 ):
     print("evaluating ...")
 
@@ -221,6 +226,11 @@ def evaluation_full_multi_models(
 
     ssim = SSIMLoss()
 
+    if label_transform:
+        label2id = {v: k for k, v in id2label.items()}
+    else:
+        label2id = list(range(num_classes))
+
     for celeb_id in tqdm.tqdm(target_ids):
         label = id2label[celeb_id]
 
@@ -228,7 +238,7 @@ def evaluation_full_multi_models(
             [
                 np.load(p)
                 for p in glob.glob(
-                    os.path.join(output_dir, str(epoch) + "_*_" + str(label) + "*")
+                    os.path.join(output_dir, str(epoch) + "_*_" + str(label) + "_*")
                 )
             ]
         )
@@ -257,35 +267,36 @@ def evaluation_full_multi_models(
         )
         best_img_tensor = torch.Tensor(best_img).to(device)
 
-        np.save(
-            os.path.join(output_dir, "private_" + str(label)),
-            cv2.cvtColor(
-                private_dataset_transformed[private_dataset_label == label]
-                .mean(dim=0)
-                .detach()
-                .cpu()
-                .numpy()
-                .transpose(1, 2, 0)
-                * 0.5
-                + 0.5,
-                cv2.COLOR_BGR2RGB,
-            ),
-        )
+        if save_gt:
+            np.save(
+                os.path.join(output_dir, "private_" + str(label)),
+                cv2.cvtColor(
+                    private_dataset_transformed[private_dataset_label == label]
+                    .mean(dim=0)
+                    .detach()
+                    .cpu()
+                    .numpy()
+                    .transpose(1, 2, 0)
+                    * 0.5
+                    + 0.5,
+                    cv2.COLOR_BGR2RGB,
+                ),
+            )
 
-        np.save(
-            os.path.join(output_dir, "public_" + str(label)),
-            cv2.cvtColor(
-                public_dataset_transformed[public_dataset_label == label]
-                .mean(dim=0)
-                .detach()
-                .cpu()
-                .numpy()
-                .transpose(1, 2, 0)
-                * 0.5
-                + 0.5,
-                cv2.COLOR_BGR2RGB,
-            ),
-        )
+            np.save(
+                os.path.join(output_dir, "public_" + str(label)),
+                cv2.cvtColor(
+                    public_dataset_transformed[public_dataset_label == label]
+                    .mean(dim=0)
+                    .detach()
+                    .cpu()
+                    .numpy()
+                    .transpose(1, 2, 0)
+                    * 0.5
+                    + 0.5,
+                    cv2.COLOR_BGR2RGB,
+                ),
+            )
         # temp_path = glob.glob(
         #    os.path.join(output_dir, str(epoch) + "_" + str(label) + "_*")
         # )[0]
@@ -316,7 +327,7 @@ def evaluation_full_multi_models(
         ssim_private_list = np.zeros(num_classes)
         ssim_public_list = np.zeros(num_classes)
 
-        for idxs in np.array_split(list(range(num_classes)), 2):
+        for idxs in np.array_split(list(range(num_classes)), 5):
             ssim_private_list[idxs] = (
                 ssim(best_img_tensor_batch[idxs], private_data[idxs], False)
                 .detach()
@@ -333,12 +344,13 @@ def evaluation_full_multi_models(
         best_label = np.nanargmax(
             ssim_private_list.tolist() + ssim_public_list.tolist()
         )
-        ssim_private = ssim_private_list[label]
-        ssim_public = ssim_public_list[label]
+        # print(label, best_label, label2id[label])
+        ssim_private = ssim_private_list[label2id[label]]
+        ssim_public = ssim_public_list[label2id[label]]
 
-        result[f"{attack_type}_success"] += label == best_label
+        result[f"{attack_type}_success"] += label2id[label] == best_label
         result[f"{attack_type}_too_close_to_public"] += (
-            label + num_classes == best_label
+            label2id[label] + num_classes == best_label
         )
         ssim_list[f"{attack_type}_ssim_private"].append(ssim_private)
         ssim_list[f"{attack_type}_ssim_public"].append(ssim_public)
@@ -346,10 +358,14 @@ def evaluation_full_multi_models(
         # evaluation on mse
 
         mse_list[f"{attack_type}_mse_private"].append(
-            torch.nn.functional.mse_loss(best_img_tensor, private_data[label]).item()
+            torch.nn.functional.mse_loss(
+                best_img_tensor, private_data[label2id[label]]
+            ).item()
         )
         mse_list[f"{attack_type}_mse_public"].append(
-            torch.nn.functional.mse_loss(best_img_tensor, public_data[label]).item()
+            torch.nn.functional.mse_loss(
+                best_img_tensor, public_data[label2id[label]]
+            ).item()
         )
 
     for k in ssim_list.keys():

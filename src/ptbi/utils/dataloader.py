@@ -248,7 +248,14 @@ def prepare_facescrub_dataloaders(
     np_resized_imgs = np.load(f"{data_folder}/resized_faces.npy")
     np_resized_labels = np.load(f"{data_folder}/resized_labels.npy")
 
-    res = np.unique(np_resized_labels, return_counts=True)
+    res = list(np.unique(np_resized_labels, return_counts=True))
+
+    if num_classes != 530:
+        res[0] = res[0][np.argsort(-res[1])[:num_classes]]
+        slice_idx = [i for i, name in enumerate(np_resized_labels) if name in res[0]]
+        np_resized_imgs = np_resized_imgs[slice_idx]
+        np_resized_labels = np_resized_labels[slice_idx]
+
     name2id = {name: i for i, name in enumerate(res[0])}
     id2name = {v: k for k, v in name2id.items()}
 

@@ -1,3 +1,4 @@
+import math
 import os
 
 import numpy as np
@@ -37,9 +38,12 @@ def train_our_inv_model(
 
     optimizer.zero_grad()
     x_rec_original = inv_model(y_pred_local.reshape(x.shape[0], -1, 1, 1))
-    loss = criterion(x, x_rec_original) + gamma * criterion(
-        prior[y_label].to(device), x_rec_original
-    )
+    if gamma != 0:
+        loss = criterion(x, x_rec_original) + gamma * criterion(
+            prior[y_label].to(device), x_rec_original
+        )
+    else:
+        loss = criterion(x, x_rec_original)
     loss.backward()
     optimizer.step()
 
@@ -64,9 +68,12 @@ def train_our_inv_model_with_pair_logits(
 
     optimizer.zero_grad()
     x_rec_original = inv_model(y_preds_server_and_local.reshape(x.shape[0], -1, 1, 1))
-    loss = criterion(x, x_rec_original) + gamma * criterion(
-        prior[y_label].to(device), x_rec_original
-    )
+    if gamma != 0:
+        loss = criterion(x, x_rec_original) + gamma * criterion(
+            prior[y_label].to(device), x_rec_original
+        )
+    else:
+        loss = criterion(x, x_rec_original)
     loss.backward()
     optimizer.step()
 
@@ -76,19 +83,23 @@ def train_our_inv_model_with_pair_logits(
 def train_our_inv_model_with_only_priors(
     target_labels, prior, device, inv_model, optimizer, criterion, gamma=0.1
 ):
-    output_dim = prior.shape[0]
-    target_labels_batch = np.array_split(target_labels, int(len(target_labels) / 64))
 
     running_loss = 0
-    for label_batch in target_labels_batch:
-        optimizer.zero_grad()
-        label_batch_tensor = torch.eye(output_dim)[label_batch].to(device)
-        xs_rec = inv_model(label_batch_tensor.reshape(len(label_batch), -1, 1, 1))
-        loss = gamma * criterion(prior[label_batch], xs_rec.cpu())
-        loss.backward()
-        optimizer.step()
 
-        running_loss += loss.item() / len(target_labels_batch)
+    if gamma != 0:
+        output_dim = prior.shape[0]
+        target_labels_batch = np.array_split(
+            target_labels, math.ceil(len(target_labels) / 64)
+        )
+        for label_batch in target_labels_batch:
+            optimizer.zero_grad()
+            label_batch_tensor = torch.eye(output_dim)[label_batch].to(device)
+            xs_rec = inv_model(label_batch_tensor.reshape(len(label_batch), -1, 1, 1))
+            loss = gamma * criterion(prior[label_batch], xs_rec.cpu())
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item() / len(target_labels_batch)
 
     return running_loss
 
@@ -96,22 +107,29 @@ def train_our_inv_model_with_only_priors(
 def train_our_inv_model_with_only_priors_paird_logits(
     target_labels, prior, device, inv_model, optimizer, criterion, pi, pj, gamma=0.1
 ):
-    output_dim = prior.shape[0]
-    target_labels_batch = np.array_split(target_labels, int(len(target_labels) / 64))
-
     running_loss = 0
-    for label_batch in target_labels_batch:
-        optimizer.zero_grad()
-        dummy_pred_server = torch.ones(label_batch.shape[0], output_dim).to(device) * pi
-        dummy_pred_server[:, label_batch] = pj
-        dummy_pred_local = torch.eye(output_dim)[label_batch].to(device)
-        dummy_preds = torch.cat([dummy_pred_server, dummy_pred_local], dim=1).to(device)
-        xs_rec = inv_model(dummy_preds.reshape(len(label_batch), -1, 1, 1))
-        loss = gamma * criterion(prior[label_batch], xs_rec.cpu())
-        loss.backward()
-        optimizer.step()
 
-        running_loss += loss.item() / len(target_labels_batch)
+    if gamma != 0:
+        output_dim = prior.shape[0]
+        target_labels_batch = np.array_split(
+            target_labels, math.ceil(len(target_labels) / 64)
+        )
+        for label_batch in target_labels_batch:
+            optimizer.zero_grad()
+            dummy_pred_server = (
+                torch.ones(label_batch.shape[0], output_dim).to(device) * pi
+            )
+            dummy_pred_server[:, label_batch] = pj
+            dummy_pred_local = torch.eye(output_dim)[label_batch].to(device)
+            dummy_preds = torch.cat([dummy_pred_server, dummy_pred_local], dim=1).to(
+                device
+            )
+            xs_rec = inv_model(dummy_preds.reshape(len(label_batch), -1, 1, 1))
+            loss = gamma * criterion(prior[label_batch], xs_rec.cpu())
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item() / len(target_labels_batch)
 
     return running_loss
 
@@ -179,7 +197,10 @@ def get_our_inv_train_func(
         # --- Prepare Public Dataset --- #
         # target_labels = local_identities[target_client_id]
 
-        target_labels = sum(local_identities, [])
+        target_labels = sum(
+            [[id2label[la] for la in temp_list] for temp_list in local_identities], []
+        )
+
         prediction_dataloader = setup_our_inv_dataloader(
             target_labels,
             is_sensitive_flag,
@@ -319,7 +340,9 @@ def get_our_inv_train_func_with_multi_models(
 ):
     def inv_train(api):
 
-        target_labels = sum(local_identities, [])
+        target_labels = sum(
+            [[id2label[la] for la in temp_list] for temp_list in local_identities], []
+        )
 
         for target_client_id in range(client_num):
 
@@ -389,13 +412,13 @@ def get_our_inv_train_func_with_multi_models(
 
                     print(f"inv epoch={i}, prior loss ", inv_prior_loss)
 
-            with open(
-                os.path.join(output_dir, "inv_result.txt"),
-                "a",
-                encoding="utf-8",
-                newline="\n",
-            ) as f:
-                f.write(f"{i}, {inv_running_loss}\n")
+                with open(
+                    os.path.join(output_dir, "inv_result.txt"),
+                    "a",
+                    encoding="utf-8",
+                    newline="\n",
+                ) as f:
+                    f.write(f"{i}, {inv_running_loss}\n")
 
             state = {
                 "model": inv.state_dict(),

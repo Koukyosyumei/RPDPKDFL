@@ -81,13 +81,6 @@ if __name__ == "__main__":
     args["inv_lr"] = parsed_args.inv_learning_rate
     args["loss_type"] = parsed_args.invloss
 
-    if args["dataset"] == "AT&T":
-        args["num_classes"] = 40
-    elif args["dataset"] == "MNIST":
-        args["num_classes"] = 10
-    elif args["dataset"] == "FaceScrub":
-        args["num_classes"] = 530
-
     args["config_dataset"] = config_dataset[args["dataset"]]
     args["config_dataset"]["data_folder"] = parsed_args.path_to_datafolder
     args["config_dataset"].pop("weight_decay")

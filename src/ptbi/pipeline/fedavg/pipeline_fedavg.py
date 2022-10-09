@@ -104,6 +104,7 @@ def attack_fedavg(
     manager = GradientInversionAttackManager(
         (config_dataset["channel"], config_dataset["height"], config_dataset["width"]),
         device=device,
+        clamp_range=(-1, 1),
         **config_gradinvattack,
     )
     FedAvgServer_GradInvAttack = manager.attach(FedAvgServer)
@@ -170,31 +171,35 @@ def attack_fedavg(
     private_dataset_transformed = torch.concat([tldl[0] for tldl in transformed_ldl])
     private_dataset_label = torch.concat([tldl[1] for tldl in transformed_ldl])
     suc_num = 0
+    best_ssim_list = []
 
     for j in range(client_num):
         local_identity = np.unique(local_dataloaders[j].dataset.y)
         fake_labels = torch.Tensor(local_identity).to(torch.int64).to(device)
 
         for x_rec, label in zip(reconstructed_xs[j], reconstructed_ys[j]):
-            best_label = np.nanargmax(
-                [
-                    ssim(
-                        x_rec.detach().cpu().numpy().transpose(1, 2, 0),
-                        torch.mean(
-                            private_dataset_transformed[private_dataset_label == label],
-                            dim=0,
-                        )
-                        .detach()
-                        .cpu()
-                        .numpy()
-                        .transpose(1, 2, 0),
-                        multichannel=True,
+            temp_rec_img = x_rec.detach().cpu().numpy().transpose(1, 2, 0)
+            temp_ssim_list = [
+                ssim(
+                    temp_rec_img,
+                    torch.mean(
+                        private_dataset_transformed[
+                            private_dataset_label == temp_label
+                        ],
+                        dim=0,
                     )
-                    for label in torch.unique(private_dataset_label)
-                ]
-            )
+                    .detach()
+                    .cpu()
+                    .numpy()
+                    .transpose(1, 2, 0),
+                    data_range=2.0,
+                    multichannel=True,
+                )
+                for temp_label in torch.unique(private_dataset_label)
+            ]
 
-            suc_num += label.item() == best_label
+            suc_num += label.item() == np.nanargmax(temp_ssim_list)
+            best_ssim_list.append(np.nanmax(temp_ssim_list))
 
         fig = plt.figure(figsize=(18, 8))
         img = torchvision.utils.make_grid(reconstructed_xs[j] * 0.5 + 0.5, nrow=12)
@@ -236,4 +241,17 @@ def attack_fedavg(
         torch.save(xs.detach(), f"{output_dir}/{i}_xs.pth")
         torch.save(ys.detach(), f"{output_dir}/{i}_ys.pth")
 
-    return {"suc_num": suc_num}
+    torch.save(
+        private_dataset_transformed.detach().cpu(),
+        f"{output_dir}/private_dataset_transformed.pth",
+    )
+    torch.save(
+        private_dataset_label.detach().cpu(),
+        f"{output_dir}/private_dataset_label.pth",
+    )
+
+    return {
+        "suc_num": suc_num,
+        "ssim_mean": np.mean(best_ssim_list),
+        "ssim_std": np.std(best_ssim_list),
+    }
