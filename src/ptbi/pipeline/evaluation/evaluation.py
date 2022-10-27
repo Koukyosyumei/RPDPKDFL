@@ -147,6 +147,8 @@ def evaluation_full(
         ssim_private = ssim_private_list[label]
         ssim_public = ssim_public_list[label]
 
+        print(f"best_label is {best_label}, target_label is {label}")
+
         result[f"{attack_type}_success"] += label == best_label
         result[f"{attack_type}_too_close_to_public"] += (
             label + num_classes == best_label
