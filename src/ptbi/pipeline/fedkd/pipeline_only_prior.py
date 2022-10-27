@@ -140,8 +140,9 @@ def attack_prior(
     target_labels = sum(
         [[id2label[la] for la in temp_list] for temp_list in local_identities], []
     )
+    print(target_labels)
 
-    for label in target_labels:
+    for label in range(output_dim):
         np.save(
             os.path.join(
                 output_dir,
