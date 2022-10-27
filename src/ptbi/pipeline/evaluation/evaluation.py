@@ -62,9 +62,41 @@ def evaluation_full(
 
     ssim = SSIMLoss()
 
+    for label in range(num_classes):
+        np.save(
+            os.path.join(output_dir, "private_" + str(label)),
+            cv2.cvtColor(
+                private_dataset_transformed[private_dataset_label == label]
+                .mean(dim=0)
+                .detach()
+                .cpu()
+                .numpy()
+                .transpose(1, 2, 0)
+                * 0.5
+                + 0.5,
+                cv2.COLOR_BGR2RGB,
+            ),
+        )
+
+        np.save(
+            os.path.join(output_dir, "public_" + str(label)),
+            cv2.cvtColor(
+                public_dataset_transformed[public_dataset_label == label]
+                .mean(dim=0)
+                .detach()
+                .cpu()
+                .numpy()
+                .transpose(1, 2, 0)
+                * 0.5
+                + 0.5,
+                cv2.COLOR_BGR2RGB,
+            ),
+        )
+
     for celeb_id in tqdm.tqdm(target_ids):
         label = id2label[celeb_id]
 
+        """
         if save_gt:
             np.save(
                 os.path.join(output_dir, "private_" + str(label)),
@@ -95,6 +127,7 @@ def evaluation_full(
                     cv2.COLOR_BGR2RGB,
                 ),
             )
+        """
 
         temp_path = glob.glob(
             os.path.join(output_dir, str(epoch) + "_" + str(label) + "_*")
