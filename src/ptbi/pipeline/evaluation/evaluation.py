@@ -61,8 +61,9 @@ def evaluation_full(
     private_dataset_label = torch.cat(private_dataset_label_list)
 
     ssim = SSIMLoss()
-
+    print("eval num_classes is ", num_classes)
     for label in range(num_classes):
+        print(output_dir, "private_" + str(label))
         np.save(
             os.path.join(output_dir, "private_" + str(label)),
             cv2.cvtColor(
