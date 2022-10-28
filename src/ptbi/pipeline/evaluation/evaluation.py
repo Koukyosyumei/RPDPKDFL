@@ -8,10 +8,8 @@ import tqdm
 from skimage.metrics import structural_similarity
 
 from ...utils.loss import SSIMLoss
-from ...utils.utils_data import (
-    extract_transformd_dataset_from_dataloader,
-    total_variance_numpy_batch,
-)
+from ...utils.utils_data import (extract_transformd_dataset_from_dataloader,
+                                 total_variance_numpy_batch)
 
 
 def evaluation_full(
@@ -63,7 +61,6 @@ def evaluation_full(
     ssim = SSIMLoss()
     print("eval num_classes is ", num_classes)
     for label in range(num_classes):
-        print(output_dir, "private_" + str(label))
         np.save(
             os.path.join(output_dir, "private_" + str(label)),
             cv2.cvtColor(
