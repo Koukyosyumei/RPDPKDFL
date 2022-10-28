@@ -32,7 +32,7 @@ class BaseOptions:
         self.netG = "resnet_3blocks"
         self.n_layers_D = 3
         self.norm = "instance"
-        self.init_tyoe = "normal"
+        self.init_type = "normal"
         self.init_gain = 0.02
         self.no_dropout = True
         self.n_epochs = 100
@@ -44,12 +44,20 @@ class BaseOptions:
         self.lr_policy = "linear"
         self.lr_decay_iters = 50
         self.checkpoints_dir = "./"
+        self.gpu_ids = [0]
+
+        self.epoch_count = 1
+
+        self.load_iter = 50
+        self.continue_train = False
 
         self.isTrain = True
 
         self.lambda_A = 10.0
         self.lambda_B = 10.0
         self.lambda_identity = 0.5
+
+        self.verbose = 2
 
         self.initialized = True
 
@@ -80,16 +88,6 @@ def ae_attack_fedkd(
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
 
-    try:
-        torch.use_deterministic_algorithms(True)
-    except:
-        print("torch.use_deterministic_algorithms is not available")
-
-    try:
-        torch.backends.cudnn.benchmark = False
-    except:
-        print("torch.backends.cudnn.benchmark is not available")
-
     # --- Setup device --- #
     device = torch.device("cuda:0") if torch.cuda.is_available() else "cpu"
     print("device is ", device)
@@ -116,11 +114,11 @@ def ae_attack_fedkd(
             f"{loss_type} is not supported. We currently support `mse` or `ssim`."
         )
 
-    parser = BaseOptions()
+    opt = BaseOptions()
+    opt.checkpoints_dir = output_dir
 
-    parser.checkpoints_dir = output_dir
-
-    model = CycleGANModel(parser).to(device)
+    model = CycleGANModel(opt)
+    model.setup(opt)
 
     for epoch in range(1, 51):
         model.update_learning_rate()

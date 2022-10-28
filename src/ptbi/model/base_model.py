@@ -31,12 +31,13 @@ class BaseModel(ABC):
         """
         self.opt = opt
         self.isTrain = opt.isTrain
+        self.gpu_ids = opt.gpu_ids
         self.device = torch.device("cuda:0") if torch.cuda.is_available() else "cpu"
         self.save_dir = opt.checkpoints_dir  # save all the checkpoints to save_dir
-        if (
-            opt.preprocess != "scale_width"
-        ):  # with [scale_width], input images might have different sizes, which hurts the performance of cudnn.benchmark.
-            torch.backends.cudnn.benchmark = True
+        # if (
+        #    opt.preprocess != "scale_width"
+        # ):  # with [scale_width], input images might have different sizes, which hurts the performance of cudnn.benchmark.
+        # torch.backends.cudnn.benchmark = True
         self.loss_names = []
         self.model_names = []
         self.visual_names = []
