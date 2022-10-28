@@ -185,7 +185,7 @@ class BaseModel(ABC):
         for name in self.model_names:
             if isinstance(name, str):
                 load_filename = "%s_net_%s.pth" % (epoch, name)
-                if model_path is not None:
+                if model_path is None:
                     load_path = os.path.join(self.save_dir, load_filename)
                 else:
                     load_path = os.path.join(model_path, load_filename)

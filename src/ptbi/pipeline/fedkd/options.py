@@ -21,7 +21,7 @@ class BaseOptions:
         self.init_gain = 0.02
         self.no_dropout = True
         self.n_epochs = 100
-        self.n_epochs_decay = 100
+        self.n_epochs_decay = 50
         self.beta1 = 0.5
         self.lr = 0.0002
         self.gan_mode = "lsgan"

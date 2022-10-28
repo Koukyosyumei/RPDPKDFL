@@ -49,7 +49,7 @@ def ae_attack_fedkd(
     inv_dataloader = prepare_inv_dataloaders(
         dataset_name=dataset,
         client_num=client_num,
-        batch_size=batch_size,
+        batch_size=8,
         seed=seed,
         num_workers=num_workers,
         num_classes=num_classes,
@@ -72,7 +72,7 @@ def ae_attack_fedkd(
     model = CycleGANModel(opt)
     model.setup(opt)
 
-    for epoch in range(1, 51):
+    for epoch in range(1, opt.n_epochs + 1):
         model.update_learning_rate()
         for data in inv_dataloader:
             x1 = data[1].to(device)
@@ -109,5 +109,5 @@ def ae_attack_fedkd(
         )
         plt.savefig(f"{epoch}.png")
 
-        if epoch % 50 == 0:
+        if epoch % 10 == 0:
             model.save_networks(epoch)

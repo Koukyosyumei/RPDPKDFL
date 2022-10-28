@@ -9,6 +9,8 @@ import torchvision.transforms as transforms
 from aijack.utils import NumpyDataset, worker_init_fn
 from sklearn.model_selection import train_test_split
 
+PAIR_SIZE_MAX = 300
+
 
 class NumpyAEDataset(NumpyDataset):
     """This class allows you to convert numpy.array to torch.Dataset
@@ -178,7 +180,7 @@ def prepare_inv_lag_dataloaders(
         pairs = sum(
             [[(ys, yn) for yn in y_nonsensitive_idx] for ys in y_sensitive_idx], []
         )
-        pairs = random.sample(pairs, min(50, len(pairs)))
+        pairs = random.sample(pairs, min(PAIR_SIZE_MAX, len(pairs)))
 
         if len(pairs) == 0:
             skipped += 1
@@ -386,7 +388,7 @@ def prepare_inv_lfw_dataloaders(
             pairs = sum(
                 [[(ys, yn) for yn in y_nonsensitive_idx] for ys in y_sensitive_idx], []
             )
-            pairs = random.sample(pairs, min(50, len(pairs)))
+            pairs = random.sample(pairs, min(PAIR_SIZE_MAX, len(pairs)))
 
             if len(pairs) == 0:
                 skipped += 1
@@ -562,7 +564,7 @@ def prepare_facescrub_dataloaders(
         pairs = sum(
             [[(ys, yn) for yn in y_nonsensitive_idx] for ys in y_sensitive_idx], []
         )
-        pairs = random.sample(pairs, min(50, len(pairs)))
+        pairs = random.sample(pairs, min(PAIR_SIZE_MAX, len(pairs)))
 
         if len(pairs) == 0:
             skipped += 1
