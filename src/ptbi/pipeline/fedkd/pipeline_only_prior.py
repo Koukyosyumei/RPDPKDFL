@@ -5,9 +5,10 @@ import random
 import numpy as np
 import torch
 
-from ...model.invmodel import AE
+from ...model.cycle_gan_model import CycleGANModel
 from ...utils.dataloader import prepare_dataloaders
 from ..evaluation.evaluation import evaluation_full
+from .options import BaseOptions
 
 
 def attack_prior(
@@ -108,9 +109,13 @@ def attack_prior(
     y_pub_nonsensitive = torch.Tensor(
         public_train_dataloader.dataset.y[nonsensitive_idxs]
     )
-    ae = AE().to(device)
-    ae.load_state_dict(torch.load(model_path))
-    ae = ae.eval()
+
+    opt = BaseOptions()
+    opt.checkpoints_dir = output_dir
+
+    model = CycleGANModel(opt)
+    model.setup(opt)
+    model.load_networks(model_path)
 
     prior = torch.zeros(
         (
@@ -130,7 +135,7 @@ def attack_prior(
             list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
         ):
             prior[lab] += (
-                ae(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
+                model.netG_A(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
                 .detach()
                 .cpu()
                 .sum(dim=0)

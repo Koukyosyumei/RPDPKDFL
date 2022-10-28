@@ -177,7 +177,7 @@ class BaseModel(ABC):
                 state_dict, getattr(module, key), keys, i + 1
             )
 
-    def load_networks(self, epoch):
+    def load_networks(self, epoch, model_path=None):
         """Load all the networks from the disk.
         Parameters:
             epoch (int) -- current epoch; used in the file name '%s_net_%s.pth' % (epoch, name)
@@ -185,7 +185,10 @@ class BaseModel(ABC):
         for name in self.model_names:
             if isinstance(name, str):
                 load_filename = "%s_net_%s.pth" % (epoch, name)
-                load_path = os.path.join(self.save_dir, load_filename)
+                if model_path is not None:
+                    load_path = os.path.join(self.save_dir, load_filename)
+                else:
+                    load_path = os.path.join(model_path, load_filename)
                 net = getattr(self, "net" + name)
                 if isinstance(net, torch.nn.DataParallel):
                     net = net.module
