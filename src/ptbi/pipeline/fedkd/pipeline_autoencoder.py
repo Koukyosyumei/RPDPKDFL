@@ -22,124 +22,36 @@ class BaseOptions:
     def __init__(self):
         """Reset the class; indicates the class hasn't been initailized"""
         self.initialized = False
+        self.direction = "AtoB"
+        self.model = "cycle_gan"
+        self.input_nc = 3
+        self.output_nc = 3
+        self.ngf = 64
+        self.ndf = 64
+        self.netD = "basic"
+        self.netG = "resnet_3blocks"
+        self.n_layers_D = 3
+        self.norm = "instance"
+        self.init_tyoe = "normal"
+        self.init_gain = 0.02
+        self.no_dropout = True
+        self.n_epochs = 100
+        self.n_epochs_decay = 100
+        self.beta1 = 0.5
+        self.lr = 0.0002
+        self.gan_mode = "lsgan"
+        self.pool_size = 50
+        self.lr_policy = "linear"
+        self.lr_decay_iters = 50
+        self.checkpoints_dir = "./"
 
-    def initialize(self, parser):
-        """Define the common options that are used in both training and test."""
-        parser.add_argument(
-            "--direction", type=str, default="AtoB", help="AtoB or BtoA"
-        )
-        # model parameters
-        parser.add_argument(
-            "--model",
-            type=str,
-            default="cycle_gan",
-            help="chooses which model to use. [cycle_gan | pix2pix | test | colorization]",
-        )
-        parser.add_argument(
-            "--input_nc",
-            type=int,
-            default=3,
-            help="# of input image channels: 3 for RGB and 1 for grayscale",
-        )
-        parser.add_argument(
-            "--output_nc",
-            type=int,
-            default=3,
-            help="# of output image channels: 3 for RGB and 1 for grayscale",
-        )
-        parser.add_argument(
-            "--ngf",
-            type=int,
-            default=64,
-            help="# of gen filters in the last conv layer",
-        )
-        parser.add_argument(
-            "--ndf",
-            type=int,
-            default=64,
-            help="# of discrim filters in the first conv layer",
-        )
-        parser.add_argument(
-            "--netD",
-            type=str,
-            default="basic",
-            help="specify discriminator architecture [basic | n_layers | pixel]. The basic model is a 70x70 PatchGAN. n_layers allows you to specify the layers in the discriminator",
-        )
-        parser.add_argument(
-            "--netG",
-            type=str,
-            default="resnet_3blocks",
-            help="specify generator architecture [resnet_9blocks | resnet_6blocks | unet_256 | unet_128]",
-        )
-        parser.add_argument(
-            "--n_layers_D", type=int, default=3, help="only used if netD==n_layers"
-        )
-        parser.add_argument(
-            "--norm",
-            type=str,
-            default="instance",
-            help="instance normalization or batch normalization [instance | batch | none]",
-        )
-        parser.add_argument(
-            "--init_type",
-            type=str,
-            default="normal",
-            help="network initialization [normal | xavier | kaiming | orthogonal]",
-        )
-        parser.add_argument(
-            "--init_gain",
-            type=float,
-            default=0.02,
-            help="scaling factor for normal, xavier and orthogonal.",
-        )
-        parser.add_argument(
-            "--no_dropout", action="store_true", help="no dropout for the generator"
-        )
-        parser.add_argument(
-            "--n_epochs",
-            type=int,
-            default=100,
-            help="number of epochs with the initial learning rate",
-        )
-        parser.add_argument(
-            "--n_epochs_decay",
-            type=int,
-            default=100,
-            help="number of epochs to linearly decay learning rate to zero",
-        )
-        parser.add_argument(
-            "--beta1", type=float, default=0.5, help="momentum term of adam"
-        )
-        parser.add_argument(
-            "--lr", type=float, default=0.0002, help="initial learning rate for adam"
-        )
-        parser.add_argument(
-            "--gan_mode",
-            type=str,
-            default="lsgan",
-            help="the type of GAN objective. [vanilla| lsgan | wgangp]. vanilla GAN loss is the cross-entropy objective used in the original GAN paper.",
-        )
-        parser.add_argument(
-            "--pool_size",
-            type=int,
-            default=50,
-            help="the size of image buffer that stores previously generated images",
-        )
-        parser.add_argument(
-            "--lr_policy",
-            type=str,
-            default="linear",
-            help="learning rate policy. [linear | step | plateau | cosine]",
-        )
-        parser.add_argument(
-            "--lr_decay_iters",
-            type=int,
-            default=50,
-            help="multiply by a gamma every lr_decay_iters iterations",
-        )
-        parser.add_argument("--checkpoints_dir", type=str, default="./")
+        self.isTrain = True
+
+        self.lambda_A = 10.0
+        self.lambda_B = 10.0
+        self.lambda_identity = 0.5
+
         self.initialized = True
-        return parser
 
 
 def unloader(img):
@@ -204,10 +116,7 @@ def ae_attack_fedkd(
             f"{loss_type} is not supported. We currently support `mse` or `ssim`."
         )
 
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser = BaseOptions().initialize(parser)
+    parser = BaseOptions()
 
     parser.checkpoints_dir = output_dir
 

@@ -30,7 +30,6 @@ class BaseModel(ABC):
             -- self.optimizers (optimizer list):    define and initialize optimizers. You can define one optimizer for each network. If two networks are updated at the same time, you can use itertools.chain to group them. See cycle_gan_model.py for an example.
         """
         self.opt = opt
-        self.gpu_ids = opt.gpu_ids
         self.isTrain = opt.isTrain
         self.device = torch.device("cuda:0") if torch.cuda.is_available() else "cpu"
         self.save_dir = opt.checkpoints_dir  # save all the checkpoints to save_dir
