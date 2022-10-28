@@ -9,7 +9,7 @@ import torchvision.transforms as transforms
 from aijack.utils import NumpyDataset, worker_init_fn
 from sklearn.model_selection import train_test_split
 
-PAIR_SIZE_MAX = 150
+PAIR_SIZE_MAX = 100
 
 
 class NumpyAEDataset(NumpyDataset):
