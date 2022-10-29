@@ -12,7 +12,6 @@ from ...attack.tbi_train import (
     get_tbi_inv_train_func,
 )
 from ...model.cycle_gan_model import CycleGANModel
-from ...model.invmodel import AE
 from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
