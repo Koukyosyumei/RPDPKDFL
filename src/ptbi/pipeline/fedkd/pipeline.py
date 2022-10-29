@@ -11,6 +11,7 @@ from ...attack.tbi_train import (
     get_our_inv_train_func_with_multi_models,
     get_tbi_inv_train_func,
 )
+from ...model.cycle_gan_model import CycleGANModel
 from ...model.invmodel import AE
 from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
@@ -18,6 +19,7 @@ from ...utils.fedkd_setup import get_fedkd_api
 from ...utils.loss import SSIMLoss
 from ...utils.tbi_setup import setup_tbi_optimizers, setup_training_based_inversion
 from ..evaluation.evaluation import evaluation_full, evaluation_full_multi_models
+from .options import BaseOptions
 
 
 def attack_fedkd(
@@ -153,9 +155,12 @@ def attack_fedkd(
         if gamma != 0.0:
             if fedkd_type != "DSFL":
 
-                ae = AE().to(device)
-                ae.load_state_dict(torch.load(model_path))
-                ae = ae.eval()
+                opt = BaseOptions()
+                opt.checkpoints_dir = output_dir
+
+                model = CycleGANModel(opt)
+                model.setup(opt)
+                model.load_networks(100, model_path)
 
                 prior = torch.zeros(
                     (
@@ -175,7 +180,9 @@ def attack_fedkd(
                         list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
                     ):
                         prior[lab] += (
-                            ae(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
+                            model.netG_A(
+                                x_pub_nonsensitive[lab_idxs[batch_pos]].to(device)
+                            )
                             .detach()
                             .cpu()
                             .sum(dim=0)
