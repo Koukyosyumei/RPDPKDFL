@@ -38,8 +38,8 @@ class BaseOptions:
 
         self.isTrain = True
 
-        self.lambda_A = 1.0
-        self.lambda_B = 1.0
+        self.lambda_A = 3.0
+        self.lambda_B = 3.0
         self.lambda_identity = 0.5
 
         self.verbose = 2
