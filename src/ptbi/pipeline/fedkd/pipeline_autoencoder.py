@@ -49,7 +49,7 @@ def ae_attack_fedkd(
     inv_dataloader = prepare_inv_dataloaders(
         dataset_name=dataset,
         client_num=client_num,
-        batch_size=1,
+        batch_size=16,
         seed=seed,
         num_workers=num_workers,
         num_classes=num_classes,
