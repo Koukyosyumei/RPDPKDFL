@@ -126,21 +126,43 @@ def attack_prior(
         )
     )
 
-    for lab in range(output_dim):
-        lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
-        lab_idxs_size = lab_idxs.shape[0]
-        if lab_idxs_size == 0:
-            continue
-        for batch_pos in np.array_split(
-            list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
-        ):
-            prior[lab] += (
-                model.netG_A(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
-                .detach()
-                .cpu()
-                .sum(dim=0)
-                / lab_idxs_size
+    if fedkd_type != "DSFL":
+        for lab in range(output_dim):
+            lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
+            lab_idxs_size = lab_idxs.shape[0]
+            if lab_idxs_size == 0:
+                continue
+            for batch_pos in np.array_split(
+                list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
+            ):
+                prior[lab] += (
+                    model.netG_A(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
+                    .detach()
+                    .cpu()
+                    .sum(dim=0)
+                    / lab_idxs_size
+                )
+
+    else:
+        sensitive_idxs = np.where(is_sensitive_flag == 1)[0]
+        x_pub_sensitive = torch.stack(
+            [
+                public_train_dataloader.dataset.transform(
+                    public_train_dataloader.dataset.x[sidx]
+                )
+                for sidx in sensitive_idxs
+            ]
+        )
+        prior = torch.zeros(
+            (
+                output_dim,
+                config_dataset["channel"],
+                config_dataset["height"],
+                config_dataset["width"],
             )
+        )
+        for lab in range(output_dim):
+            prior[lab] = x_pub_sensitive.mean(dim=0)
 
     target_labels = sum(
         [[id2label[la] for la in temp_list] for temp_list in local_identities], []
