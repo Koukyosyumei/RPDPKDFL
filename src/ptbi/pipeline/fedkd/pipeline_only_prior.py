@@ -116,6 +116,7 @@ def attack_prior(
     model = CycleGANModel(opt)
     model.setup(opt)
     model.load_networks(50, model_path)
+    model.netG_A.eval()
 
     prior = torch.zeros(
         (
