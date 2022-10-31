@@ -38,7 +38,7 @@ class DeblurTrainer:
                 )
 
     def _run_epoch(self, epoch):
-        for data in self.train_dataset:
+        for i, data in enumerate(self.train_dataset):
             inputs, targets = self.model.get_input(data)
             outputs = self.netG(inputs)
             _ = self._update_d(outputs, targets)
@@ -48,6 +48,9 @@ class DeblurTrainer:
             loss_G = loss_content + self.adv_lambda * loss_adv
             loss_G.backward()
             self.optimizer_G.step()
+
+            if i > 1000:
+                break
 
         figure = plt.figure()
         figure.add_subplot(1, 3, 1)
