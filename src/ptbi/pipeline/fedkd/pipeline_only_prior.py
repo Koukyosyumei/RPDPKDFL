@@ -19,26 +19,21 @@ def torch_richardson_lucy(image, psf, num_iter=50, device="cpu"):
     psf:   4-dimensional input, NCHW format
     """
 
-    pad = psf.shape[-1] // 2 + 1
-    image = torch.nn.functional.pad(image, (pad, pad, pad, pad), mode="reflect")
-
     im_deconv = torch.full(image.shape, 0.5).to(device)
-    psf_mirror = torch.flip(psf, (-2, -1))
+    psf_mirror = torch.flip(psf, (-2, -1)).to(device)
 
     eps = 1e-12
+    reg = 1
 
     for _ in range(num_iter):
-        conv = torch.conv2d(im_deconv, psf, stride=1, padding=psf.shape[-1] // 2) + eps
+        conv = torch.conv2d(im_deconv, psf, stride=1, padding="same") + eps
         relative_blur = image / conv
         im_deconv *= (
-            torch.conv2d(
-                relative_blur, psf_mirror, stride=1, padding=psf.shape[-1] // 2
-            )
-            + eps
-        )
+            torch.conv2d(relative_blur, psf_mirror, stride=1, padding="same") + eps
+        ) * reg
         im_deconv = torch.clip(im_deconv, -1, 1)
 
-    return im_deconv[:, :, pad:-pad, pad:-pad]
+    return im_deconv
 
 
 def attack_prior(
@@ -157,8 +152,13 @@ def attack_prior(
         )
     )
 
+    target_labels = sum(
+        [[id2label[la] for la in temp_list] for temp_list in local_identities], []
+    )
+    print(target_labels)
+
     if dataset == "FaceScrub":
-        for lab in range(output_dim):
+        for lab in range(target_labels):
             lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
             lab_idxs_size = lab_idxs.shape[0]
             if lab_idxs_size == 0:
@@ -177,7 +177,7 @@ def attack_prior(
                 )
     else:
         if fedkd_type != "DSFL":
-            for lab in range(output_dim):
+            for lab in range(target_labels):
                 lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
                 lab_idxs_size = lab_idxs.shape[0]
                 if lab_idxs_size == 0:
@@ -211,15 +211,10 @@ def attack_prior(
                     config_dataset["width"],
                 )
             )
-            for lab in range(output_dim):
+            for lab in range(target_labels):
                 prior[lab] = x_pub_sensitive.mean(dim=0)
 
-    target_labels = sum(
-        [[id2label[la] for la in temp_list] for temp_list in local_identities], []
-    )
-    print(target_labels)
-
-    for label in range(output_dim):
+    for label in range(target_labels):
         np_img = prior[label].detach().cpu().numpy()
         np.save(
             os.path.join(
