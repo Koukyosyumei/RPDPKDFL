@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 from ...model.cycle_gan_model import CycleGANModel
 from ...utils.inv_dataloader import prepare_inv_dataloaders
 from ...utils.loss import SSIMLoss
+from ..deblur.train import DeblurTrainer
 from .options import BaseOptions
 
 
@@ -69,45 +70,49 @@ def ae_attack_fedkd(
     opt = BaseOptions()
     opt.checkpoints_dir = output_dir
 
-    model = CycleGANModel(opt)
-    model.setup(opt)
+    if dataset == "FaceScrub":
+        trainer = DeblurTrainer(inv_dataloader)
+        trainer.train()
+    else:
+        model = CycleGANModel(opt)
+        model.setup(opt)
 
-    for epoch in range(1, opt.n_epochs + 1):
-        model.update_learning_rate()
-        for data in inv_dataloader:
-            x1 = data[1].to(device)
-            x2 = data[2].to(device)
+        for epoch in range(1, opt.n_epochs + 1):
+            model.update_learning_rate()
+            for data in inv_dataloader:
+                x1 = data[1].to(device)
+                x2 = data[2].to(device)
 
-            model.set_input(
-                {"A": data[1], "B": data[2]}
-            )  # unpack data from dataset and apply preprocessing
-            model.optimize_parameters()
+                model.set_input(
+                    {"A": data[1], "B": data[2]}
+                )  # unpack data from dataset and apply preprocessing
+                model.optimize_parameters()
 
-        x3 = model.netG_A(x1[[0]])
+            x3 = model.netG_A(x1[[0]])
 
-        figure = plt.figure()
-        figure.add_subplot(1, 3, 1)
-        plt.imshow(
-            cv2.cvtColor(
-                x1[0].detach().cpu().numpy().transpose(1, 2, 0) * 0.5 + 0.5,
-                cv2.COLOR_BGR2RGB,
+            figure = plt.figure()
+            figure.add_subplot(1, 3, 1)
+            plt.imshow(
+                cv2.cvtColor(
+                    x1[0].detach().cpu().numpy().transpose(1, 2, 0) * 0.5 + 0.5,
+                    cv2.COLOR_BGR2RGB,
+                )
             )
-        )
-        figure.add_subplot(1, 3, 2)
-        plt.imshow(
-            cv2.cvtColor(
-                x2[0].detach().cpu().numpy().transpose(1, 2, 0) * 0.5 + 0.5,
-                cv2.COLOR_BGR2RGB,
+            figure.add_subplot(1, 3, 2)
+            plt.imshow(
+                cv2.cvtColor(
+                    x2[0].detach().cpu().numpy().transpose(1, 2, 0) * 0.5 + 0.5,
+                    cv2.COLOR_BGR2RGB,
+                )
             )
-        )
-        figure.add_subplot(1, 3, 3)
-        plt.imshow(
-            cv2.cvtColor(
-                x3[0].detach().cpu().numpy().transpose(1, 2, 0) * 0.5 + 0.5,
-                cv2.COLOR_BGR2RGB,
+            figure.add_subplot(1, 3, 3)
+            plt.imshow(
+                cv2.cvtColor(
+                    x3[0].detach().cpu().numpy().transpose(1, 2, 0) * 0.5 + 0.5,
+                    cv2.COLOR_BGR2RGB,
+                )
             )
-        )
-        plt.savefig(f"{epoch}.png")
+            plt.savefig(f"{epoch}.png")
 
-        if epoch % 10 == 0:
-            model.save_networks(epoch)
+            if epoch % 10 == 0:
+                model.save_networks(epoch)

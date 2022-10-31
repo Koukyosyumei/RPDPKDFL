@@ -13,7 +13,7 @@ from .schedulers import LinearDecay
 cv2.setNumThreads(0)
 
 
-class Trainer:
+class DeblurTrainer:
     def __init__(self, train: DataLoader):
         self.train_dataset = train
         self.adv_lambda = 0.001
