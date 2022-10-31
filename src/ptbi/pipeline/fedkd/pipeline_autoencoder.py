@@ -72,7 +72,7 @@ def ae_attack_fedkd(
 
     if dataset == "FaceScrub":
         trainer = DeblurTrainer(inv_dataloader)
-        trainer.train()
+        trainer.train(output_dir)
     else:
         model = CycleGANModel(opt)
         model.setup(opt)
