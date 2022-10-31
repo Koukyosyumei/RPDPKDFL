@@ -22,6 +22,7 @@ class DeblurTrainer:
     def train(self):
         self._init_params()
         for epoch in range(0, 200):
+            print("epoch: ", epoch + 1)
             if (epoch == self.warmup_epochs) and not (self.warmup_epochs == 0):
                 self.netG.module.unfreeze()
                 self.optimizer_G = self._get_optim(self.netG.parameters())
