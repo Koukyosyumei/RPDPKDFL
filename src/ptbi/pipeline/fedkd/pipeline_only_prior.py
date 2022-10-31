@@ -235,6 +235,12 @@ def attack_prior(
             )
         )
         plt.axis("off")
+        plt.savefig(
+            os.path.join(
+                output_dir,
+                f"0_{label}_prior.png",
+            )
+        )
 
     result = evaluation_full(
         client_num,
