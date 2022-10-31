@@ -2,13 +2,43 @@ import math
 import os
 import random
 
+import cv2
 import numpy as np
 import torch
+from matplotlib import pyplot as plt
 
 from ...model.cycle_gan_model import CycleGANModel
 from ...utils.dataloader import prepare_dataloaders
 from ..evaluation.evaluation import evaluation_full
 from .options import BaseOptions
+
+
+def torch_richardson_lucy(image, psf, num_iter=50, device="cpu"):
+    """
+    image: 4-dimensional input, NCHW format
+    psf:   4-dimensional input, NCHW format
+    """
+
+    pad = psf.shape[-1] // 2 + 1
+    image = torch.nn.functional.pad(image, (pad, pad, pad, pad), mode="reflect")
+
+    im_deconv = torch.full(image.shape, 0.5).to(device)
+    psf_mirror = torch.flip(psf, (-2, -1))
+
+    eps = 1e-12
+
+    for _ in range(num_iter):
+        conv = torch.conv2d(im_deconv, psf, stride=1, padding=psf.shape[-1] // 2) + eps
+        relative_blur = image / conv
+        im_deconv *= (
+            torch.conv2d(
+                relative_blur, psf_mirror, stride=1, padding=psf.shape[-1] // 2
+            )
+            + eps
+        )
+        im_deconv = torch.clip(im_deconv, -1, 1)
+
+    return im_deconv[:, :, pad:-pad, pad:-pad]
 
 
 def attack_prior(
@@ -127,7 +157,7 @@ def attack_prior(
         )
     )
 
-    if fedkd_type != "DSFL":
+    if dataset == "FaceScrub":
         for lab in range(output_dim):
             lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
             lab_idxs_size = lab_idxs.shape[0]
@@ -137,33 +167,52 @@ def attack_prior(
                 list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
             ):
                 prior[lab] += (
-                    model.netG_A(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
+                    torch_richardson_lucy(
+                        x_pub_nonsensitive[lab_idxs[batch_pos]].to(device)
+                    )
                     .detach()
                     .cpu()
                     .sum(dim=0)
                     / lab_idxs_size
                 )
-
     else:
-        sensitive_idxs = np.where(is_sensitive_flag == 1)[0]
-        x_pub_sensitive = torch.stack(
-            [
-                public_train_dataloader.dataset.transform(
-                    public_train_dataloader.dataset.x[sidx]
-                )
-                for sidx in sensitive_idxs
-            ]
-        )
-        prior = torch.zeros(
-            (
-                output_dim,
-                config_dataset["channel"],
-                config_dataset["height"],
-                config_dataset["width"],
+        if fedkd_type != "DSFL":
+            for lab in range(output_dim):
+                lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
+                lab_idxs_size = lab_idxs.shape[0]
+                if lab_idxs_size == 0:
+                    continue
+                for batch_pos in np.array_split(
+                    list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
+                ):
+                    prior[lab] += (
+                        model.netG_A(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
+                        .detach()
+                        .cpu()
+                        .sum(dim=0)
+                        / lab_idxs_size
+                    )
+
+        else:
+            sensitive_idxs = np.where(is_sensitive_flag == 1)[0]
+            x_pub_sensitive = torch.stack(
+                [
+                    public_train_dataloader.dataset.transform(
+                        public_train_dataloader.dataset.x[sidx]
+                    )
+                    for sidx in sensitive_idxs
+                ]
             )
-        )
-        for lab in range(output_dim):
-            prior[lab] = x_pub_sensitive.mean(dim=0)
+            prior = torch.zeros(
+                (
+                    output_dim,
+                    config_dataset["channel"],
+                    config_dataset["height"],
+                    config_dataset["width"],
+                )
+            )
+            for lab in range(output_dim):
+                prior[lab] = x_pub_sensitive.mean(dim=0)
 
     target_labels = sum(
         [[id2label[la] for la in temp_list] for temp_list in local_identities], []
@@ -171,13 +220,21 @@ def attack_prior(
     print(target_labels)
 
     for label in range(output_dim):
+        np_img = prior[label].detach().cpu().numpy()
         np.save(
             os.path.join(
                 output_dir,
                 f"0_{label}_prior",
             ),
-            prior[label].detach().cpu().numpy(),
+            np_img,
         )
+        plt.imshow(
+            cv2.cvtColor(
+                np_img.transpose(1, 2, 0) * 0.5 + 0.5,
+                cv2.COLOR_BGR2RGB,
+            )
+        )
+        plt.axis("off")
 
     result = evaluation_full(
         client_num,
