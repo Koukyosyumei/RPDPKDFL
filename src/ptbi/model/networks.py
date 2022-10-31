@@ -457,6 +457,10 @@ class ResnetGenerator(nn.Module):
         """Standard forward"""
         return self.model(input)
 
+    def unfreeze(self):
+        for param in self.parameters():
+            param.requires_grad = True
+
 
 class ResnetBlock(nn.Module):
     """Define a Resnet block"""

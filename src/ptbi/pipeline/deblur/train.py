@@ -22,11 +22,10 @@ class DeblurTrainer:
     def train(self):
         self._init_params()
         for epoch in range(0, 200):
-            print("epoch: ", epoch + 1)
-            if (epoch == self.warmup_epochs) and not (self.warmup_epochs == 0):
-                self.netG.module.unfreeze()
-                self.optimizer_G = self._get_optim(self.netG.parameters())
-                self.scheduler_G = self._get_scheduler(self.optimizer_G)
+            # if (epoch == self.warmup_epochs) and not (self.warmup_epochs == 0):
+            #    self.netG.module.unfreeze()
+            #    self.optimizer_G = self._get_optim(self.netG.parameters())
+            #    self.scheduler_G = self._get_scheduler(self.optimizer_G)
             self._run_epoch(epoch)
             self.scheduler_G.step()
             self.scheduler_D.step()
@@ -34,10 +33,11 @@ class DeblurTrainer:
             if epoch % 10 == 0:
                 torch.save(
                     {"model": self.netG.state_dict()},
-                    "last_{}.h5".format(epoch),
+                    "last_{}.h5".format(epoch + 1),
                 )
 
     def _run_epoch(self, epoch):
+        running_loss = 0
         for i, data in enumerate(self.train_dataset):
             inputs, targets = self.model.get_input(data)
             outputs = self.netG(inputs)
@@ -49,8 +49,9 @@ class DeblurTrainer:
             loss_G.backward()
             self.optimizer_G.step()
 
-            if i > 1000:
-                break
+            running_loss += loss_G.item() / len(self.train_dataset)
+
+        print(f"epoch: {epoch + 1}, {running_loss}")
 
         figure = plt.figure()
         figure.add_subplot(1, 3, 1)

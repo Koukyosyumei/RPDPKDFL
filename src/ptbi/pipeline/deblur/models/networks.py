@@ -120,6 +120,10 @@ class ResnetGenerator(nn.Module):
             output = torch.clamp(output, min=-1, max=1)
         return output
 
+    def unfreeze(self):
+        for param in self.parameters():
+            param.requires_grad = True
+
 
 # Define a resnet block
 class ResnetBlock(nn.Module):
