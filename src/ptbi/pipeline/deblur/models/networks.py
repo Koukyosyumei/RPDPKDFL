@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from .fpn_inception import FPNInception
+from ....model.networks import define_G
 
 ###############################################################################
 # Functions
@@ -366,12 +366,6 @@ def get_fullD():
     return model_d
 
 
-def get_generator():
-    model_g = FPNInception(norm_layer=get_norm_layer(norm_type="instance"))
-
-    return nn.DataParallel(model_g)
-
-
 def get_discriminator():
     patch_gan = NLayerDiscriminator(
         n_layers=3,
@@ -387,4 +381,17 @@ def get_discriminator():
 
 
 def get_nets():
-    return get_generator(), get_discriminator()
+    return (
+        define_G(
+            3,
+            3,
+            64,
+            "resnet_3blocks",
+            norm="instance",
+            use_dropout=False,
+            init_type="normal",
+            init_gain=0.02,
+            gpu_ids=[0],
+        ),
+        get_discriminator(),
+    )
