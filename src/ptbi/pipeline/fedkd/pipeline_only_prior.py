@@ -5,35 +5,11 @@ import random
 import cv2
 import numpy as np
 import torch
-from matplotlib import pyplot as plt
 
 from ...model.cycle_gan_model import CycleGANModel
 from ...utils.dataloader import prepare_dataloaders
 from ..evaluation.evaluation import evaluation_full
 from .options import BaseOptions
-
-
-def torch_richardson_lucy(image, psf, num_iter=50, device="cpu"):
-    """
-    image: 4-dimensional input, NCHW format
-    psf:   4-dimensional input, NCHW format
-    """
-
-    im_deconv = torch.full(image.shape, 0.5).to(device)
-    psf_mirror = torch.flip(psf, (-2, -1)).to(device)
-
-    eps = 1e-12
-    reg = 1
-
-    for _ in range(num_iter):
-        conv = torch.conv2d(im_deconv, psf, stride=1, padding="same") + eps
-        relative_blur = image / conv
-        im_deconv *= (
-            torch.conv2d(relative_blur, psf_mirror, stride=1, padding="same") + eps
-        ) * reg
-        im_deconv = torch.clip(im_deconv, -1, 1)
-
-    return im_deconv
 
 
 def attack_prior(
@@ -135,14 +111,6 @@ def attack_prior(
         public_train_dataloader.dataset.y[nonsensitive_idxs]
     )
 
-    opt = BaseOptions()
-    opt.checkpoints_dir = output_dir
-
-    model = CycleGANModel(opt)
-    model.setup(opt)
-    model.load_networks(50, model_path)
-    model.netG_A.eval()
-
     prior = torch.zeros(
         (
             output_dim,
@@ -157,8 +125,17 @@ def attack_prior(
     )
     print(target_labels)
 
-    if dataset == "FaceScrub":
-        for lab in range(target_labels):
+    if fedkd_type != "DSFL":
+
+        opt = BaseOptions()
+        opt.checkpoints_dir = output_dir
+
+        model = CycleGANModel(opt)
+        model.setup(opt)
+        model.load_networks(50, model_path)
+        model.netG_A.eval()
+
+        for lab in target_labels:
             lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
             lab_idxs_size = lab_idxs.shape[0]
             if lab_idxs_size == 0:
@@ -167,54 +144,35 @@ def attack_prior(
                 list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
             ):
                 prior[lab] += (
-                    torch_richardson_lucy(
-                        x_pub_nonsensitive[lab_idxs[batch_pos]].to(device)
-                    )
+                    model.netG_A(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
                     .detach()
                     .cpu()
                     .sum(dim=0)
                     / lab_idxs_size
                 )
+
     else:
-        if fedkd_type != "DSFL":
-            for lab in range(target_labels):
-                lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
-                lab_idxs_size = lab_idxs.shape[0]
-                if lab_idxs_size == 0:
-                    continue
-                for batch_pos in np.array_split(
-                    list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
-                ):
-                    prior[lab] += (
-                        model.netG_A(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
-                        .detach()
-                        .cpu()
-                        .sum(dim=0)
-                        / lab_idxs_size
-                    )
-
-        else:
-            sensitive_idxs = np.where(is_sensitive_flag == 1)[0]
-            x_pub_sensitive = torch.stack(
-                [
-                    public_train_dataloader.dataset.transform(
-                        public_train_dataloader.dataset.x[sidx]
-                    )
-                    for sidx in sensitive_idxs
-                ]
-            )
-            prior = torch.zeros(
-                (
-                    output_dim,
-                    config_dataset["channel"],
-                    config_dataset["height"],
-                    config_dataset["width"],
+        sensitive_idxs = np.where(is_sensitive_flag == 1)[0]
+        x_pub_sensitive = torch.stack(
+            [
+                public_train_dataloader.dataset.transform(
+                    public_train_dataloader.dataset.x[sidx]
                 )
+                for sidx in sensitive_idxs
+            ]
+        )
+        prior = torch.zeros(
+            (
+                output_dim,
+                config_dataset["channel"],
+                config_dataset["height"],
+                config_dataset["width"],
             )
-            for lab in range(target_labels):
-                prior[lab] = x_pub_sensitive.mean(dim=0)
+        )
+        for lab in target_labels:
+            prior[lab] = x_pub_sensitive.mean(dim=0)
 
-    for label in range(target_labels):
+    for label in target_labels:
         np_img = prior[label].detach().cpu().numpy()
         np.save(
             os.path.join(
@@ -222,19 +180,6 @@ def attack_prior(
                 f"0_{label}_prior",
             ),
             np_img,
-        )
-        plt.imshow(
-            cv2.cvtColor(
-                np_img.transpose(1, 2, 0) * 0.5 + 0.5,
-                cv2.COLOR_BGR2RGB,
-            )
-        )
-        plt.axis("off")
-        plt.savefig(
-            os.path.join(
-                output_dir,
-                f"0_{label}_prior.png",
-            )
         )
 
     result = evaluation_full(
