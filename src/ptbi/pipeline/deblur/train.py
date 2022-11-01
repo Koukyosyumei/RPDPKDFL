@@ -24,10 +24,10 @@ class DeblurTrainer:
     def train(self, output_folder):
         self._init_params()
         for epoch in range(0, 200):
-            # if (epoch == self.warmup_epochs) and not (self.warmup_epochs == 0):
-            #    self.netG.module.unfreeze()
-            #    self.optimizer_G = self._get_optim(self.netG.parameters())
-            #    self.scheduler_G = self._get_scheduler(self.optimizer_G)
+            if (epoch == self.warmup_epochs) and not (self.warmup_epochs == 0):
+                self.netG.module.unfreeze()
+                self.optimizer_G = self._get_optim(self.netG.parameters())
+                self.scheduler_G = self._get_scheduler(self.optimizer_G)
             self._run_epoch(epoch)
             self.scheduler_G.step()
             self.scheduler_D.step()
@@ -35,25 +35,23 @@ class DeblurTrainer:
             if epoch % 10 == 0:
                 torch.save(
                     {"model": self.netG.state_dict()},
-                    os.path.join(output_folder, f"last_{epoch + 1}.h5"),
+                    os.path.join(output_folder, "last_{}.h5".format(epoch)),
                 )
 
     def _run_epoch(self, epoch):
-        running_loss = 0
         for i, data in enumerate(self.train_dataset):
-            self.optimizer_G.zero_grad()
-            inputs, targets = self.model.get_input(data)
+            targets, inputs = self.model.get_input(data)
             outputs = self.netG(inputs)
             _ = self._update_d(outputs, targets)
+            self.optimizer_G.zero_grad()
             loss_content = self.criterionG(outputs, targets)
             loss_adv = self.adv_trainer.loss_g(outputs, targets)
             loss_G = loss_content + self.adv_lambda * loss_adv
             loss_G.backward()
             self.optimizer_G.step()
 
-            running_loss += loss_G.item() / len(self.train_dataset)
-
-        print(f"epoch: {epoch + 1}, {running_loss}")
+            if i > 1000:
+                break
 
         figure = plt.figure()
         figure.add_subplot(1, 3, 1)
@@ -116,7 +114,9 @@ class DeblurTrainer:
         self.netG.cuda()
         self.adv_trainer = self._get_adversarial_trainer("double_gan", netD, criterionD)
         self.model = get_model()
-        self.optimizer_G = self._get_optim(self.netG.parameters())
+        self.optimizer_G = self._get_optim(
+            filter(lambda p: p.requires_grad, self.netG.parameters())
+        )
         self.optimizer_D = self._get_optim(self.adv_trainer.get_params())
         self.scheduler_G = self._get_scheduler(self.optimizer_G)
         self.scheduler_D = self._get_scheduler(self.optimizer_D)

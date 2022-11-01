@@ -7,6 +7,7 @@ import numpy as np
 import torch
 
 from ...model.cycle_gan_model import CycleGANModel
+from ...model.networks import define_G
 from ...utils.dataloader import prepare_dataloaders
 from ..evaluation.evaluation import evaluation_full
 from .options import BaseOptions
@@ -127,29 +128,45 @@ def attack_prior(
 
     if fedkd_type != "DSFL":
 
-        opt = BaseOptions()
-        opt.checkpoints_dir = output_dir
+        if dataset == "FaceScrub":
+            model = define_G(
+                3,
+                3,
+                64,
+                "resnet_3blocks",
+                norm="instance",
+                use_dropout=False,
+                init_type="normal",
+                init_gain=0.02,
+                gpu_ids=[0],
+            )
+            model.load_state_dict(
+                torch.load(os.path.join(model_path, "last_50.h5")["model"])
+            )
+        else:
+            opt = BaseOptions()
+            opt.checkpoints_dir = output_dir
 
-        model = CycleGANModel(opt)
-        model.setup(opt)
-        model.load_networks(50, model_path)
-        model.netG_A.eval()
+            model = CycleGANModel(opt)
+            model.setup(opt)
+            model.load_networks(50, model_path)
+            model.netG_A.eval()
 
-        for lab in target_labels:
-            lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
-            lab_idxs_size = lab_idxs.shape[0]
-            if lab_idxs_size == 0:
-                continue
-            for batch_pos in np.array_split(
-                list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
-            ):
-                prior[lab] += (
-                    model.netG_A(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
-                    .detach()
-                    .cpu()
-                    .sum(dim=0)
-                    / lab_idxs_size
-                )
+            for lab in target_labels:
+                lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
+                lab_idxs_size = lab_idxs.shape[0]
+                if lab_idxs_size == 0:
+                    continue
+                for batch_pos in np.array_split(
+                    list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
+                ):
+                    prior[lab] += (
+                        model.netG_A(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
+                        .detach()
+                        .cpu()
+                        .sum(dim=0)
+                        / lab_idxs_size
+                    )
 
     else:
         sensitive_idxs = np.where(is_sensitive_flag == 1)[0]
