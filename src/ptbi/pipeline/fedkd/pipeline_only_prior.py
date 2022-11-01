@@ -141,8 +141,26 @@ def attack_prior(
                 gpu_ids=[0],
             )
             model.load_state_dict(
-                torch.load(os.path.join(model_path, "last_50.h5")["model"])
+                torch.load(os.path.join(model_path, "last_100.h5"))["model"]
             )
+            model.eval()
+
+            for lab in range(output_dim):
+                lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
+                lab_idxs_size = lab_idxs.shape[0]
+                if lab_idxs_size == 0:
+                    continue
+                for batch_pos in np.array_split(
+                    list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
+                ):
+                    prior[lab] += (
+                        model(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
+                        .detach()
+                        .cpu()
+                        .sum(dim=0)
+                        / lab_idxs_size
+                    )
+
         else:
             opt = BaseOptions()
             opt.checkpoints_dir = output_dir
