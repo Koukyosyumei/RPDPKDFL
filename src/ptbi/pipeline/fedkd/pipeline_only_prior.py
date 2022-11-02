@@ -141,7 +141,7 @@ def attack_prior(
                 gpu_ids=[0],
             )
             model.load_state_dict(
-                torch.load(os.path.join(model_path, "last_100.h5"))["model"]
+                torch.load(os.path.join(model_path, "last_200.h5"))["model"]
             )
             model.eval()
 
