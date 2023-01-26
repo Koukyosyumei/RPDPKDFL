@@ -127,6 +127,7 @@ def setup_fedgems(
             user_id=i,
             lr=lr,
             epsilon=epsilon,
+            device=device,
         ).to(device)
         for i in range(client_num)
     ]
