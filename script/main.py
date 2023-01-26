@@ -28,6 +28,10 @@ def add_args(parser):
     )
 
     parser.add_argument(
+        "--num_communication", type=int, default=5, help="number of communication"
+    )
+
+    parser.add_argument(
         "-c", "--client_num", type=int, default=10, help="number of clients"
     )
 
@@ -137,6 +141,7 @@ if __name__ == "__main__":
 
     args["attack_type"] = parsed_args.attack_type
     args["client_num"] = parsed_args.client_num
+    args["num_communication"] = parsed_args.num_communication
     args["inv_lr"] = parsed_args.inv_learning_rate
     args["loss_type"] = parsed_args.invloss
     args["alpha"] = parsed_args.alpha
