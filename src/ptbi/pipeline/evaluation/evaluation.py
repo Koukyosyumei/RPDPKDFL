@@ -61,10 +61,42 @@ def evaluation_full(
     private_dataset_label = torch.cat(private_dataset_label_list)
 
     ssim = SSIMLoss()
+    print("eval num_classes is ", num_classes)
+    for label in range(num_classes):
+        np.save(
+            os.path.join(output_dir, "private_" + str(label)),
+            cv2.cvtColor(
+                private_dataset_transformed[private_dataset_label == label]
+                .mean(dim=0)
+                .detach()
+                .cpu()
+                .numpy()
+                .transpose(1, 2, 0)
+                * 0.5
+                + 0.5,
+                cv2.COLOR_BGR2RGB,
+            ),
+        )
+
+        np.save(
+            os.path.join(output_dir, "public_" + str(label)),
+            cv2.cvtColor(
+                public_dataset_transformed[public_dataset_label == label]
+                .mean(dim=0)
+                .detach()
+                .cpu()
+                .numpy()
+                .transpose(1, 2, 0)
+                * 0.5
+                + 0.5,
+                cv2.COLOR_BGR2RGB,
+            ),
+        )
 
     for celeb_id in tqdm.tqdm(target_ids):
         label = id2label[celeb_id]
 
+        """
         if save_gt:
             np.save(
                 os.path.join(output_dir, "private_" + str(label)),
@@ -95,6 +127,7 @@ def evaluation_full(
                     cv2.COLOR_BGR2RGB,
                 ),
             )
+        """
 
         temp_path = glob.glob(
             os.path.join(output_dir, str(epoch) + "_" + str(label) + "_*")
@@ -146,6 +179,8 @@ def evaluation_full(
         )
         ssim_private = ssim_private_list[label]
         ssim_public = ssim_public_list[label]
+
+        print(f"best_label is {best_label}, target_label is {label}")
 
         result[f"{attack_type}_success"] += label == best_label
         result[f"{attack_type}_too_close_to_public"] += (

@@ -9,6 +9,8 @@ import torchvision.transforms as transforms
 from aijack.utils import NumpyDataset, worker_init_fn
 from sklearn.model_selection import train_test_split
 
+PAIR_SIZE_MAX = 100
+
 
 class NumpyAEDataset(NumpyDataset):
     """This class allows you to convert numpy.array to torch.Dataset
@@ -178,7 +180,7 @@ def prepare_inv_lag_dataloaders(
         pairs = sum(
             [[(ys, yn) for yn in y_nonsensitive_idx] for ys in y_sensitive_idx], []
         )
-        pairs = random.sample(pairs, min(50, len(pairs)))
+        pairs = random.sample(pairs, min(PAIR_SIZE_MAX, len(pairs)))
 
         if len(pairs) == 0:
             skipped += 1
@@ -386,7 +388,7 @@ def prepare_inv_lfw_dataloaders(
             pairs = sum(
                 [[(ys, yn) for yn in y_nonsensitive_idx] for ys in y_sensitive_idx], []
             )
-            pairs = random.sample(pairs, min(50, len(pairs)))
+            pairs = random.sample(pairs, min(PAIR_SIZE_MAX, len(pairs)))
 
             if len(pairs) == 0:
                 skipped += 1
@@ -559,22 +561,25 @@ def prepare_facescrub_dataloaders(
         y_sensitive_idx = list(set(list(y_idx)) & set(list(sensitive_idx)))
         y_nonsensitive_idx = list(set(list(y_idx)) & set(list(nonsensitive_idx)))
 
-        pairs = sum(
-            [[(ys, yn) for yn in y_nonsensitive_idx] for ys in y_sensitive_idx], []
-        )
-        pairs = random.sample(pairs, min(50, len(pairs)))
+        if len(y_sensitive_idx) != 0:
+            blurred = []
+            for idx in y_sensitive_idx:
+                blurred.append(
+                    cv2.blur(
+                        X_public_train[idx],
+                        (blur_strength, blur_strength),
+                    )
+                )
 
-        if len(pairs) == 0:
+            X_public_input_inv.append(X_public_train[y_sensitive_idx])
+            X_public_output_inv.append(np.stack(blurred))
+        else:
             skipped += 1
-
-        for pair in pairs:
-            X_public_input_inv.append(X_public_train[pair[1]])
-            X_public_output_inv.append(X_public_train[pair[0]])
 
     print("#skipped", skipped)
 
-    X_public_input_inv = np.stack(X_public_input_inv)
-    X_public_output_inv = np.stack(X_public_output_inv)
+    X_public_input_inv = np.concatenate(X_public_input_inv)
+    X_public_output_inv = np.concatenate(X_public_output_inv)
 
     public_inv_dataset = NumpyAEDataset(
         x=X_public_input_inv,

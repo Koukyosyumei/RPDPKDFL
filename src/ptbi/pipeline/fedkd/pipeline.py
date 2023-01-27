@@ -11,13 +11,15 @@ from ...attack.tbi_train import (
     get_our_inv_train_func_with_multi_models,
     get_tbi_inv_train_func,
 )
-from ...model.invmodel import AE
+from ...model.cycle_gan_model import CycleGANModel
 from ...model.model import get_model_class
+from ...model.networks import define_G
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
 from ...utils.loss import SSIMLoss
 from ...utils.tbi_setup import setup_tbi_optimizers, setup_training_based_inversion
 from ..evaluation.evaluation import evaluation_full, evaluation_full_multi_models
+from .options import BaseOptions
 
 
 def attack_fedkd(
@@ -150,37 +152,78 @@ def attack_fedkd(
             public_train_dataloader.dataset.y[nonsensitive_idxs]
         )
 
+        prior = torch.zeros(
+            (
+                output_dim,
+                config_dataset["channel"],
+                config_dataset["height"],
+                config_dataset["width"],
+            )
+        )
+
         if gamma != 0.0:
             if fedkd_type != "DSFL":
-
-                ae = AE().to(device)
-                ae.load_state_dict(torch.load(model_path))
-                ae = ae.eval()
-
-                prior = torch.zeros(
-                    (
-                        output_dim,
-                        config_dataset["channel"],
-                        config_dataset["height"],
-                        config_dataset["width"],
+                if dataset == "FaceScrub":
+                    model = define_G(
+                        3,
+                        3,
+                        64,
+                        "resnet_3blocks",
+                        norm="instance",
+                        use_dropout=False,
+                        init_type="normal",
+                        init_gain=0.02,
+                        gpu_ids=[0],
                     )
-                )
+                    model.load_state_dict(
+                        torch.load(os.path.join(model_path, "last_200.h5"))["model"]
+                    )
+                    model.eval()
 
-                for lab in range(output_dim):
-                    lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
-                    lab_idxs_size = lab_idxs.shape[0]
-                    if lab_idxs_size == 0:
-                        continue
-                    for batch_pos in np.array_split(
-                        list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
-                    ):
-                        prior[lab] += (
-                            ae(x_pub_nonsensitive[lab_idxs[batch_pos]].to(device))
-                            .detach()
-                            .cpu()
-                            .sum(dim=0)
-                            / lab_idxs_size
-                        )
+                    for lab in range(output_dim):
+                        lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
+                        lab_idxs_size = lab_idxs.shape[0]
+                        if lab_idxs_size == 0:
+                            continue
+                        for batch_pos in np.array_split(
+                            list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
+                        ):
+                            prior[lab] += (
+                                model(
+                                    x_pub_nonsensitive[lab_idxs[batch_pos]].to(device)
+                                )
+                                .detach()
+                                .cpu()
+                                .sum(dim=0)
+                                / lab_idxs_size
+                            )
+
+                else:
+                    opt = BaseOptions()
+                    opt.checkpoints_dir = output_dir
+
+                    model = CycleGANModel(opt)
+                    model.setup(opt)
+                    model.load_networks(50, model_path)
+                    model.netG_A.eval()
+
+                    for lab in range(output_dim):
+                        lab_idxs = torch.where(y_pub_nonsensitive == lab)[0]
+                        lab_idxs_size = lab_idxs.shape[0]
+                        if lab_idxs_size == 0:
+                            continue
+                        for batch_pos in np.array_split(
+                            list(range(lab_idxs_size)), math.ceil(lab_idxs_size / 8)
+                        ):
+                            prior[lab] += (
+                                model.netG_A(
+                                    x_pub_nonsensitive[lab_idxs[batch_pos]].to(device)
+                                )
+                                .detach()
+                                .cpu()
+                                .sum(dim=0)
+                                / lab_idxs_size
+                            )
             else:
                 sensitive_idxs = np.where(is_sensitive_flag == 1)[0]
                 x_pub_sensitive = torch.stack(

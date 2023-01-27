@@ -79,7 +79,7 @@ optional arguments:
                         type of ablation study;
                      0: only local logits with prior-based inference adjusting
                      1: only local logits witout inference adjusting
-                     2: paird logits with prior-based  inference adjusting
+                     2: paird logits with prior-based inference adjusting
 ```
 
 #### Example
