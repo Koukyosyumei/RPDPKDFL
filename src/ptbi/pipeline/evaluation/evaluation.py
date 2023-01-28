@@ -1,5 +1,6 @@
 import glob
 import os
+import pickle
 
 import cv2
 import numpy as np
@@ -8,10 +9,8 @@ import tqdm
 from skimage.metrics import structural_similarity
 
 from ...utils.loss import SSIMLoss
-from ...utils.utils_data import (
-    extract_transformd_dataset_from_dataloader,
-    total_variance_numpy_batch,
-)
+from ...utils.utils_data import (extract_transformd_dataset_from_dataloader,
+                                 total_variance_numpy_batch)
 
 
 def evaluation_full(
@@ -260,6 +259,10 @@ def evaluation_full_multi_models(
     private_dataset_label = torch.cat(private_dataset_label_list)
 
     ssim = SSIMLoss()
+
+    ssim_true = []
+    ssim_false = []
+
 
     if label_transform:
         label2id = {v: k for k, v in id2label.items()}
