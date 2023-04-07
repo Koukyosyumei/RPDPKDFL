@@ -8,7 +8,7 @@ import torch
 import torchvision.transforms as transforms
 from sklearn.model_selection import train_test_split
 
-from ...utils.utils import NumpyDataset, worker_init_fn
+from ..utilsdata.utils import NumpyDataset, worker_init_fn
 
 PAIR_SIZE_MAX = 100
 

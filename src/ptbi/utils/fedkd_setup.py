@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from ...fedmd import (
+from ..fedmd import (
     DSFLAPI,
     DSFLClient,
     DSFLServer,

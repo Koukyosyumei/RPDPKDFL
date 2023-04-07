@@ -6,7 +6,7 @@ import torch
 import torchvision.transforms as transforms
 from torch import nn
 
-from ...utils.utils import NumpyDataset, worker_init_fn
+from ..utilsdata.utils import NumpyDataset, worker_init_fn
 from ..model.invmodel import get_invmodel_class
 
 
