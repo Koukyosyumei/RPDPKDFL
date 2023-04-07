@@ -6,8 +6,9 @@ import numpy as np
 import pandas as pd
 import torch
 import torchvision.transforms as transforms
-from aijack.utils import NumpyDataset, worker_init_fn
 from sklearn.model_selection import train_test_split
+
+from ...utils.utils import NumpyDataset, worker_init_fn
 
 PAIR_SIZE_MAX = 100
 

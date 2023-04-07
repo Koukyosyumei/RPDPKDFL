@@ -4,9 +4,9 @@ import random
 import numpy as np
 import torch
 import torchvision.transforms as transforms
-from aijack.utils import NumpyDataset, worker_init_fn
 from torch import nn
 
+from ...utils.utils import NumpyDataset, worker_init_fn
 from ..model.invmodel import get_invmodel_class
 
 
@@ -87,7 +87,6 @@ def setup_tbi_inv_dataloader(
     inv_tempreature,
     inv_batch_size,
 ):
-
     inv_trainset = NumpyDataset(
         x=api.public_dataloader.dataset.x,
         y=api.public_dataloader.dataset.y,
@@ -150,7 +149,6 @@ def setup_our_inv_dataloader(
     inv_batch_size,
     only_sensitive=True,
 ):
-
     if only_sensitive:
         sensitive_flag = np.where(is_sensitive_flag == 1)[0]
         inv_trainset = NumpyDataset(
@@ -232,7 +230,6 @@ def setup_our_inv_dataloader_from_single_client(
     inv_batch_size,
     only_sensitive=True,
 ):
-
     if only_sensitive:
         sensitive_flag = np.where(is_sensitive_flag == 1)[0]
         inv_trainset = NumpyDataset(

@@ -2,7 +2,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from aijack.collaborative import (
+
+from ...fedmd import (
     DSFLAPI,
     DSFLClient,
     DSFLServer,
@@ -198,7 +199,6 @@ def setup_dsfl(
     round_decimal=None,
     custom_action=lambda x: x,
 ):
-
     local_identities = [np.unique(dl.dataset.y).tolist() for dl in local_dataloaders]
     label2newlabel = {
         la: i for i, la in enumerate(np.unique(sum(local_identities, [])))

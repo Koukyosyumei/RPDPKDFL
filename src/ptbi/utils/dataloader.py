@@ -9,8 +9,9 @@ import pandas as pd
 import torch
 import torchvision
 import torchvision.transforms as transforms
-from aijack.utils import NumpyDataset, worker_init_fn
 from sklearn.model_selection import train_test_split
+
+from ...utils.utils import NumpyDataset, worker_init_fn
 
 
 def prepare_lfw_dataloaders(

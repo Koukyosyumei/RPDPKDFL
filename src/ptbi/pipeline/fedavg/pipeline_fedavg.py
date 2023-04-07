@@ -7,11 +7,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
-from aijack.attack import GradientInversionAttackManager
 from aijack.collaborative import FedAvgClient, FedAvgServer
 from matplotlib import pyplot as plt
 from skimage.metrics import structural_similarity as ssim
 
+from ...attack.gradinv.gradientinversion import GradientInversionAttackManager
 from ...model.model import get_model_class
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.utils_data import extract_transformd_dataset_from_dataloader
