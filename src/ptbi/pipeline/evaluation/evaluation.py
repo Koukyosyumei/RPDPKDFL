@@ -1,5 +1,6 @@
 import glob
 import os
+import pickle
 
 import cv2
 import numpy as np
@@ -261,10 +262,19 @@ def evaluation_full_multi_models(
 
     ssim = SSIMLoss()
 
+    ssim_true = []
+    ssim_false = []
+
     if label_transform:
         label2id = {v: k for k, v in id2label.items()}
     else:
         label2id = list(range(num_classes))
+
+    for client_id, ldl in enumerate(local_dataloaders):
+        np.save(
+            os.path.join(output_dir, "label_" + str(client_id)),
+            np.unique(ldl.dataset.y),
+        )
 
     for celeb_id in tqdm.tqdm(target_ids):
         label = id2label[celeb_id]
@@ -289,6 +299,11 @@ def evaluation_full_multi_models(
                         multichannel=True,
                         data_range=1,
                     )
+
+        np.save(
+            os.path.join(output_dir, "ssim_" + str(label)),
+            ssim_matrix.sum(axis=0) / (client_num - 1),
+        )
 
         best_img = reconstructed_imgs[
             np.argmin(ssim_matrix.sum(axis=0) / (client_num - 1) + beta * tv_array)
