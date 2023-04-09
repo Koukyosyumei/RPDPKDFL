@@ -3,7 +3,7 @@ from abc import abstractmethod
 
 import torch
 
-from ...utils import accuracy_torch_dataloader
+from ...utils.utils_data import accuracy_torch_dataloader
 
 
 class BaseFedAPI:
