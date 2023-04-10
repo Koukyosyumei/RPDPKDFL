@@ -2,7 +2,7 @@
 
 Code for Breaching FedMD: Image Recovery via Paired-Logits Inversion Attack
 
-<img src="new_architecture.drawio.svg">
+<img src="img/overview.drawio.svg">
 
 ## Install
 
@@ -16,24 +16,13 @@ We assume that all data locates in `data` folder.
 
 ```
 ├── data
-│   ├── LAGdataset_100.zip
-│   ├── lfw-align-128-mask.tar.gz
-│   └── lfw-align-128.tar.gz
-```
-
-- LFW
-
-```
-mkdir data/lag
-unzip -qq data/LAGdataset_100.zip -d data/lag
-```
-
-- LAG
-
-```
-mkdir data/lfw
-tar -zxf data/lfw-align-128.tar.gz -C data/lfw
-tar -zxf data/lfw-align-128-mask.tar.gz -C data/lfw
+│   ├── LAG
+│   │    ├── 50_cent
+│   │    │      .
+│   │    │      .
+│   │
+│   ├── LFW
+│   └── FaceScrub
 ```
 
 ## Usage

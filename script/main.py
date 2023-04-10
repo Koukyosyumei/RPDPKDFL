@@ -19,7 +19,7 @@ def add_args(parser):
         "-t",
         "--fedkd_type",
         type=str,
-        default="fedgems",
+        default="FedMD",
         help="type of FedKD; FedMD, FedGEMS, or FedGEMS",
     )
 
@@ -169,6 +169,9 @@ if __name__ == "__main__":
     os.makedirs(run_dir)
 
     only_sensitive = parsed_args.data_for_inversion == 1
+
+    if args["fedkd_type"] == "tbi":
+        parsed_args.use_multi_models = 0
 
     args["random_seed"] = parsed_args.random_seed
     args["gamma"] = parsed_args.gamma
