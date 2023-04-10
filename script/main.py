@@ -122,7 +122,7 @@ def add_args(parser):
                                       2: paird logits with prior-based inference adjusting",
     )
 
-    parser.add_argument("--use_multi_models", type=int, default=0)
+    parser.add_argument("--use_multi_models", type=int, default=1)
 
     args = parser.parse_args()
     return args
