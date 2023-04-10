@@ -1,8 +1,8 @@
 # Breaching FedMD: Image Recovery via Paired-Logits Inversion Attack
 
-Code for **Breaching FedMD: Image Recovery via Paired-Logits Inversion Attack**
+Code for Breaching FedMD: Image Recovery via Paired-Logits Inversion Attack
 
-<img src="new_architecture.drawio.drawio.svg">
+<img src="new_architecture.drawio.svg">
 
 ## Install
 
