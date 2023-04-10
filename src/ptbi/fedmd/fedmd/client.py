@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from ...utils.utils import torch_round_x_decimal
+from ...utilsdata.utils import torch_round_x_decimal
 from ..core import BaseClient
 
 

@@ -1,7 +1,7 @@
 import torch
 
 from ...utils.metrics import crossentropyloss_between_logits
-from ...utils.utils import torch_round_x_decimal
+from ...utilsdata.utils import torch_round_x_decimal
 from ..core import BaseClient
 
 
