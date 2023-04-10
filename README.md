@@ -38,6 +38,12 @@ tar -zxf data/lfw-align-128-mask.tar.gz -C data/lfw
 
 ## Usage
 
+- example
+
+```
+python script/main.py -t FedMD -d LAG -a pli -p ./data/lag -o path_to_output_folder
+```
+
 ```
 usage: main.py [-h] [-t FEDKD_TYPE] [-d DATASET] [-a ATTACK_TYPE] [-c CLIENT_NUM] [-s SOFTMAX_TEMPREATURE]
                [-p PATH_TO_DATAFOLDER] [-o OUTPUT_FOLDER] [-b ABLATION_STUDY]
@@ -52,7 +58,7 @@ optional arguments:
                             LAG or LFW
   -a ATTACK_TYPE, --attack_type ATTACK_TYPE
                         type of attack;
-                            ptbi or tbi
+                            pli or tbi
   -c CLIENT_NUM, --client_num CLIENT_NUM
                         number of clients
   -s SOFTMAX_TEMPREATURE, --softmax_tempreature SOFTMAX_TEMPREATURE

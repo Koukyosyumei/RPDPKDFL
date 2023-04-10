@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 
-from ptbi.pipeline.fedkd.pipeline_only_evaluation import evaluation_fedkd
+from pli.pipeline.fedkd.pipeline_only_evaluation import evaluation_fedkd
 
 
 def add_args(parser):

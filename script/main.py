@@ -4,9 +4,9 @@ import random
 import string
 from datetime import datetime
 
-from ptbi.attack.confidence import get_pi, get_pj
-from ptbi.config.config import config_base, config_dataset, config_fedkd
-from ptbi.pipeline.fedkd.pipeline import attack_fedkd
+from pli.attack.confidence import get_pi, get_pj
+from pli.config.config import config_base, config_dataset, config_fedkd
+from pli.pipeline.fedkd.pipeline import attack_fedkd
 
 
 def randomname(n):
@@ -62,8 +62,8 @@ def add_args(parser):
         "-a",
         "--attack_type",
         type=str,
-        default="ptbi",
-        help="type of attack; ptbi or tbi",
+        default="pli",
+        help="type of attack; pli or tbi",
     )
 
     parser.add_argument("--alpha", type=float, default=3.0, help="alpha")
@@ -108,7 +108,7 @@ def add_args(parser):
         "-m",
         "--path_to_model",
         type=str,
-        default="/content/",
+        default=None,
         help="path to the trained model folder",
     )
 
@@ -189,6 +189,14 @@ if __name__ == "__main__":
     print("#target classes is ", args["config_dataset"]["target_celeblities_num"])
     print("pi is ", get_pi(args["num_classes"], args["alpha"]))
     print("pj is ", get_pj(args["num_classes"], args["alpha"]))
+
+    if parsed_args.path_to_model is None:
+        if args["dataset"] == "LAG":
+            parsed_args.path_to_model = "/content/RPDPKDFL/model/LAG/"
+        elif args["dataset"] == "LFW":
+            parsed_args.path_to_model = "/content/RPDPKDFL/model/LFW/"
+        elif args["dataset"] == "FaceScrub":
+            parsed_args.path_to_model = "/content/RPDPKDFL/model/FaceScrub"
 
     result = attack_fedkd(
         seed=parsed_args.random_seed,
