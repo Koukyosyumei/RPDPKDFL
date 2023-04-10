@@ -16,13 +16,25 @@ We assume that all data locates in `data` folder.
 
 ```
 ├── data
-│   ├── LAG
-│   │    ├── 50_cent
-│   │    │      .
-│   │    │      .
-│   │
-│   ├── LFW
-│   └── FaceScrub
+    ├── LAG
+    │    ├── 50_cent
+    │    │      .
+    │    │      .
+    │
+    ├── LFW
+    |    ├── lfw-align-128
+    |    |      ├── AJ_Cook
+    |    |      ├──    .
+    |    |      ├──    .
+    |    |
+    |    └── lfw-align-128-masked
+    |           ├── AJ_Cook
+    |           ├──    .
+    |           ├──    .
+    |
+    └── FaceScrub
+            ├── actors_faces
+            └── actresses_face
 ```
 
 ## Usage
@@ -60,7 +72,7 @@ optional arguments:
                         type of ablation study;
                      0: only local logits with prior-based inference adjusting
                      1: only local logits witout inference adjusting
-                     2: paird logits with prior-based inference adjusting
+                     2: paird logits with prior-based inference adjusting (default)
 ```
 
 ## Citation
