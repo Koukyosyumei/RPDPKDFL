@@ -5,8 +5,7 @@ import numpy as np
 import torch
 
 from ...utils.dataloader import prepare_dataloaders
-from ..evaluation.evaluation import (evaluation_full,
-                                     evaluation_full_multi_models)
+from ..evaluation.evaluation import evaluation_full, evaluation_full_multi_models
 
 
 def evaluation_fedkd(

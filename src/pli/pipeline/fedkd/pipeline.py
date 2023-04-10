@@ -6,19 +6,19 @@ import random
 import numpy as np
 import torch
 
-from ...attack.tbi_train import (get_our_inv_train_func,
-                                 get_our_inv_train_func_with_multi_models,
-                                 get_tbi_inv_train_func)
+from ...attack.tbi_train import (
+    get_our_inv_train_func,
+    get_our_inv_train_func_with_multi_models,
+    get_tbi_inv_train_func,
+)
 from ...model.cycle_gan_model import CycleGANModel
 from ...model.model import get_model_class
 from ...model.networks import define_G
 from ...utils.dataloader import prepare_dataloaders
 from ...utils.fedkd_setup import get_fedkd_api
 from ...utils.loss import SSIMLoss
-from ...utils.tbi_setup import (setup_tbi_optimizers,
-                                setup_training_based_inversion)
-from ..evaluation.evaluation import (evaluation_full,
-                                     evaluation_full_multi_models)
+from ...utils.tbi_setup import setup_tbi_optimizers, setup_training_based_inversion
+from ..evaluation.evaluation import evaluation_full, evaluation_full_multi_models
 from .options import BaseOptions
 
 

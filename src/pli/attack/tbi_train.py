@@ -4,12 +4,16 @@ import os
 import numpy as np
 import torch
 
-from ..utils.tbi_setup import (setup_our_inv_dataloader,
-                               setup_our_inv_dataloader_from_single_client,
-                               setup_tbi_inv_dataloader)
+from ..utils.tbi_setup import (
+    setup_our_inv_dataloader,
+    setup_our_inv_dataloader_from_single_client,
+    setup_tbi_inv_dataloader,
+)
 from .confidence import get_pi, get_pj
-from .reconstruction import (reconstruct_all_possible_targets,
-                             reconstruct_all_possible_targets_with_pair_logits)
+from .reconstruction import (
+    reconstruct_all_possible_targets,
+    reconstruct_all_possible_targets_with_pair_logits,
+)
 
 
 def train_tbi_inv_model(data, device, inv_model, optimizer, criterion):

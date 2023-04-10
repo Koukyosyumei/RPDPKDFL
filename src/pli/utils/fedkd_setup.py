@@ -3,9 +3,17 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from ..fedmd import (DSFLAPI, DSFLClient, DSFLServer, FedGEMSAPI,
-                     FedGEMSClient, FedGEMSServer, FedMDAPI, FedMDClient,
-                     FedMDServer)
+from ..fedmd import (
+    DSFLAPI,
+    DSFLClient,
+    DSFLServer,
+    FedGEMSAPI,
+    FedGEMSClient,
+    FedGEMSServer,
+    FedMDAPI,
+    FedMDClient,
+    FedMDServer,
+)
 
 
 def setup_fedmd(

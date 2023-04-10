@@ -5,8 +5,12 @@ import torch
 import torch.nn as nn
 
 from .utils.distance import cossim, l2
-from .utils.regularization import (bn_regularizer, group_consistency,
-                                   label_matching, total_variance)
+from .utils.regularization import (
+    bn_regularizer,
+    group_consistency,
+    label_matching,
+    total_variance,
+)
 
 
 class BaseManager(metaclass=ABCMeta):

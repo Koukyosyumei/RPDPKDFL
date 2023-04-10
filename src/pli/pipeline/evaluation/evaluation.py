@@ -9,8 +9,10 @@ import tqdm
 from skimage.metrics import structural_similarity
 
 from ...utils.loss import SSIMLoss
-from ...utils.utils_data import (extract_transformd_dataset_from_dataloader,
-                                 total_variance_numpy_batch)
+from ...utils.utils_data import (
+    extract_transformd_dataset_from_dataloader,
+    total_variance_numpy_batch,
+)
 
 
 def evaluation_full(

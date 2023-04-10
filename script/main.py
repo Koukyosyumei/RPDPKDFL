@@ -44,17 +44,17 @@ def add_args(parser):
     )
 
     parser.add_argument(
-        "--tot_class_num", type=int, default=300, help="number of total classes"
+        "--tot_class_num", type=int, default=1000, help="number of total classes"
     )
     parser.add_argument(
-        "--tar_class_num", type=int, default=30, help="number of target classes"
+        "--tar_class_num", type=int, default=200, help="number of target classes"
     )
 
     parser.add_argument(
         "-u",
         "--blur_strength",
         type=int,
-        default=15,
+        default=10,
         help="strength of blur",
     )
 
@@ -66,8 +66,8 @@ def add_args(parser):
         help="type of attack; pli or tbi",
     )
 
-    parser.add_argument("--alpha", type=float, default=3.0, help="alpha")
-    parser.add_argument("--gamma", type=float, default=0.1, help="gamma")
+    parser.add_argument("--alpha", type=float, default=5.0, help="alpha")
+    parser.add_argument("--gamma", type=float, default=0.03, help="gamma")
 
     parser.add_argument(
         "--invloss", type=str, default="mse", help="loss function for inversion"
@@ -77,7 +77,7 @@ def add_args(parser):
         "-s",
         "--softmax_tempreature",
         type=float,
-        default=1.0,
+        default=3.0,
         help="tempreature $\tau$",
     )
 
@@ -116,12 +116,10 @@ def add_args(parser):
         "-b",
         "--ablation_study",
         type=int,
-        default=0,
-        help="type of ablation study; 0:normal(Q=p'_{c_i, j}+p'_{s, j}+\alpha H(p'_s)), \
-                                      1:without entropy (Q=p'_{c_i, j}+p'_{s, j})\
-                                      2:without p'_{s, j} (Q=p'_{c_i, j}+\alpha H(p'_s))\
-                                      3:without local logit (Q=p'_{s, j}+\alpha H(p'_s))\
-                                      4:without sensitive flag",
+        default=2,
+        help="type of ablation study; 0: only local logits with prior-based inference adjusting, \
+                                      1: only local logits witout inference adjusting,\
+                                      2: paird logits with prior-based inference adjusting",
     )
 
     parser.add_argument("--use_multi_models", type=int, default=0)
