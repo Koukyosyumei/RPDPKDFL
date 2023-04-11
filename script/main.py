@@ -4,9 +4,9 @@ import random
 import string
 from datetime import datetime
 
-from ptbi.attack.confidence import get_pi, get_pj
-from ptbi.config.config import config_base, config_dataset, config_fedkd
-from ptbi.pipeline.fedkd.pipeline import attack_fedkd
+from pli.attack.confidence import get_pi, get_pj
+from pli.config.config import config_base, config_dataset, config_fedkd
+from pli.pipeline.fedkd.pipeline import attack_fedkd
 
 
 def randomname(n):
@@ -19,7 +19,7 @@ def add_args(parser):
         "-t",
         "--fedkd_type",
         type=str,
-        default="fedgems",
+        default="FedMD",
         help="type of FedKD; FedMD, FedGEMS, or FedGEMS",
     )
 
@@ -44,17 +44,17 @@ def add_args(parser):
     )
 
     parser.add_argument(
-        "--tot_class_num", type=int, default=300, help="number of total classes"
+        "--tot_class_num", type=int, default=1000, help="number of total classes"
     )
     parser.add_argument(
-        "--tar_class_num", type=int, default=30, help="number of target classes"
+        "--tar_class_num", type=int, default=200, help="number of target classes"
     )
 
     parser.add_argument(
         "-u",
         "--blur_strength",
         type=int,
-        default=15,
+        default=10,
         help="strength of blur",
     )
 
@@ -62,12 +62,12 @@ def add_args(parser):
         "-a",
         "--attack_type",
         type=str,
-        default="ptbi",
-        help="type of attack; ptbi or tbi",
+        default="pli",
+        help="type of attack; pli or tbi",
     )
 
-    parser.add_argument("--alpha", type=float, default=3.0, help="alpha")
-    parser.add_argument("--gamma", type=float, default=0.1, help="gamma")
+    parser.add_argument("--alpha", type=float, default=5.0, help="alpha")
+    parser.add_argument("--gamma", type=float, default=0.03, help="gamma")
 
     parser.add_argument(
         "--invloss", type=str, default="mse", help="loss function for inversion"
@@ -77,7 +77,7 @@ def add_args(parser):
         "-s",
         "--softmax_tempreature",
         type=float,
-        default=1.0,
+        default=3.0,
         help="tempreature $\tau$",
     )
 
@@ -108,7 +108,7 @@ def add_args(parser):
         "-m",
         "--path_to_model",
         type=str,
-        default="/content/",
+        default=None,
         help="path to the trained model folder",
     )
 
@@ -116,15 +116,13 @@ def add_args(parser):
         "-b",
         "--ablation_study",
         type=int,
-        default=0,
-        help="type of ablation study; 0:normal(Q=p'_{c_i, j}+p'_{s, j}+\alpha H(p'_s)), \
-                                      1:without entropy (Q=p'_{c_i, j}+p'_{s, j})\
-                                      2:without p'_{s, j} (Q=p'_{c_i, j}+\alpha H(p'_s))\
-                                      3:without local logit (Q=p'_{s, j}+\alpha H(p'_s))\
-                                      4:without sensitive flag",
+        default=2,
+        help="type of ablation study; 0: only local logits with prior-based inference adjusting, \
+                                      1: only local logits witout inference adjusting,\
+                                      2: paird logits with prior-based inference adjusting",
     )
 
-    parser.add_argument("--use_multi_models", type=int, default=0)
+    parser.add_argument("--use_multi_models", type=int, default=1)
 
     args = parser.parse_args()
     return args
@@ -172,6 +170,9 @@ if __name__ == "__main__":
 
     only_sensitive = parsed_args.data_for_inversion == 1
 
+    if args["fedkd_type"] == "tbi":
+        parsed_args.use_multi_models = 0
+
     args["random_seed"] = parsed_args.random_seed
     args["gamma"] = parsed_args.gamma
     args["only_sensitive"] = parsed_args.data_for_inversion
@@ -189,6 +190,14 @@ if __name__ == "__main__":
     print("#target classes is ", args["config_dataset"]["target_celeblities_num"])
     print("pi is ", get_pi(args["num_classes"], args["alpha"]))
     print("pj is ", get_pj(args["num_classes"], args["alpha"]))
+
+    if parsed_args.path_to_model is None:
+        if args["dataset"] == "LAG":
+            parsed_args.path_to_model = "/content/RPDPKDFL/model/LAG/"
+        elif args["dataset"] == "LFW":
+            parsed_args.path_to_model = "/content/RPDPKDFL/model/LFW/"
+        elif args["dataset"] == "FaceScrub":
+            parsed_args.path_to_model = "/content/RPDPKDFL/model/FaceScrub"
 
     result = attack_fedkd(
         seed=parsed_args.random_seed,

@@ -4,9 +4,9 @@ import random
 import string
 from datetime import datetime
 
-from ptbi.attack import get_pj
-from ptbi.config.config import config_base, config_dataset, config_fedkd
-from ptbi.pipeline.fedkd.pipeline_confidence_gap import confidence_gap_fedkd
+from pli.attack import get_pj
+from pli.config.config import config_base, config_dataset, config_fedkd
+from pli.pipeline.fedkd.pipeline_confidence_gap import confidence_gap_fedkd
 
 
 def randomname(n):
@@ -58,8 +58,8 @@ def add_args(parser):
         "-a",
         "--attack_type",
         type=str,
-        default="ptbi",
-        help="type of attack; ptbi or tbi",
+        default="pli",
+        help="type of attack; pli or tbi",
     )
 
     parser.add_argument("--alpha", type=float, default=3.0, help="alpha")

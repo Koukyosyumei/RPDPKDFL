@@ -4,8 +4,8 @@ import random
 import string
 from datetime import datetime
 
-from ptbi.config.config import config_base, config_dataset
-from ptbi.pipeline.fedkd.pipeline_autoencoder import ae_attack_fedkd
+from pli.config.config import config_base, config_dataset
+from pli.pipeline.fedkd.pipeline_autoencoder import ae_attack_fedkd
 
 
 def randomname(n):
